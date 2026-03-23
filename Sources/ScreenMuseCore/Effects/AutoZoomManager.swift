@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreImage
 import QuartzCore
 
 /// Configuration for auto-zoom camera behavior
