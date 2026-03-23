@@ -175,8 +175,19 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         }
 
         if frameCount == 0 {
-            print("⚠️ WARNING: stopRecording called with 0 frames — video will be empty!")
+            print("⚠️ WARNING: No frames captured — Screen Recording permission may not be fully granted")
             print("⚠️ Check System Settings → Privacy & Security → Screen Recording")
+            // Don't call finishWriting on a writer with no session — it will fail with
+            // "The operation could not be completed". Abort cleanly instead.
+            videoInput?.markAsFinished()
+            audioInput?.markAsFinished()
+            assetWriter = nil
+            videoInput = nil
+            videoAdaptor = nil
+            audioInput = nil
+            sessionStarted = false
+            isRecording = false
+            throw RecordingError.noFramesCaptured
         }
 
         // Capture URL before clearing state
@@ -292,6 +303,7 @@ public enum RecordingError: Error, LocalizedError {
     case writerNotConfigured
     case writerFailed(String)
     case permissionDenied(String)
+    case noFramesCaptured
 
     public var errorDescription: String? {
         switch self {
@@ -305,6 +317,8 @@ public enum RecordingError: Error, LocalizedError {
             return "Recording failed: \(msg)"
         case .permissionDenied(let msg):
             return "Screen Recording permission denied — grant it in System Settings → Privacy & Security → Screen Recording. (\(msg))"
+        case .noFramesCaptured:
+            return "No frames were captured — Screen Recording permission may not be granted, or the stream delivered no content. Grant permission in System Settings → Privacy & Security → Screen Recording, then relaunch."
         }
     }
 }

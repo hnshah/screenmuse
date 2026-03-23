@@ -1,12 +1,16 @@
 import Foundation
 import Network
+import ScreenCaptureKit
+import AppKit
 
 // Local HTTP server for programmatic agent control
 // Endpoints:
 //   POST /start    body: {"name": "recording-name"}  → {"session_id": "uuid", "status": "recording"}
 //   POST /stop     → {"video_path": "/path/video.mp4", "metadata": {...}}
 //   POST /chapter  body: {"name": "Chapter name"}   → {"ok": true}
-//   POST /highlight → {"ok": true}
+//   POST /highlight  → {"ok": true}
+//   POST /screenshot body: {"path": "/optional/path.png"}  → {"path": "...", "width": N, "height": N}
+//   GET  /status     → {"recording": true, "elapsed": 12.3, "chapters": [...]}
 //   GET  /status   → {"recording": true, "elapsed": 12.3, "chapters": [...]}
 
 @MainActor
@@ -152,6 +156,56 @@ public class ScreenMuseServer {
                 "chapters": chapters.map { ["name": $0.name, "time": $0.time] },
                 "last_video": currentVideoURL?.path ?? ""
             ])
+
+        case ("POST", "/screenshot"):
+            // One-shot screenshot using SCScreenshotManager (WWDC23)
+            // Optional body: {"path": "/full/path/to/save.png"}
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                guard let display = content.displays.first else {
+                    sendResponse(connection: connection, status: 500, body: ["error": "No display found"])
+                    return
+                }
+                let filter = SCContentFilter(display: display, excludingWindows: [])
+                let config = SCStreamConfiguration()
+                config.width = display.width
+                config.height = display.height
+                config.pixelFormat = kCVPixelFormatType_32BGRA
+
+                // Determine save path
+                let savePath: URL
+                if let customPath = body["path"] as? String {
+                    savePath = URL(fileURLWithPath: customPath)
+                } else {
+                    let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+                    let screenshotDir = moviesURL.appendingPathComponent("ScreenMuse/Screenshots", isDirectory: true)
+                    try FileManager.default.createDirectory(at: screenshotDir, withIntermediateDirectories: true)
+                    let formatter = ISO8601DateFormatter()
+                    formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+                    let fileName = "screenshot-\(formatter.string(from: Date())).png".replacingOccurrences(of: ":", with: "-")
+                    savePath = screenshotDir.appendingPathComponent(fileName)
+                }
+
+                if #available(macOS 14.0, *) {
+                    let cgImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+                    let rep = NSBitmapImageRep(cgImage: cgImage)
+                    guard let pngData = rep.representation(using: .png, properties: [:]) else {
+                        sendResponse(connection: connection, status: 500, body: ["error": "PNG conversion failed"])
+                        return
+                    }
+                    try pngData.write(to: savePath)
+                    sendResponse(connection: connection, status: 200, body: [
+                        "path": savePath.path,
+                        "width": cgImage.width,
+                        "height": cgImage.height,
+                        "size": pngData.count
+                    ])
+                } else {
+                    sendResponse(connection: connection, status: 400, body: ["error": "Screenshot API requires macOS 14+"])
+                }
+            } catch {
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
 
         case ("GET", "/debug"):
             // Diagnostic endpoint — shows save dir, recent recordings, permission status
