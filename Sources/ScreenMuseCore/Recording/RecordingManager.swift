@@ -1,17 +1,24 @@
 import AVFoundation
 import ScreenCaptureKit
 
+// RecordingManager bridges two concurrency domains:
+//   1. @MainActor for Published state (isRecording, duration)
+//   2. SCStreamOutput callbacks on a background queue
+// Properties accessed from the stream callback are marked nonisolated(unsafe)
+// and protected by the fact that startRecording/stopRecording fully configure
+// them before the stream begins emitting, and clear them only after stopCapture returns.
 public final class RecordingManager: NSObject, ObservableObject, @unchecked Sendable {
     @Published public var isRecording = false
     @Published public var duration: TimeInterval = 0
 
     private var stream: SCStream?
-    private var assetWriter: AVAssetWriter?
-    private var videoInput: AVAssetWriterInput?
-    private var audioInput: AVAssetWriterInput?
-    private var outputURL: URL?
     private var timer: Timer?
-    private var sessionStarted = false
+
+    // Accessed from SCStreamOutput callback (background queue) -- nonisolated(unsafe)
+    nonisolated(unsafe) private var assetWriter: AVAssetWriter?
+    nonisolated(unsafe) private var videoInput: AVAssetWriterInput?
+    nonisolated(unsafe) private var audioInput: AVAssetWriterInput?
+    nonisolated(unsafe) private var sessionStarted = false
 
     public override init() {
         super.init()
@@ -62,7 +69,6 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = "ScreenMuse_\(ISO8601DateFormatter().string(from: Date())).mp4"
         let url = tempDir.appendingPathComponent(fileName)
-        outputURL = url
 
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
 
@@ -74,7 +80,6 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         let vInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
         vInput.expectsMediaDataInRealTime = true
         writer.add(vInput)
-        videoInput = vInput
 
         if config.includeSystemAudio {
             let audioSettings: [String: Any] = [
@@ -88,6 +93,8 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
             audioInput = aInput
         }
 
+        // Set these before calling startCapture so the stream callback sees them
+        videoInput = vInput
         assetWriter = writer
         sessionStarted = false
         writer.startWriting()
@@ -115,16 +122,19 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         timer?.invalidate()
         timer = nil
 
-        guard let stream = stream else {
+        guard let stream else {
             throw RecordingError.notRecording
         }
 
         try await stream.stopCapture()
         self.stream = nil
 
-        guard let writer = assetWriter, let url = outputURL else {
+        guard let writer = assetWriter else {
             throw RecordingError.writerNotConfigured
         }
+
+        // Capture URL before clearing state
+        let outputURL = writer.outputURL
 
         videoInput?.markAsFinished()
         audioInput?.markAsFinished()
@@ -136,12 +146,16 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         audioInput = nil
         sessionStarted = false
 
-        return url
+        return outputURL
     }
 }
 
 extension RecordingManager: SCStreamOutput {
-    public func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    public nonisolated func stream(
+        _ stream: SCStream,
+        didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
+        of type: SCStreamOutputType
+    ) {
         guard let writer = assetWriter, writer.status == .writing else { return }
 
         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
@@ -153,11 +167,11 @@ extension RecordingManager: SCStreamOutput {
 
         switch type {
         case .screen:
-            if let videoInput = videoInput, videoInput.isReadyForMoreMediaData {
+            if let videoInput, videoInput.isReadyForMoreMediaData {
                 videoInput.append(sampleBuffer)
             }
         case .audio:
-            if let audioInput = audioInput, audioInput.isReadyForMoreMediaData {
+            if let audioInput, audioInput.isReadyForMoreMediaData {
                 audioInput.append(sampleBuffer)
             }
         @unknown default:

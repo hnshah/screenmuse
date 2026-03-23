@@ -1,13 +1,16 @@
 import Foundation
 import ScreenCaptureKit
 
-public enum CaptureSource: Sendable {
+// SCWindow is an ObjC class without guaranteed Sendable conformance in Swift 6,
+// so we use @unchecked Sendable here. RecordingConfig is only created on the
+// main actor and passed into async functions — safe in practice.
+public enum CaptureSource: @unchecked Sendable {
     case fullScreen
     case window(SCWindow)
     case region(CGRect)
 }
 
-public struct RecordingConfig: Sendable {
+public struct RecordingConfig: @unchecked Sendable {
     public let captureSource: CaptureSource
     public let includeSystemAudio: Bool
     public let includeMicrophone: Bool

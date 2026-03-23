@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import ScreenCaptureKit
 import ScreenMuseCore
 
 @MainActor
@@ -38,6 +39,7 @@ final class CaptureViewModel: ObservableObject {
         isCapturing = true
         defer { isCapturing = false }
         do {
+            // TODO: In Phase 2, replace with interactive region selector
             let region = CGRect(x: 100, y: 100, width: 800, height: 600)
             lastCapture = try await screenshotManager.captureRegion(region)
         } catch {
@@ -70,5 +72,3 @@ final class CaptureViewModel: ObservableObject {
         }
     }
 }
-
-import ScreenCaptureKit
