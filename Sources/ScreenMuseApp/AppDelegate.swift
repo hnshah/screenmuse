@@ -1,9 +1,20 @@
 import AppKit
-import ScreenCaptureKit
 import ScreenMuseCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Check permissions and warn if missing
+        let hasScreen = CGPreflightScreenCaptureAccess()
+        let hasAccessibility = AXIsProcessTrusted()
+
+        if !hasScreen {
+            showPermissionAlert()
+        }
+
+        if !hasAccessibility {
+            print("⚠️ ScreenMuse: Accessibility not granted — keyboard overlays disabled")
+        }
+
         // Start agent API server on port 7823
         Task { @MainActor in
             do {
@@ -13,20 +24,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 print("Failed to start agent API server: \(error)")
             }
         }
-
-        // Request screen capture permission
-        Task {
-            do {
-                _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
-            } catch {
-                print("Screen capture permission not granted: \(error.localizedDescription)")
-            }
-        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         Task { @MainActor in
             ScreenMuseServer.shared.stop()
+        }
+    }
+
+    private func showPermissionAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Screen Recording Permission Required"
+        alert.informativeText = """
+        ScreenMuse needs Screen Recording permission to capture your screen.
+
+        Click "Open System Settings" to grant access, then relaunch the app.
+        """
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Later")
+        alert.alertStyle = .warning
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(
+                URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
+            )
         }
     }
 }
