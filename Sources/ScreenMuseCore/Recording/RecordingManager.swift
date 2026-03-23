@@ -17,6 +17,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
     // Accessed from SCStreamOutput callback (background queue) -- nonisolated(unsafe)
     nonisolated(unsafe) private var assetWriter: AVAssetWriter?
     nonisolated(unsafe) private var videoInput: AVAssetWriterInput?
+    nonisolated(unsafe) private var videoAdaptor: AVAssetWriterInputPixelBufferAdaptor?
     nonisolated(unsafe) private var audioInput: AVAssetWriterInput?
     nonisolated(unsafe) private var sessionStarted = false
     nonisolated(unsafe) private var frameCount = 0
@@ -112,8 +113,19 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
             audioInput = aInput
         }
 
+        // Set up pixel buffer adaptor — more reliable than direct sampleBuffer append for SCStream
+        let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+            assetWriterInput: vInput,
+            sourcePixelBufferAttributes: [
+                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+                kCVPixelBufferWidthKey as String: width,
+                kCVPixelBufferHeightKey as String: height
+            ]
+        )
+
         // Set these before calling startCapture so the stream callback sees them
         videoInput = vInput
+        videoAdaptor = adaptor
         assetWriter = writer
         sessionStarted = false
         frameCount = 0
@@ -182,6 +194,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         isRecording = false
         assetWriter = nil
         videoInput = nil
+        videoAdaptor = nil
         audioInput = nil
         sessionStarted = false
 
@@ -218,10 +231,23 @@ extension RecordingManager: SCStreamOutput {
 
         switch type {
         case .screen:
-            if let videoInput, videoInput.isReadyForMoreMediaData {
-                videoInput.append(sampleBuffer)
+            // Use pixel buffer adaptor — the production-verified pattern for SCStream
+            if let adaptor = videoAdaptor,
+               let videoInput = videoInput,
+               videoInput.isReadyForMoreMediaData,
+               let pixelBuffer = sampleBuffer.imageBuffer {
+                let success = adaptor.append(pixelBuffer, withPresentationTime: timestamp)
                 frameCount += 1
-                if frameCount == 1 { print("📹 First video frame captured!") }
+                if frameCount == 1 { print("📹 First video frame captured! adaptor.append success=\(success)") }
+                if !success && frameCount < 5 {
+                    print("⚠️ Failed to append frame \(frameCount), writer error: \(assetWriter?.error?.localizedDescription ?? "none")")
+                }
+            } else if frameCount == 0 {
+                let hasAdaptor = videoAdaptor != nil
+                let hasInput = videoInput != nil
+                let hasPixelBuffer = sampleBuffer.imageBuffer != nil
+                let isReady = videoInput?.isReadyForMoreMediaData ?? false
+                print("❌ Frame dropped: adaptor=\(hasAdaptor) input=\(hasInput) pixelBuf=\(hasPixelBuffer) ready=\(isReady)")
             }
         case .audio:
             if let audioInput, audioInput.isReadyForMoreMediaData {
