@@ -5,16 +5,16 @@ import Foundation
 /// Composites all effects: auto-zoom, click ripples, cursor animations, and keystroke overlay
 @MainActor
 public final class FullEffectsCompositor {
-    private let clickEffects: ClickEffectsManager
-    private let autoZoom: AutoZoomManager
-    private let cursorAnimation: CursorAnimationManager
+    private let clickEffects: ClickEffectsManager?
+    private let autoZoom: AutoZoomManager?
+    private let cursorAnimation: CursorAnimationManager?
     private let keystrokeOverlay: KeystrokeOverlayManager?
     private let ciContext: CIContext
     
     public init(
-        clickEffects: ClickEffectsManager,
-        autoZoom: AutoZoomManager,
-        cursorAnimation: CursorAnimationManager,
+        clickEffects: ClickEffectsManager? = nil,
+        autoZoom: AutoZoomManager? = nil,
+        cursorAnimation: CursorAnimationManager? = nil,
         keystrokeOverlay: KeystrokeOverlayManager? = nil
     ) {
         self.clickEffects = clickEffects
@@ -164,42 +164,48 @@ final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing {
             
             // Render all effects on main actor
             Task { @MainActor in
-                // Step 1: Apply auto-zoom transform
-                let zoomTransform = instruction.autoZoom.transform(
-                    at: currentTime,
-                    videoSize: inputImage.extent.size
-                )
+                var currentImage = inputImage
                 
-                let zoomedImage = inputImage.applyingZoom(
-                    zoomTransform,
-                    outputSize: inputImage.extent.size
-                )
+                // Step 1: Apply auto-zoom transform (if enabled)
+                if let autoZoom = instruction.autoZoom {
+                    let zoomTransform = autoZoom.transform(
+                        at: currentTime,
+                        videoSize: currentImage.extent.size
+                    )
+                    currentImage = currentImage.applyingZoom(
+                        zoomTransform,
+                        outputSize: currentImage.extent.size
+                    )
+                }
                 
-                // Step 2: Render click effects on zoomed image
-                let withClickEffects = instruction.clickEffects.renderEffects(
-                    at: currentTime,
-                    videoSize: inputImage.extent.size,
-                    baseImage: zoomedImage
-                )
-                
-                // Step 3: Render cursor on top of everything
-                let withCursor = instruction.cursorAnimation.renderCursor(
-                    at: currentTime,
-                    videoSize: inputImage.extent.size,
-                    baseImage: withClickEffects
-                )
-                
-                // Step 4: Render keystroke overlay (if enabled)
-                let finalImage: CIImage
-                if let keystrokeOverlay = instruction.keystrokeOverlay {
-                    finalImage = keystrokeOverlay.renderOverlay(
+                // Step 2: Render click effects (if enabled)
+                if let clickEffects = instruction.clickEffects {
+                    currentImage = clickEffects.renderEffects(
                         at: currentTime,
                         videoSize: inputImage.extent.size,
-                        baseImage: withCursor
+                        baseImage: currentImage
                     )
-                } else {
-                    finalImage = withCursor
                 }
+                
+                // Step 3: Render cursor (if enabled)
+                if let cursorAnimation = instruction.cursorAnimation {
+                    currentImage = cursorAnimation.renderCursor(
+                        at: currentTime,
+                        videoSize: inputImage.extent.size,
+                        baseImage: currentImage
+                    )
+                }
+                
+                // Step 4: Render keystroke overlay (if enabled)
+                if let keystrokeOverlay = instruction.keystrokeOverlay {
+                    currentImage = keystrokeOverlay.renderOverlay(
+                        at: currentTime,
+                        videoSize: inputImage.extent.size,
+                        baseImage: currentImage
+                    )
+                }
+                
+                let finalImage = currentImage
                 
                 // Render to buffer
                 guard let renderBuffer = asyncVideoCompositionRequest.renderContext.newPixelBuffer() else {
@@ -232,9 +238,9 @@ final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing {
 final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProtocol {
     let trackID: CMPersistentTrackID
     let timeRange: CMTimeRange
-    let clickEffects: ClickEffectsManager
-    let autoZoom: AutoZoomManager
-    let cursorAnimation: CursorAnimationManager
+    let clickEffects: ClickEffectsManager?
+    let autoZoom: AutoZoomManager?
+    let cursorAnimation: CursorAnimationManager?
     let keystrokeOverlay: KeystrokeOverlayManager?
     let ciContext: CIContext
     
@@ -246,9 +252,9 @@ final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProto
     init(
         trackID: CMPersistentTrackID,
         timeRange: CMTimeRange,
-        clickEffects: ClickEffectsManager,
-        autoZoom: AutoZoomManager,
-        cursorAnimation: CursorAnimationManager,
+        clickEffects: ClickEffectsManager?,
+        autoZoom: AutoZoomManager?,
+        cursorAnimation: CursorAnimationManager?,
         keystrokeOverlay: KeystrokeOverlayManager?,
         ciContext: CIContext
     ) {
