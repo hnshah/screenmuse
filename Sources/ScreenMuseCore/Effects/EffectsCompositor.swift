@@ -132,7 +132,7 @@ final class EffectsVideoCompositor: NSObject, AVVideoCompositing {
         // No-op
     }
     
-    func startRequest(_ asyncVideoCompositionRequest: AVAsyncVideoCompositionRequest) {
+    func startRequest(_ asyncVideoCompositionRequest: AVAsynchronousVideoCompositionRequest) {
         renderQueue.async {
             guard let instruction = asyncVideoCompositionRequest.videoCompositionInstruction as? EffectsCompositionInstruction else {
                 asyncVideoCompositionRequest.finish(with: NSError(
