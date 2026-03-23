@@ -4,6 +4,9 @@ import ScreenMuseCore
 
 @MainActor
 final class RecordViewModel: ObservableObject {
+    // Shared instance used by both the UI and the agent API server
+    static let shared = RecordViewModel()
+
     // MARK: - Recording State
     @Published var isRecording = false
     @Published var duration: TimeInterval = 0
@@ -42,6 +45,8 @@ final class RecordViewModel: ObservableObject {
     private var timer: Timer?
     private var recordingStartTime: Date?
     private var rawVideoURL: URL?
+    /// The final video URL after effects are applied — set by stopRecording() / processRecordingWithEffects()
+    @Published public private(set) var lastVideoURL: URL?
 
     var formattedDuration: String {
         let minutes = Int(duration) / 60
@@ -107,6 +112,11 @@ final class RecordViewModel: ObservableObject {
     }
 
     // MARK: - Recording
+    /// API-facing start — used by RecordingCoordinating conformance
+    func startRecording(name: String) async throws {
+        await startRecording()
+    }
+
     func startRecording() async {
         let source: CaptureSource
         if selectedSourceIndex == 0 {
@@ -168,31 +178,40 @@ final class RecordViewModel: ObservableObject {
     }
 
     func stopRecording() async {
+        await stopAndGetVideo()
+    }
+
+    /// Stop recording and return final video URL (with effects applied).
+    /// Used by both the UI and the agent API server.
+    @discardableResult
+    func stopAndGetVideo() async -> URL? {
         timer?.invalidate()
         timer = nil
-        
+
         // Stop tracking
         cursorTracker.stopTracking()
         keyboardMonitor.stopMonitoring()
-        
+
         do {
             let url = try await recordingManager.stopRecording()
             rawVideoURL = url
             isRecording = false
-            
-            // Check if any effects enabled
-            let hasEffects = clickEffectsEnabled || autoZoomEnabled || 
-                           cursorAnimationsEnabled || keystrokeOverlayEnabled
-            
+
+            let hasEffects = clickEffectsEnabled || autoZoomEnabled ||
+                             cursorAnimationsEnabled || keystrokeOverlayEnabled
+
             if hasEffects {
-                // Process with effects
                 await processRecordingWithEffects(rawVideoURL: url)
+                // lastVideoURL is set inside processRecordingWithEffects
+                return lastVideoURL ?? url
             } else {
-                // No effects, just save raw video
+                lastVideoURL = url
                 print("Recording saved to \(url.path)")
+                return url
             }
         } catch {
             print("Failed to stop recording: \(error.localizedDescription)")
+            return nil
         }
     }
     
@@ -272,6 +291,7 @@ final class RecordViewModel: ObservableObject {
             )
             
             isProcessing = false
+            lastVideoURL = outputURL
             print("Processed video saved to \(outputURL.path)")
             
             // Optionally show timeline editor

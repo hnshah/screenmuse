@@ -2,7 +2,7 @@ import SwiftUI
 import ScreenMuseCore
 
 struct RecordView: View {
-    @StateObject private var viewModel = RecordViewModel()
+    @StateObject private var viewModel = RecordViewModel.shared
     @State private var showEffectsSettings = false
     
     var body: some View {

@@ -18,7 +18,12 @@ public class ScreenMuseServer {
     public static let shared = ScreenMuseServer()
 
     private var listener: NWListener?
+    // recordingManager used when coordinator is not set (e.g. headless/test mode)
     private let recordingManager = RecordingManager()
+    /// Set this at app launch to route API calls through the full effects pipeline.
+    /// When set, /start and /stop go through RecordViewModel (effects compositing included).
+    /// When nil, falls back to raw RecordingManager (no effects).
+    public weak var coordinator: RecordingCoordinating?
 
     public private(set) var isRecording = false
     public private(set) var sessionName: String?
@@ -91,9 +96,15 @@ public class ScreenMuseServer {
                 return
             }
             let name = body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
-            let config = RecordingConfig(captureSource: .fullScreen, includeSystemAudio: true, includeMicrophone: false)
             do {
-                try await recordingManager.startRecording(config: config)
+                if let coord = coordinator {
+                    // Full pipeline: effects compositing via RecordViewModel
+                    try await coord.startRecording(name: name)
+                } else {
+                    // Fallback: raw recording, no effects
+                    let config = RecordingConfig(captureSource: .fullScreen, includeSystemAudio: true, includeMicrophone: false)
+                    try await recordingManager.startRecording(config: config)
+                }
                 sessionID = UUID().uuidString
                 sessionName = name
                 startTime = Date()
@@ -116,26 +127,45 @@ public class ScreenMuseServer {
                 return
             }
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
-            do {
-                let url = try await recordingManager.stopRecording()
-                currentVideoURL = url
-                isRecording = false
-                let metadata: [String: Any] = [
-                    "session_id": sessionID ?? "",
-                    "name": sessionName ?? "",
-                    "elapsed": elapsed,
-                    "chapters": chapters.map { ["name": $0.name, "time": $0.time] }
-                ]
-                sessionID = nil
-                sessionName = nil
-                startTime = nil
-                sendResponse(connection: connection, status: 200, body: [
-                    "video_path": url.path,
-                    "metadata": metadata
-                ])
-            } catch {
-                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            let metadata: [String: Any] = [
+                "session_id": sessionID ?? "",
+                "name": sessionName ?? "",
+                "elapsed": elapsed,
+                "chapters": chapters.map { ["name": $0.name, "time": $0.time] }
+            ]
+            let capturedSessionID = sessionID
+            let capturedSessionName = sessionName
+            sessionID = nil
+            sessionName = nil
+            startTime = nil
+            isRecording = false
+
+            if let coord = coordinator {
+                // Full pipeline: waits for effects compositing to finish
+                if let url = await coord.stopAndGetVideo() {
+                    currentVideoURL = url
+                    sendResponse(connection: connection, status: 200, body: [
+                        "video_path": url.path,
+                        "metadata": metadata
+                    ])
+                } else {
+                    sendResponse(connection: connection, status: 500, body: ["error": "Recording stopped but video could not be finalized"])
+                }
+            } else {
+                // Fallback: raw stop, no effects
+                do {
+                    let url = try await recordingManager.stopRecording()
+                    currentVideoURL = url
+                    sendResponse(connection: connection, status: 200, body: [
+                        "video_path": url.path,
+                        "metadata": metadata
+                    ])
+                } catch {
+                    sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+                }
             }
+            _ = capturedSessionID  // suppress unused warning
+            _ = capturedSessionName
 
         case ("POST", "/chapter"):
             let name = body["name"] as? String ?? "Chapter"

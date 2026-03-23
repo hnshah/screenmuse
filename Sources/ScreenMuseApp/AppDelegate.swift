@@ -16,10 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Start agent API server on port 7823
+        // Connect to RecordViewModel.shared so API calls get the full effects pipeline
         Task { @MainActor in
             do {
+                ScreenMuseServer.shared.coordinator = RecordViewModel.shared
                 try ScreenMuseServer.shared.start()
-                print("ScreenMuse agent API running on http://localhost:7823")
+                print("ScreenMuse agent API running on http://localhost:7823 (effects pipeline: enabled)")
             } catch {
                 print("Failed to start agent API server: \(error)")
             }
