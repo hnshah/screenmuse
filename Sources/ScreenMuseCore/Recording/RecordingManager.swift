@@ -19,6 +19,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
     nonisolated(unsafe) private var videoInput: AVAssetWriterInput?
     nonisolated(unsafe) private var audioInput: AVAssetWriterInput?
     nonisolated(unsafe) private var sessionStarted = false
+    nonisolated(unsafe) private var frameCount = 0
 
     public override init() {
         super.init()
@@ -27,7 +28,16 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
     @MainActor
     public func startRecording(config: RecordingConfig) async throws {
         print("🎬 RecordingManager.startRecording() called")
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+
+        // Explicitly check Screen Recording permission before attempting to start
+        do {
+            _ = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+        } catch {
+            print("❌ Screen Recording permission denied: \(error.localizedDescription)")
+            throw RecordingError.permissionDenied(error.localizedDescription)
+        }
+
+        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
 
         let filter: SCContentFilter
         let width: Int
@@ -39,21 +49,22 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
                 throw RecordingError.noDisplayFound
             }
             filter = SCContentFilter(display: display, excludingWindows: [])
-            width = display.width * 2
-            height = display.height * 2
+            width = display.width
+            height = display.height
+            print("📺 Capturing display: \(width)x\(height)")
 
         case .window(let window):
             filter = SCContentFilter(desktopIndependentWindow: window)
-            width = Int(window.frame.width) * 2
-            height = Int(window.frame.height) * 2
+            width = Int(window.frame.width)
+            height = Int(window.frame.height)
 
         case .region(let rect):
             guard let display = content.displays.first else {
                 throw RecordingError.noDisplayFound
             }
             filter = SCContentFilter(display: display, excludingWindows: [])
-            width = Int(rect.width) * 2
-            height = Int(rect.height) * 2
+            width = Int(rect.width)
+            height = Int(rect.height)
         }
 
         let streamConfig = SCStreamConfiguration()
@@ -76,7 +87,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         let fileName = "ScreenMuse_\(formatter.string(from: Date())).mp4"
             .replacingOccurrences(of: ":", with: "-")
         let url = screenMuseDir.appendingPathComponent(fileName)
-        print("🎬 ScreenMuse: Recording to \(url.path)")
+        print("📁 Recording to: \(url.path)")
 
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
 
@@ -105,29 +116,37 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         videoInput = vInput
         assetWriter = writer
         sessionStarted = false
+        frameCount = 0
         writer.startWriting()
+        print("✍️ AVAssetWriter started, status: \(writer.status.rawValue)")
 
-        let scStream = SCStream(filter: filter, configuration: streamConfig, delegate: nil)
+        // Use self as delegate to catch stream errors
+        let scStream = SCStream(filter: filter, configuration: streamConfig, delegate: self)
         try scStream.addStreamOutput(self, type: .screen, sampleHandlerQueue: .global(qos: .userInteractive))
         if config.includeSystemAudio {
             try scStream.addStreamOutput(self, type: .audio, sampleHandlerQueue: .global(qos: .userInteractive))
         }
 
         try await scStream.startCapture()
+        print("✅ SCStream.startCapture() succeeded")
         stream = scStream
         isRecording = true
         duration = 0
 
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.duration += 1
+                guard let self else { return }
+                self.duration += 1
+                if Int(self.duration) % 3 == 0 {
+                    print("🎥 Recording \(Int(self.duration))s, frames captured: \(self.frameCount)")
+                }
             }
         }
     }
 
     @MainActor
     public func stopRecording() async throws -> URL {
-        print("🛑 RecordingManager.stopRecording() called")
+        print("🛑 stopRecording() called, total frames: \(frameCount)")
         timer?.invalidate()
         timer = nil
 
@@ -142,6 +161,11 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
             throw RecordingError.writerNotConfigured
         }
 
+        if frameCount == 0 {
+            print("⚠️ WARNING: stopRecording called with 0 frames — video will be empty!")
+            print("⚠️ Check System Settings → Privacy & Security → Screen Recording")
+        }
+
         // Capture URL before clearing state
         let outputURL = writer.outputURL
 
@@ -149,16 +173,25 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         audioInput?.markAsFinished()
         await writer.finishWriting()
 
+        if writer.status == .failed {
+            let errMsg = writer.error?.localizedDescription ?? "unknown"
+            print("❌ AVAssetWriter failed: \(errMsg)")
+            throw RecordingError.writerFailed(errMsg)
+        }
+
         isRecording = false
         assetWriter = nil
         videoInput = nil
         audioInput = nil
         sessionStarted = false
 
-        print("✅ ScreenMuse: Recording saved to \(outputURL.path)")
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: outputURL.path)[.size] as? Int) ?? 0
+        print("✅ Recording saved to: \(outputURL.path) (\(fileSize) bytes, \(frameCount) frames)")
         return outputURL
     }
 }
+
+// MARK: - SCStreamOutput
 
 extension RecordingManager: SCStreamOutput {
     public nonisolated func stream(
@@ -166,19 +199,29 @@ extension RecordingManager: SCStreamOutput {
         didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
         of type: SCStreamOutputType
     ) {
-        guard let writer = assetWriter, writer.status == .writing else { return }
+        guard let writer = assetWriter else {
+            if frameCount == 0 { print("❌ Frame arrived but assetWriter is nil!") }
+            return
+        }
+        guard writer.status == .writing else {
+            if frameCount == 0 { print("❌ Frame arrived but writer status=\(writer.status.rawValue), error=\(writer.error?.localizedDescription ?? "none")") }
+            return
+        }
 
         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
 
         if !sessionStarted {
             writer.startSession(atSourceTime: timestamp)
             sessionStarted = true
+            print("▶️ Writer session started at \(timestamp.seconds)s")
         }
 
         switch type {
         case .screen:
             if let videoInput, videoInput.isReadyForMoreMediaData {
                 videoInput.append(sampleBuffer)
+                frameCount += 1
+                if frameCount == 1 { print("📹 First video frame captured!") }
             }
         case .audio:
             if let audioInput, audioInput.isReadyForMoreMediaData {
@@ -190,10 +233,25 @@ extension RecordingManager: SCStreamOutput {
     }
 }
 
+// MARK: - SCStreamDelegate
+
+extension RecordingManager: SCStreamDelegate {
+    public func stream(_ stream: SCStream, didStopWithError error: Error) {
+        print("❌ SCStream stopped with error: \(error.localizedDescription)")
+        Task { @MainActor in
+            self.isRecording = false
+        }
+    }
+}
+
+// MARK: - Errors
+
 public enum RecordingError: Error, LocalizedError {
     case noDisplayFound
     case notRecording
     case writerNotConfigured
+    case writerFailed(String)
+    case permissionDenied(String)
 
     public var errorDescription: String? {
         switch self {
@@ -203,6 +261,10 @@ public enum RecordingError: Error, LocalizedError {
             return "No active recording to stop"
         case .writerNotConfigured:
             return "Asset writer was not properly configured"
+        case .writerFailed(let msg):
+            return "Recording failed: \(msg)"
+        case .permissionDenied(let msg):
+            return "Screen Recording permission denied — grant it in System Settings → Privacy & Security → Screen Recording. (\(msg))"
         }
     }
 }
