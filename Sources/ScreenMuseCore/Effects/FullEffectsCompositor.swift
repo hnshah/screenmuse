@@ -2,22 +2,25 @@ import AVFoundation
 import CoreImage
 import Foundation
 
-/// Composites all effects: auto-zoom, click ripples, and cursor animations
+/// Composites all effects: auto-zoom, click ripples, cursor animations, and keystroke overlay
 @MainActor
 public final class FullEffectsCompositor {
     private let clickEffects: ClickEffectsManager
     private let autoZoom: AutoZoomManager
     private let cursorAnimation: CursorAnimationManager
+    private let keystrokeOverlay: KeystrokeOverlayManager?
     private let ciContext: CIContext
     
     public init(
         clickEffects: ClickEffectsManager,
         autoZoom: AutoZoomManager,
-        cursorAnimation: CursorAnimationManager
+        cursorAnimation: CursorAnimationManager,
+        keystrokeOverlay: KeystrokeOverlayManager? = nil
     ) {
         self.clickEffects = clickEffects
         self.autoZoom = autoZoom
         self.cursorAnimation = cursorAnimation
+        self.keystrokeOverlay = keystrokeOverlay
         
         // Use Metal for hardware acceleration
         if let device = MTLCreateSystemDefaultDevice() {
@@ -87,6 +90,7 @@ public final class FullEffectsCompositor {
             clickEffects: clickEffects,
             autoZoom: autoZoom,
             cursorAnimation: cursorAnimation,
+            keystrokeOverlay: keystrokeOverlay,
             ciContext: ciContext
         )
         
@@ -179,11 +183,23 @@ final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing {
                 )
                 
                 // Step 3: Render cursor on top of everything
-                let finalImage = instruction.cursorAnimation.renderCursor(
+                let withCursor = instruction.cursorAnimation.renderCursor(
                     at: currentTime,
                     videoSize: inputImage.extent.size,
                     baseImage: withClickEffects
                 )
+                
+                // Step 4: Render keystroke overlay (if enabled)
+                let finalImage: CIImage
+                if let keystrokeOverlay = instruction.keystrokeOverlay {
+                    finalImage = keystrokeOverlay.renderOverlay(
+                        at: currentTime,
+                        videoSize: inputImage.extent.size,
+                        baseImage: withCursor
+                    )
+                } else {
+                    finalImage = withCursor
+                }
                 
                 // Render to buffer
                 guard let renderBuffer = asyncVideoCompositionRequest.renderContext.newPixelBuffer() else {
@@ -219,6 +235,7 @@ final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProto
     let clickEffects: ClickEffectsManager
     let autoZoom: AutoZoomManager
     let cursorAnimation: CursorAnimationManager
+    let keystrokeOverlay: KeystrokeOverlayManager?
     let ciContext: CIContext
     
     var enablePostProcessing = false
@@ -232,6 +249,7 @@ final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProto
         clickEffects: ClickEffectsManager,
         autoZoom: AutoZoomManager,
         cursorAnimation: CursorAnimationManager,
+        keystrokeOverlay: KeystrokeOverlayManager?,
         ciContext: CIContext
     ) {
         self.trackID = trackID
@@ -239,6 +257,7 @@ final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProto
         self.clickEffects = clickEffects
         self.autoZoom = autoZoom
         self.cursorAnimation = cursorAnimation
+        self.keystrokeOverlay = keystrokeOverlay
         self.ciContext = ciContext
         self.requiredSourceTrackIDs = [NSNumber(value: trackID)]
         super.init()
