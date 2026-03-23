@@ -125,11 +125,11 @@ public final class FullEffectsCompositor {
 
 /// Custom compositor for all effects
 final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing {
-    nonisolated(unsafe) var sourcePixelBufferAttributes: [String : Any]? = [
+    var sourcePixelBufferAttributes: [String : Any]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     
-    nonisolated(unsafe) var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
+    var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     
