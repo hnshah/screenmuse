@@ -96,7 +96,12 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         let videoSettings: [String: Any] = [
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoWidthKey: width,
-            AVVideoHeightKey: height
+            AVVideoHeightKey: height,
+            AVVideoCompressionPropertiesKey: [
+                AVVideoAverageBitRateKey: config.quality.bitrate,
+                AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
+                AVVideoExpectedSourceFrameRateKey: config.fps
+            ]
         ]
         let vInput = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
         vInput.expectsMediaDataInRealTime = true
@@ -304,6 +309,7 @@ public enum RecordingError: Error, LocalizedError {
     case writerFailed(String)
     case permissionDenied(String)
     case noFramesCaptured
+    case windowNotFound(String)
 
     public var errorDescription: String? {
         switch self {
@@ -319,6 +325,8 @@ public enum RecordingError: Error, LocalizedError {
             return "Screen Recording permission denied — grant it in System Settings → Privacy & Security → Screen Recording. (\(msg))"
         case .noFramesCaptured:
             return "No frames were captured — Screen Recording permission may not be granted, or the stream delivered no content. Grant permission in System Settings → Privacy & Security → Screen Recording, then relaunch."
+        case .windowNotFound(let query):
+            return "Window not found: '\(query)'. Use GET /windows to list available windows."
         }
     }
 }

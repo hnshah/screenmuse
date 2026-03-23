@@ -112,9 +112,64 @@ final class RecordViewModel: ObservableObject {
     }
 
     // MARK: - Recording
-    /// API-facing start — used by RecordingCoordinating conformance
-    func startRecording(name: String) async throws {
-        await startRecording()
+    /// API-facing start — used by RecordingCoordinating conformance.
+    /// Supports window targeting and quality selection from the agent API.
+    func startRecording(name: String, windowTitle: String?, windowPid: Int?, quality: String?) async throws {
+        let resolvedQuality = RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
+
+        // Resolve capture source
+        let source: CaptureSource
+        if windowTitle != nil || windowPid != nil {
+            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+            if let title = windowTitle,
+               let window = content.windows.first(where: { $0.title?.localizedCaseInsensitiveContains(title) ?? false }) {
+                source = .window(window)
+            } else if let pid = windowPid,
+                      let window = content.windows.first(where: { $0.owningApplication?.processID == pid }) {
+                source = .window(window)
+            } else {
+                let query = windowTitle ?? "PID \(windowPid ?? 0)"
+                throw RecordingError.windowNotFound(query)
+            }
+        } else {
+            source = .fullScreen
+        }
+
+        let config = RecordingConfig(
+            captureSource: source,
+            includeSystemAudio: includeSystemAudio,
+            includeMicrophone: includeMicrophone,
+            fps: 30,
+            quality: resolvedQuality
+        )
+        try await recordingManager.startRecording(config: config)
+        isRecording = true
+        duration = 0
+        lastVideoURL = nil
+
+        // Start effects tracking
+        let recordingStartTime = Date()
+        if clickEffectsEnabled {
+            clickEffectsManager.startRecording(at: recordingStartTime)
+        }
+        if autoZoomEnabled {
+            autoZoomManager.startRecording(at: recordingStartTime)
+        }
+        if cursorAnimationsEnabled {
+            cursorTracker.startTracking()
+            cursorAnimationManager.startRecording(at: recordingStartTime)
+        }
+        if keystrokeOverlayEnabled {
+            keyboardMonitor.startMonitoring()
+            keystrokeOverlayManager.startRecording(at: recordingStartTime)
+            keystrokeOverlayManager.updateConfig(keystrokePreset.config)
+        }
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.duration += 1
+            }
+        }
     }
 
     func startRecording() async {

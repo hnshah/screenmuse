@@ -92,17 +92,40 @@ public class ScreenMuseServer {
 
         case ("POST", "/start"):
             guard !isRecording else {
-                sendResponse(connection: connection, status: 409, body: ["error": "already recording"])
+                sendResponse(connection: connection, status: 409, body: [
+                    "error": "Already recording",
+                    "code": "ALREADY_RECORDING",
+                    "suggestion": "Call POST /stop first to stop the current recording"
+                ])
                 return
             }
             let name = body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
+            let windowTitle = body["window_title"] as? String
+            let windowPid = body["window_pid"] as? Int
+            let quality = body["quality"] as? String
             do {
                 if let coord = coordinator {
-                    // Full pipeline: effects compositing via RecordViewModel
-                    try await coord.startRecording(name: name)
+                    try await coord.startRecording(name: name, windowTitle: windowTitle, windowPid: windowPid, quality: quality)
                 } else {
                     // Fallback: raw recording, no effects
-                    let config = RecordingConfig(captureSource: .fullScreen, includeSystemAudio: true, includeMicrophone: false)
+                    let source: CaptureSource
+                    if let title = windowTitle {
+                        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                        if let window = content.windows.first(where: { $0.title?.localizedCaseInsensitiveContains(title) ?? false }) {
+                            source = .window(window)
+                        } else {
+                            sendResponse(connection: connection, status: 404, body: [
+                                "error": "Window not found: '\(title)'",
+                                "code": "WINDOW_NOT_FOUND",
+                                "suggestion": "Call GET /windows to see available windows"
+                            ])
+                            return
+                        }
+                    } else {
+                        source = .fullScreen
+                    }
+                    let resolvedQuality = RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
+                    let config = RecordingConfig(captureSource: source, includeSystemAudio: true, quality: resolvedQuality)
                     try await recordingManager.startRecording(config: config)
                 }
                 sessionID = UUID().uuidString
@@ -112,13 +135,22 @@ public class ScreenMuseServer {
                 chapters = []
                 highlightNextClick = false
                 currentVideoURL = nil
-                sendResponse(connection: connection, status: 200, body: [
+                var resp: [String: Any] = [
                     "session_id": sessionID!,
                     "status": "recording",
-                    "name": name
-                ])
+                    "name": name,
+                    "quality": quality ?? "medium"
+                ]
+                if let wt = windowTitle { resp["window_title"] = wt }
+                if let wp = windowPid { resp["window_pid"] = wp }
+                sendResponse(connection: connection, status: 200, body: resp)
+            } catch let err as RecordingError {
+                sendResponse(connection: connection, status: 500, body: structuredError(err))
             } catch {
-                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": error.localizedDescription,
+                    "code": "UNKNOWN_ERROR"
+                ])
             }
 
         case ("POST", "/stop"):
@@ -186,6 +218,34 @@ public class ScreenMuseServer {
                 "chapters": chapters.map { ["name": $0.name, "time": $0.time] },
                 "last_video": currentVideoURL?.path ?? ""
             ])
+
+        case ("GET", "/windows"):
+            // List on-screen windows available for capture
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                let windows: [[String: Any]] = content.windows.compactMap { window in
+                    guard let title = window.title, !title.isEmpty else { return nil }
+                    var entry: [String: Any] = [
+                        "title": title,
+                        "app": window.owningApplication?.applicationName ?? "Unknown",
+                        "bundle_id": window.owningApplication?.bundleIdentifier ?? "",
+                        "on_screen": window.isOnScreen,
+                        "bounds": [
+                            "x": window.frame.origin.x,
+                            "y": window.frame.origin.y,
+                            "width": window.frame.width,
+                            "height": window.frame.height
+                        ]
+                    ]
+                    if let pid = window.owningApplication?.processID {
+                        entry["pid"] = pid
+                    }
+                    return entry
+                }
+                sendResponse(connection: connection, status: 200, body: ["windows": windows, "count": windows.count])
+            } catch {
+                sendResponse(connection: connection, status: 500, body: structuredError(error))
+            }
 
         case ("POST", "/screenshot"):
             // One-shot screenshot using SCScreenshotManager (WWDC23)
@@ -264,6 +324,39 @@ public class ScreenMuseServer {
         default:
             sendResponse(connection: connection, status: 404, body: ["error": "not found"])
         }
+    }
+
+    private func structuredError(_ error: Error) -> [String: Any] {
+        if let re = error as? RecordingError {
+            switch re {
+            case .permissionDenied:
+                return [
+                    "error": re.errorDescription ?? error.localizedDescription,
+                    "code": "PERMISSION_DENIED",
+                    "suggestion": "Grant Screen Recording in System Settings → Privacy & Security → Screen Recording, then relaunch ScreenMuse"
+                ]
+            case .noFramesCaptured:
+                return [
+                    "error": re.errorDescription ?? error.localizedDescription,
+                    "code": "NO_FRAMES_CAPTURED",
+                    "suggestion": "Grant Screen Recording permission and relaunch. Also check ./scripts/reset-permissions.sh"
+                ]
+            case .windowNotFound(let q):
+                return [
+                    "error": re.errorDescription ?? error.localizedDescription,
+                    "code": "WINDOW_NOT_FOUND",
+                    "query": q,
+                    "suggestion": "Call GET /windows to list available windows"
+                ]
+            case .notRecording:
+                return ["error": re.errorDescription ?? error.localizedDescription, "code": "NOT_RECORDING"]
+            case .writerFailed(let msg):
+                return ["error": msg, "code": "WRITER_FAILED", "suggestion": "Check Console.app for AVFoundation errors"]
+            default:
+                return ["error": re.errorDescription ?? error.localizedDescription, "code": "RECORDING_ERROR"]
+            }
+        }
+        return ["error": error.localizedDescription, "code": "UNKNOWN_ERROR"]
     }
 
     private func sendResponse(connection: NWConnection, status: Int, body: [String: Any]) {

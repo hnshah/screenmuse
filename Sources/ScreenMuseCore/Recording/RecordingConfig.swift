@@ -11,20 +11,41 @@ public enum CaptureSource: @unchecked Sendable {
 }
 
 public struct RecordingConfig: @unchecked Sendable {
+
+    /// Output video quality / bitrate preset
+    public enum Quality: String, CaseIterable {
+        case low    = "low"     //  1 Mbps  — ~8 MB/min  — great for agent logging
+        case medium = "medium"  //  3 Mbps  — ~23 MB/min — default, shareable
+        case high   = "high"    //  8 Mbps  — ~60 MB/min — presentations
+        case max    = "max"     // 14 Mbps  — ~105 MB/min — archival
+
+        public var bitrate: Int {
+            switch self {
+            case .low:    return 1_000_000
+            case .medium: return 3_000_000
+            case .high:   return 8_000_000
+            case .max:    return 14_000_000
+            }
+        }
+    }
+
     public let captureSource: CaptureSource
     public let includeSystemAudio: Bool
     public let includeMicrophone: Bool
     public let fps: Int
+    public let quality: Quality
 
     public init(
         captureSource: CaptureSource,
         includeSystemAudio: Bool = true,
         includeMicrophone: Bool = false,
-        fps: Int = 30
+        fps: Int = 30,
+        quality: Quality = .medium
     ) {
         self.captureSource = captureSource
         self.includeSystemAudio = includeSystemAudio
         self.includeMicrophone = includeMicrophone
         self.fps = fps
+        self.quality = quality
     }
 }

@@ -6,6 +6,8 @@ import Foundation
 @MainActor
 public protocol RecordingCoordinating: AnyObject {
     var isRecording: Bool { get }
-    func startRecording(name: String) async throws
+    /// Start recording. windowTitle/windowPid specify a specific window; nil = full screen.
+    /// quality is the RecordingConfig.Quality rawValue string ("low"/"medium"/"high"/"max").
+    func startRecording(name: String, windowTitle: String?, windowPid: Int?, quality: String?) async throws
     func stopAndGetVideo() async -> URL?
 }
