@@ -37,7 +37,7 @@ final class RecordViewModel: ObservableObject {
     private let autoZoomManager = AutoZoomManager()
     private let cursorAnimationManager = CursorAnimationManager()
     private let keystrokeOverlayManager = KeystrokeOverlayManager()
-    private let timelineManager = TimelineManager()
+    let timelineManager = TimelineManager()
     
     private var timer: Timer?
     private var recordingStartTime: Date?

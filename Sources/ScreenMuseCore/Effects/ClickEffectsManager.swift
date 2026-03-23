@@ -51,6 +51,26 @@ public struct ClickEffectConfig: Sendable {
         ringWidth: 4.0
     )
     
+    /// Preset: Medium blue ripple (balanced)
+    public static let medium = ClickEffectConfig(
+        maxRadius: 50.0,
+        duration: 0.7,
+        color: CIColor(red: 0.0, green: 0.47, blue: 1.0, alpha: 1.0),
+        initialOpacity: 0.9,
+        springDamping: 0.6,
+        ringWidth: 3.5
+    )
+
+    /// Preset: Bold — alias for strong
+    public static let bold = ClickEffectConfig(
+        maxRadius: 60.0,
+        duration: 0.8,
+        color: CIColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0),
+        initialOpacity: 1.0,
+        springDamping: 0.5,
+        ringWidth: 4.0
+    )
+
     /// Preset: Quick yellow ripple (for fast clicks)
     public static let quick = ClickEffectConfig(
         maxRadius: 30.0,
