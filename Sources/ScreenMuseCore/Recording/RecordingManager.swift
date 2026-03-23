@@ -74,6 +74,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.fps))
         streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
         streamConfig.capturesAudio = config.includeSystemAudio
+        streamConfig.queueDepth = 5  // Apple recommended: 5 frames in queue for smooth capture
 
         if case .region(let rect) = config.captureSource {
             streamConfig.sourceRect = rect
@@ -212,6 +213,9 @@ extension RecordingManager: SCStreamOutput {
         didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
         of type: SCStreamOutputType
     ) {
+        // Apple required: check validity first
+        guard sampleBuffer.isValid else { return }
+
         guard let writer = assetWriter else {
             if frameCount == 0 { print("❌ Frame arrived but assetWriter is nil!") }
             return
@@ -231,6 +235,16 @@ extension RecordingManager: SCStreamOutput {
 
         switch type {
         case .screen:
+            // Apple required: check frame status before using pixel data
+            // Frames with .idle/.started status have no actual pixel content
+            guard let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
+                  let attachments = attachmentsArray.first,
+                  let statusRawValue = attachments[SCStreamFrameInfo.status] as? Int,
+                  let status = SCFrameStatus(rawValue: statusRawValue),
+                  status == .complete else {
+                return
+            }
+
             // Use pixel buffer adaptor — the production-verified pattern for SCStream
             if let adaptor = videoAdaptor,
                let videoInput = videoInput,
@@ -238,7 +252,7 @@ extension RecordingManager: SCStreamOutput {
                let pixelBuffer = sampleBuffer.imageBuffer {
                 let success = adaptor.append(pixelBuffer, withPresentationTime: timestamp)
                 frameCount += 1
-                if frameCount == 1 { print("📹 First video frame captured! adaptor.append success=\(success)") }
+                if frameCount == 1 { print("📹 First complete video frame captured! adaptor.append success=\(success)") }
                 if !success && frameCount < 5 {
                     print("⚠️ Failed to append frame \(frameCount), writer error: \(assetWriter?.error?.localizedDescription ?? "none")")
                 }
