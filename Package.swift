@@ -17,7 +17,10 @@ let package = Package(
             dependencies: ["ScreenMuseCore"]
         ),
         .target(
-            name: "ScreenMuseCore"
+            name: "ScreenMuseCore",
+            swiftSettings: [
+                .swiftLanguageMode(.v5)
+            ]
         )
     ]
 )

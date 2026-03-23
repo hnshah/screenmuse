@@ -1,78 +1,99 @@
 # ScreenMuse
 
-The most advanced macOS screen recorder, screenshot, and screencast tool.
-Native Swift + ScreenCaptureKit + on-device AI (coming in Phase 3).
+**The screen recorder built for AI agents.**
 
-## Requirements
+ScreenMuse is a native macOS screen recorder that AI agents can control via a local HTTP API. Record demos, mark chapters, highlight important clicks, and get back polished videos — all programmatically.
 
-- macOS 14.0 (Sonoma) or later
-- Xcode 15.0 or later
+## Quick Start
 
-Note: macOS 14 is required because ScreenMuse uses `SCScreenshotManager`, which was introduced in macOS 14.
+```python
+from screenmuse import ScreenMuse
 
-## How to Build
+sm = ScreenMuse()
+sm.start("my-feature-demo")
+sm.mark_chapter("Login flow")
+sm.highlight_next_click()
+# ... agent does its work ...
+result = sm.stop()
+print(result["video_path"])  # → /Users/you/Movies/ScreenMuse/recording.mp4
+```
+
+## Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Agent API | v0.1.0 | HTTP server on port 7823 — start/stop/chapter/highlight |
+| Click Effects | v0.1.0 | Ripple, glow, particle burst, ring, and sonar presets |
+| Cursor Tracking | v0.1.0 | Records cursor position and clicks for post-processing |
+| Auto-Zoom | v0.1.0 | Camera follows clicks with spring easing |
+| Screen Capture | v0.1.0 | Full screen, window, and region via ScreenCaptureKit |
+| Recording | v0.1.0 | MP4 with system audio and microphone |
+
+## Install
+
+**Requirements:** macOS 14.0 (Sonoma) or later, Xcode 15.0+
 
 ```bash
 git clone https://github.com/hnshah/screenmuse
 cd screenmuse
-open Package.swift
+swift build
 ```
 
-Xcode will open the Swift Package. Press Cmd+R to build and run.
+Or open `Package.swift` in Xcode and press Cmd+R.
 
-On first launch, macOS will prompt for screen recording permission. Grant it to enable capture features.
+On first launch, macOS will prompt for screen recording permission.
 
-## Features (Phase 1 - Current)
+## Click Effects
 
-- Full screen, window, and region screenshots via ScreenCaptureKit
-- Screen recording to MP4 with system audio and microphone
-- Cursor position and click tracking (foundation for Phase 2 AI zoom)
-- Clean SwiftUI interface with Capture, Record, and History tabs
-- Proper permissions handling for screen capture and microphone
+| Preset | Description |
+|--------|-------------|
+| `ripple` | Expanding rings from click point with spring easing |
+| `glow` | Soft radial glow that fades out |
+| `particleBurst` | Particles explode outward from click |
+| `ring` | Single expanding ring |
+| `sonar` | Pulsing sonar-style rings |
 
-## Planned Features
+Effects are composited onto the recorded video during export using Metal-accelerated Core Image.
 
-**Phase 2: Effects and Editing**
-- Auto-zoom on click
-- Cursor animations (smooth path, motion blur, click ripple)
+## Agent API
+
+ScreenMuse runs a local HTTP server on **port 7823** for programmatic control:
+
+```bash
+# Start recording
+curl -X POST http://localhost:7823/start -H "Content-Type: application/json" -d '{"name": "demo"}'
+
+# Mark a chapter
+curl -X POST http://localhost:7823/chapter -H "Content-Type: application/json" -d '{"name": "Setup"}'
+
+# Highlight next click (auto-zoom + enhanced effect)
+curl -X POST http://localhost:7823/highlight
+
+# Check status
+curl http://localhost:7823/status
+
+# Stop and get video
+curl -X POST http://localhost:7823/stop
+```
+
+**Clients:** [Python](clients/python) | [Node.js/TypeScript](clients/node)
+
+Full API reference: [docs/AGENT_API.md](docs/AGENT_API.md)
+
+## Roadmap
+
 - Timeline editor with trim and speed controls
-- Real-time and post-recording annotations
-- Scrolling screenshots
-- Device frames (iPhone, Mac)
-
-**Phase 3: AI Layer (on-device, private)**
 - On-device transcription via Whisper (Core ML)
 - Edit by transcript: delete words to cut video
 - Filler word removal (um, uh, like)
-- AI smart zoom based on cursor intent
-
-**Phase 4: Polish and Sharing**
 - MP4, GIF, WebP export
 - Shareable links via Cloudflare R2
-- Webcam overlay
-- Background customization
+- Webcam overlay and background customization
 
 ## Tech Stack
 
 - Swift 6.0 + SwiftUI
 - ScreenCaptureKit (Apple native screen capture, macOS 14+)
 - AVFoundation (H.264 video encoding, AAC audio)
-- Core ML (coming in Phase 3)
-
-## Architecture
-
-```
-ScreenMuse/
-├── Sources/
-│   ├── ScreenMuseApp/          # SwiftUI app target
-│   │   ├── Views/              # CaptureView, RecordView, HistoryView
-│   │   └── ViewModels/         # CaptureViewModel, RecordViewModel
-│   └── ScreenMuseCore/         # Library (reusable core)
-│       ├── Capture/            # ScreenshotManager
-│       ├── Recording/          # RecordingManager, CursorTracker, RecordingConfig
-│       └── Permissions/        # PermissionsManager
-```
-
-## Status
-
-Phase 1 scaffold complete. All core APIs wired. Next: compile on macOS 14, iterate on build errors, then Phase 2 effects.
+- Network.framework (agent API HTTP server)
+- Core Image + Metal (click effects compositing)

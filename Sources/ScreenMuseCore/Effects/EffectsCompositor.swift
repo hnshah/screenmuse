@@ -100,8 +100,11 @@ public final class EffectsCompositor {
         export.videoComposition = videoComposition
         
         // Monitor progress
-        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            progress?(Double(export.progress))
+        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak export] _ in
+            guard let export = export else { return }
+            Task { @MainActor in
+                progress?(Double(export.progress))
+            }
         }
         
         await export.export()
