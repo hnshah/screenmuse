@@ -36,12 +36,16 @@ print(result["video_path"])  # → /Users/you/Movies/ScreenMuse/recording.mp4
 ```bash
 git clone https://github.com/hnshah/screenmuse
 cd screenmuse
-swift build
+./scripts/dev-run.sh
 ```
 
 Or open `Package.swift` in Xcode and press Cmd+R.
 
-On first launch, macOS will prompt for screen recording permission.
+On first launch, macOS will prompt for screen recording permission. Grant it, then relaunch.
+
+> **Note on `swift build`:** Using `swift build` directly produces an ad-hoc signed binary whose code signature hash changes on every rebuild. macOS TCC (Screen Recording permission) identifies apps by signature hash, so permissions must be re-granted after each rebuild. Use `./scripts/dev-run.sh` (xcodebuild) or Xcode to avoid this — it produces a consistently-signed app that TCC recognizes between builds.
+>
+> If permissions get stuck: `./scripts/reset-permissions.sh`
 
 ## Click Effects
 
@@ -71,6 +75,9 @@ curl -X POST http://localhost:7823/highlight
 
 # Check status
 curl http://localhost:7823/status
+
+# Take a screenshot (macOS 14+, no recording required)
+curl -X POST http://localhost:7823/screenshot
 
 # Stop and get video
 curl -X POST http://localhost:7823/stop
