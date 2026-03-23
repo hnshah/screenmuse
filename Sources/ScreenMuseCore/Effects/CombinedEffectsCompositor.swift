@@ -114,11 +114,11 @@ public final class CombinedEffectsCompositor {
 
 /// Custom AVVideoCompositing for combined effects
 final class CombinedEffectsVideoCompositor: NSObject, AVVideoCompositing {
-    var sourcePixelBufferAttributes: [String : Any]? = [
+    nonisolated(unsafe) var sourcePixelBufferAttributes: [String : Any]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     
-    var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
+    nonisolated(unsafe) var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     

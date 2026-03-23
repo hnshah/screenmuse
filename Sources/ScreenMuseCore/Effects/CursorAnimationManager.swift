@@ -33,7 +33,7 @@ public enum CursorStyle: String, Sendable, CaseIterable {
             cursor = .resizeLeftRight
         }
         
-        guard let image = cursor.image else { return nil }
+        let image = cursor.image
         
         if scale == 1.0 {
             return image

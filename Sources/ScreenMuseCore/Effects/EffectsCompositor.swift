@@ -58,7 +58,7 @@ public final class EffectsCompositor {
         
         // Copy audio tracks if present
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
-        for (index, audioTrack) in audioTracks.enumerated() {
+        for (_, audioTrack) in audioTracks.enumerated() {
             if let compositionAudioTrack = composition.addMutableTrack(
                 withMediaType: .audio,
                 preferredTrackID: kCMPersistentTrackID_Invalid
@@ -118,11 +118,11 @@ public final class EffectsCompositor {
 
 /// Custom AVVideoCompositing implementation for rendering effects
 final class EffectsVideoCompositor: NSObject, AVVideoCompositing {
-    var sourcePixelBufferAttributes: [String : Any]? = [
+    nonisolated(unsafe) var sourcePixelBufferAttributes: [String : Any]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     
-    var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
+    nonisolated(unsafe) var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     

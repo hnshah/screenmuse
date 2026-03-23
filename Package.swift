@@ -14,7 +14,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "ScreenMuseApp",
-            dependencies: ["ScreenMuseCore"]
+            dependencies: ["ScreenMuseCore"],
+            swiftSettings: [
+                .swiftLanguageMode(.v5)
+            ]
         ),
         .target(
             name: "ScreenMuseCore",

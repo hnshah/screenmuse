@@ -24,7 +24,9 @@ public class ScreenMuseServer {
         let params = NWParameters.tcp
         listener = try NWListener(using: params, on: 7823)
         listener?.newConnectionHandler = { [weak self] conn in
-            self?.handleConnection(conn)
+            Task { @MainActor in
+                self?.handleConnection(conn)
+            }
         }
         listener?.start(queue: .main)
     }
@@ -44,7 +46,9 @@ public class ScreenMuseServer {
                 connection.cancel()
                 return
             }
-            self.processHTTPRequest(data: data, connection: connection)
+            Task { @MainActor in
+                self.processHTTPRequest(data: data, connection: connection)
+            }
         }
     }
 
