@@ -304,9 +304,9 @@ final class RecordViewModel: ObservableObject {
         let (clicks, zooms, keystrokes) = timelineManager.exportEvents()
         
         // Update managers with edited events
-        clickEffectsManager.clickEvents = clicks
-        autoZoomManager.zoomEvents = zooms
-        keystrokeOverlayManager.keyEvents = keystrokes
+        clickEffectsManager.setClickEvents(clicks)
+        autoZoomManager.setZoomEvents(zooms)
+        keystrokeOverlayManager.setKeyEvents(keystrokes)
         
         // Re-process with edited timeline
         await processRecordingWithEffects(rawVideoURL: rawURL)

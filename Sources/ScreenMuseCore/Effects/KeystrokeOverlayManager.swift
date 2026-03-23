@@ -360,6 +360,10 @@ public final class KeystrokeOverlayManager: ObservableObject {
         return CIImage(cgImage: cgImage)
     }
     
+        public func setKeyEvents(_ events: [KeyEvent]) {
+        keyEvents = events
+    }
+
     /// Reset all state
     public func reset() {
         keyEvents.removeAll()

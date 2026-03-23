@@ -15,9 +15,6 @@ let package = Package(
         .executableTarget(
             name: "ScreenMuseApp",
             dependencies: ["ScreenMuseCore"],
-            resources: [
-                .process("Resources/Info.plist")
-            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]

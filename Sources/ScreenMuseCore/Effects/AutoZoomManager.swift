@@ -221,6 +221,10 @@ public final class AutoZoomManager: ObservableObject {
     }
     
     /// Reset all events
+    public func setZoomEvents(_ events: [ZoomEvent]) {
+        zoomEvents = events
+    }
+
     public func reset() {
         zoomEvents.removeAll()
         recordingStartTime = nil

@@ -123,6 +123,12 @@ public struct ClickEffect: Sendable {
 @MainActor
 public final class ClickEffectsManager: ObservableObject {
     @Published public private(set) var activeEffects: [ClickEffect] = []
+    /// Raw click events from timeline editing — settable via setClickEvents()
+    public private(set) var clickEvents: [ClickEvent] = []
+
+    public func setClickEvents(_ events: [ClickEvent]) {
+        clickEvents = events
+    }
     
     private var config: ClickEffectConfig
     private var recordingStartTime: Date?
