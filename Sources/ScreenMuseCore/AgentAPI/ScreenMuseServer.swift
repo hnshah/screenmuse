@@ -153,6 +153,30 @@ public class ScreenMuseServer {
                 "last_video": currentVideoURL?.path ?? ""
             ])
 
+        case ("GET", "/debug"):
+            // Diagnostic endpoint — shows save dir, recent recordings, permission status
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse")
+            var recentFiles: [String] = []
+            if let contents = try? FileManager.default.contentsOfDirectory(
+                at: screenMuseDir,
+                includingPropertiesForKeys: [.creationDateKey],
+                options: .skipsHiddenFiles
+            ) {
+                recentFiles = contents
+                    .filter { $0.pathExtension == "mp4" }
+                    .sorted { ($0.path) > ($1.path) }
+                    .prefix(5)
+                    .map { $0.path }
+            }
+            sendResponse(connection: connection, status: 200, body: [
+                "save_directory": screenMuseDir.path,
+                "directory_exists": FileManager.default.fileExists(atPath: screenMuseDir.path),
+                "recent_recordings": recentFiles,
+                "last_video": currentVideoURL?.path ?? "",
+                "server_recording": isRecording
+            ])
+
         default:
             sendResponse(connection: connection, status: 404, body: ["error": "not found"])
         }

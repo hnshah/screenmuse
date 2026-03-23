@@ -26,6 +26,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
 
     @MainActor
     public func startRecording(config: RecordingConfig) async throws {
+        print("🎬 RecordingManager.startRecording() called")
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
 
         let filter: SCContentFilter
@@ -66,9 +67,16 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
             streamConfig.sourceRect = rect
         }
 
-        let tempDir = FileManager.default.temporaryDirectory
-        let fileName = "ScreenMuse_\(ISO8601DateFormatter().string(from: Date())).mp4"
-        let url = tempDir.appendingPathComponent(fileName)
+        // Save to ~/Movies/ScreenMuse/ — create directory if needed
+        let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+        let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse", isDirectory: true)
+        try FileManager.default.createDirectory(at: screenMuseDir, withIntermediateDirectories: true)
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+        let fileName = "ScreenMuse_\(formatter.string(from: Date())).mp4"
+            .replacingOccurrences(of: ":", with: "-")
+        let url = screenMuseDir.appendingPathComponent(fileName)
+        print("🎬 ScreenMuse: Recording to \(url.path)")
 
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
 
@@ -119,6 +127,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
 
     @MainActor
     public func stopRecording() async throws -> URL {
+        print("🛑 RecordingManager.stopRecording() called")
         timer?.invalidate()
         timer = nil
 
@@ -146,6 +155,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         audioInput = nil
         sessionStarted = false
 
+        print("✅ ScreenMuse: Recording saved to \(outputURL.path)")
         return outputURL
     }
 }
