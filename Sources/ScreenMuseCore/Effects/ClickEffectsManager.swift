@@ -237,3 +237,16 @@ extension CIColor {
         CIColor(red: red, green: green, blue: blue, alpha: alpha)
     }
 }
+
+/// Lightweight click event used for timeline import/export
+public struct ClickEvent: Sendable {
+    public let position: CGPoint
+    public let timestamp: TimeInterval
+    public let intensity: Double
+
+    public init(position: CGPoint, timestamp: TimeInterval, intensity: Double = 1.0) {
+        self.position = position
+        self.timestamp = timestamp
+        self.intensity = intensity
+    }
+}
