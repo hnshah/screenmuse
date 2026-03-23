@@ -7,8 +7,8 @@ import Carbon
 public final class KeyboardMonitor: ObservableObject {
     @Published public private(set) var events: [(key: String, modifiers: [String], timestamp: Date)] = []
     
-    private var eventTap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
+    nonisolated(unsafe) private var eventTap: CFMachPort?
+    nonisolated(unsafe) private var runLoopSource: CFRunLoopSource?
     
     public init() {}
     
@@ -57,7 +57,7 @@ public final class KeyboardMonitor: ObservableObject {
     }
     
     /// Stop monitoring
-    public func stopMonitoring() {
+    public nonisolated func stopMonitoring() {
         if let eventTap = eventTap {
             CGEvent.tapEnable(tap: eventTap, enable: false)
             CFMachPortInvalidate(eventTap)

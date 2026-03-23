@@ -405,6 +405,7 @@ extension KeystrokeOverlayManager {
         // Try to get character from key code
         var char: UniChar = 0
         var deadKeys: UInt32 = 0
+        var actualLength: Int = 0
         let keyboard = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
         guard let layoutData = TISGetInputSourceProperty(keyboard, kTISPropertyUnicodeKeyLayoutData) else {
             return "?"
@@ -422,7 +423,7 @@ extension KeystrokeOverlayManager {
             UInt32(kUCKeyTranslateNoDeadKeysMask),
             &deadKeys,
             1,
-            &char,
+            &actualLength,
             &char
         )
         
