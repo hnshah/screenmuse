@@ -202,22 +202,27 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
 
     @MainActor
     public func stopRecording() async throws -> URL {
-        smLog.info("stopRecording() called — elapsed=\(String(format: "%.1f", duration))s totalFrames=\(frameCount) droppedFrames=\(droppedFrameCount) audioSamples=\(audioSampleCount)", category: .recording)
+        smLog.info("stopRecording() called — elapsed=\(String(format: "%.1f", duration))s paused=\(isPaused) totalFrames=\(frameCount) droppedFrames=\(droppedFrameCount) audioSamples=\(audioSampleCount)", category: .recording)
         timer?.invalidate()
         timer = nil
 
-        guard let stream else {
-            smLog.error("stopRecording() called but no active stream", category: .recording)
-            throw RecordingError.notRecording
+        // If paused, the SCStream is already stopped — calling stopCapture() again would throw.
+        // We only stop the stream if it's actively running.
+        if let stream {
+            if isPaused {
+                smLog.debug("Stream was paused — skipping stopCapture() (already stopped)", category: .recording)
+            } else {
+                smLog.debug("Calling SCStream.stopCapture()...", category: .recording)
+                try await stream.stopCapture()
+                smLog.info("SCStream.stopCapture() completed", category: .recording)
+            }
+            self.stream = nil
+        } else {
+            smLog.error("stopRecording() called but stream is nil — writer may still need finalizing", category: .recording)
         }
 
-        smLog.debug("Calling SCStream.stopCapture()...", category: .recording)
-        try await stream.stopCapture()
-        self.stream = nil
-        smLog.info("SCStream.stopCapture() completed", category: .recording)
-
         guard let writer = assetWriter else {
-            smLog.error("assetWriter is nil after stopCapture — this should not happen", category: .recording)
+            smLog.error("assetWriter is nil — recording was never properly started", category: .recording)
             throw RecordingError.writerNotConfigured
         }
 
@@ -278,6 +283,7 @@ extension RecordingManager {
         }
         smLog.info("Pausing stream at elapsed=\(String(format: "%.1f", duration))s", category: .recording)
         try await stream.stopCapture()
+        self.stream = nil  // nil out so stopRecording() won't call stopCapture() again on a dead stream
         isPaused = true
         isPausedCallback = true
         timer?.invalidate()

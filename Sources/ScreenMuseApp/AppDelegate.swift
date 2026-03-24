@@ -6,13 +6,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         smLog.info("applicationDidFinishLaunching", category: .lifecycle)
 
-        // Request notification permission upfront so it's ready when video finishes
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
-            if granted {
-                smLog.info("Notification permission granted", category: .permissions)
-            } else {
-                smLog.warning("Notification permission denied\(error.map { ": \($0.localizedDescription)" } ?? "") — video-ready alerts will be silent", category: .permissions)
+        // Request notification permission upfront so it's ready when video finishes.
+        // UNUserNotificationCenter requires a proper signed .app bundle — it crashes on bare
+        // executables produced by `swift build`. Guard on bundleIdentifier to fail gracefully.
+        if Bundle.main.bundleIdentifier != nil {
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+                if granted {
+                    smLog.info("Notification permission granted", category: .permissions)
+                } else {
+                    smLog.warning("Notification permission denied\(error.map { ": \($0.localizedDescription)" } ?? "") — video-ready alerts will be silent", category: .permissions)
+                }
             }
+        } else {
+            smLog.warning("No bundle identifier — running as bare executable (swift build). Notifications disabled. Use ./scripts/dev-run.sh or Xcode for full functionality.", category: .permissions)
         }
 
         // Check permissions and warn if missing

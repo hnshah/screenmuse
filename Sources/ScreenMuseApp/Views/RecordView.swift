@@ -318,6 +318,6 @@ struct TimelineEditorView: View {
     }
 }
 
-#Preview {
-    RecordView()
-}
+// #Preview {  // Requires Xcode — not available in swift build (SPM)
+//     RecordView()
+// }

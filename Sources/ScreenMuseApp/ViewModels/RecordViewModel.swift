@@ -35,7 +35,7 @@ final class RecordViewModel: ObservableObject {
     @Published var showTimeline = false
     
     // MARK: - Managers
-    private let recordingManager = RecordingManager()
+    internal let recordingManager = RecordingManager()
     private let cursorTracker = CursorTracker()
     private let keyboardMonitor = KeyboardMonitor()
     private let clickEffectsManager = ClickEffectsManager()
@@ -44,7 +44,7 @@ final class RecordViewModel: ObservableObject {
     private let keystrokeOverlayManager = KeystrokeOverlayManager()
     let timelineManager = TimelineManager()
     
-    private var timer: Timer?
+    internal var timer: Timer?
     private var recordingStartTime: Date?
     private var rawVideoURL: URL?
     /// The final video URL after effects are applied — set by stopRecording() / processRecordingWithEffects()
@@ -127,7 +127,7 @@ final class RecordViewModel: ObservableObject {
                let window = content.windows.first(where: { $0.title?.localizedCaseInsensitiveContains(title) ?? false }) {
                 source = .window(window)
             } else if let pid = windowPid,
-                      let window = content.windows.first(where: { $0.owningApplication?.processID == pid }) {
+                      let window = content.windows.first(where: { $0.owningApplication?.processID == Int32(pid) }) {
                 source = .window(window)
             } else {
                 let query = windowTitle ?? "PID \(windowPid ?? 0)"
@@ -368,11 +368,16 @@ final class RecordViewModel: ObservableObject {
     // MARK: - Notifications & Finder
 
     /// Send a native macOS notification when the video file is ready.
+    /// No-ops gracefully when running as a bare executable (swift build) — no bundle = no UNUserNotificationCenter.
     private func notifyVideoReady(url: URL) {
         let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
         let sizeMB = String(format: "%.1f", Double(fileSize) / 1_048_576)
-        smLog.info("Sending 'video ready' notification — \(url.lastPathComponent) (\(sizeMB)MB)", category: .lifecycle)
+        smLog.info("Video ready — \(url.lastPathComponent) (\(sizeMB)MB)", category: .lifecycle)
 
+        guard Bundle.main.bundleIdentifier != nil else {
+            smLog.debug("Skipping notification (no bundle — swift build mode)", category: .permissions)
+            return
+        }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else {
                 smLog.warning("Notification permission not granted — skipping video-ready notification", category: .permissions)
@@ -402,7 +407,9 @@ final class RecordViewModel: ObservableObject {
     }
 
     /// Send an error notification (e.g. when compositing fails).
+    /// No-ops gracefully without a proper app bundle.
     private func notifyError(_ title: String, detail: String) {
+        guard Bundle.main.bundleIdentifier != nil else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
