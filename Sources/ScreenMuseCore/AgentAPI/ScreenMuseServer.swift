@@ -3,6 +3,7 @@ import AppKit
 import Foundation
 import Network
 import ScreenCaptureKit
+import Vision
 
 // Local HTTP server for programmatic agent control
 // Endpoints:
@@ -1287,6 +1288,158 @@ public class ScreenMuseServer {
                 sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
             }
 
+        // MARK: - Thumbnail
+
+        case ("POST", "/thumbnail"):
+            // Extract a still frame from a video at a specific timestamp.
+            // {"source":"last","time":5.0,"scale":800,"format":"jpeg","quality":85}
+            smLog.info("[\(reqID)] /thumbnail request", category: .server)
+
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
+            guard let src = sourceURL else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            let thumbTime = (body["time"] as? Double) ?? (body["time"] as? Int).map(Double.init)
+            let scale = body["scale"] as? Int ?? 800
+            let format = body["format"] as? String ?? "jpeg"
+            let quality = Double(body["quality"] as? Int ?? 85) / 100.0
+
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let thumbsDir = moviesURL.appendingPathComponent("ScreenMuse/Thumbnails", isDirectory: true)
+            try? FileManager.default.createDirectory(at: thumbsDir, withIntermediateDirectories: true)
+            let ext = (format == "png") ? "png" : "jpg"
+            let outputURL = thumbsDir.appendingPathComponent("thumb_\(Int(Date().timeIntervalSince1970)).\(ext)")
+
+            do {
+                let extractor = ThumbnailExtractor()
+                let result = try await extractor.extract(
+                    sourceURL: src,
+                    time: thumbTime,
+                    scale: scale,
+                    format: format,
+                    quality: quality,
+                    outputURL: outputURL
+                )
+                sendResponse(connection: connection, status: 200, body: [
+                    "path": result.outputURL.path,
+                    "time": result.actualTime,
+                    "width": result.width,
+                    "height": result.height,
+                    "size_bytes": result.fileSizeBytes,
+                    "format": format
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /thumbnail failed: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
+        // MARK: - OCR
+
+        case ("POST", "/ocr"):
+            // Read text from the screen or any image file using Apple Vision.
+            // {"source":"screen"} — OCR current display (default)
+            // {"source":"/path/to/image.png"} — OCR existing image
+            // {"level":"fast"} — "accurate" (default) or "fast"
+            smLog.info("[\(reqID)] /ocr request source=\(body["source"] as? String ?? "screen")", category: .server)
+
+            let ocrSource = body["source"] as? String ?? "screen"
+            let levelStr = body["level"] as? String ?? "accurate"
+            let level: VNRequestTextRecognitionLevel = (levelStr == "fast") ? .fast : .accurate
+            let langHint = body["lang"] as? String
+            let languages: [String] = langHint.map { [$0] } ?? []
+            let fullTextOnly = body["full_text_only"] as? Bool ?? false
+
+            do {
+                let ocr = ScreenOCR()
+                let result: ScreenOCR.OCRResult
+                if ocrSource == "screen" || ocrSource == "display" {
+                    result = try await ocr.recognizeScreen(level: level, languages: languages)
+                } else {
+                    result = try await ocr.recognizeFile(at: URL(fileURLWithPath: ocrSource), level: level, languages: languages)
+                }
+
+                var responseBody = result.asJSON
+                if fullTextOnly {
+                    responseBody.removeValue(forKey: "blocks")
+                }
+                sendResponse(connection: connection, status: 200, body: responseBody)
+            } catch {
+                smLog.error("[\(reqID)] /ocr failed: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": error.localizedDescription,
+                    "tip": "Ensure Screen Recording permission is granted"
+                ])
+            }
+
+        // MARK: - Crop
+
+        case ("POST", "/crop"):
+            // Crop a rectangular region from an existing recording.
+            // {"source":"last","region":{"x":100,"y":50,"width":1280,"height":720}}
+            smLog.info("[\(reqID)] /crop request", category: .server)
+
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
+            guard let src = sourceURL else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            guard let regionDict = body["region"] as? [String: Any],
+                  let w = (regionDict["width"] as? Double) ?? (regionDict["width"] as? Int).map(Double.init),
+                  let h = (regionDict["height"] as? Double) ?? (regionDict["height"] as? Int).map(Double.init),
+                  w > 0, h > 0 else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'region' is required: {x, y, width, height}",
+                    "example": "{\"source\":\"last\",\"region\":{\"x\":0,\"y\":0,\"width\":1280,\"height\":720}}"
+                ])
+                return
+            }
+            let rx = (regionDict["x"] as? Double) ?? (regionDict["x"] as? Int).map(Double.init) ?? 0
+            let ry = (regionDict["y"] as? Double) ?? (regionDict["y"] as? Int).map(Double.init) ?? 0
+            let cropRect = CGRect(x: rx, y: ry, width: w, height: h)
+            let quality = RecordingConfig.Quality(rawValue: body["quality"] as? String ?? "medium") ?? .medium
+
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir = moviesURL.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir, withIntermediateDirectories: true)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+            let ts = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
+            let outputURL = exportsDir.appendingPathComponent("ScreenMuse_\(ts).cropped.mp4")
+
+            do {
+                let cropper = VideoCropper()
+                let result = try await cropper.crop(sourceURL: src, region: cropRect, outputURL: outputURL, quality: quality)
+                currentVideoURL = outputURL
+                sendResponse(connection: connection, status: 200, body: [
+                    "path": result.outputURL.path,
+                    "crop_rect": ["x": result.cropRect.origin.x, "y": result.cropRect.origin.y,
+                                  "width": result.cropRect.width, "height": result.cropRect.height],
+                    "duration": result.duration,
+                    "size_mb": result.fileSizeMB
+                ])
+            } catch let err as VideoCropper.CropError {
+                smLog.error("[\(reqID)] /crop failed: \(err.localizedDescription)", category: .server)
+                let status = (err.localizedDescription.contains("not found")) ? 404 :
+                             (err.localizedDescription.contains("required") || err.localizedDescription.contains("Invalid")) ? 400 : 500
+                sendResponse(connection: connection, status: status, body: [
+                    "error": err.errorDescription ?? err.localizedDescription
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /crop error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
         case ("POST", "/screenshot"):
             smLog.info("[\(reqID)] Screenshot requested path=\(body["path"] as? String ?? "(auto)")", category: .capture)
             do {
@@ -1394,6 +1547,62 @@ public class ScreenMuseServer {
                 "recording_elapsed": isRecording ? elapsed : -1
             ])
 
+        case ("GET", "/openapi"):
+            // Machine-readable OpenAPI 3.0 spec for the full ScreenMuse API.
+            // Use with Postman, Claude, Cursor, or any OpenAPI-aware tool.
+            smLog.debug("[\(reqID)] /openapi spec requested", category: .server)
+            let spec: [String: Any] = [
+                "openapi": "3.0.3",
+                "info": ["title": "ScreenMuse Agent API", "version": "1.2", "description": "macOS screen recorder REST API for AI agents and automation workflows"],
+                "servers": [["url": "http://localhost:7823", "description": "Local ScreenMuse instance"]],
+                "paths": [
+                    "/start": ["post": ["summary": "Start recording", "requestBody": ["content": ["application/json": ["schema": ["properties": ["name": ["type":"string"], "quality": ["type":"string","enum":["low","medium","high","max"]], "region": ["type":"object","properties":["x":["type":"number"],"y":["type":"number"],"width":["type":"number"],"height":["type":"number"]]], "audio_source": ["type":"string"], "webhook": ["type":"string","format":"uri"]]]]]]]]],
+                    "/stop": ["post": ["summary": "Stop recording and get video path"]],
+                    "/pause": ["post": ["summary": "Pause current recording"]],
+                    "/resume": ["post": ["summary": "Resume paused recording"]],
+                    "/chapter": ["post": ["summary": "Add chapter marker", "requestBody": ["content": ["application/json": ["schema": ["properties": ["name": ["type":"string"]]]]]]]],
+                    "/note": ["post": ["summary": "Add timestamped annotation"]],
+                    "/highlight": ["post": ["summary": "Flag next click for highlight effect"]],
+                    "/screenshot": ["post": ["summary": "Capture full-screen screenshot"]],
+                    "/frame": ["post": ["summary": "Capture frame with recording context metadata"]],
+                    "/thumbnail": ["post": ["summary": "Extract still frame from video at timestamp"]],
+                    "/ocr": ["post": ["summary": "OCR the screen or an image file (Vision framework)", "requestBody": ["content": ["application/json": ["schema": ["properties": ["source": ["type":"string","default":"screen"], "level": ["type":"string","enum":["accurate","fast"]]]]]]]]]],
+                    "/export": ["post": ["summary": "Export recording as animated GIF or WebP"]],
+                    "/trim": ["post": ["summary": "Trim video to time range (stream copy)"]],
+                    "/speedramp": ["post": ["summary": "Auto-compress idle sections"]],
+                    "/crop": ["post": ["summary": "Crop a region from an existing recording"]],
+                    "/concat": ["post": ["summary": "Concatenate multiple recordings"]],
+                    "/upload/icloud": ["post": ["summary": "Upload recording to iCloud Drive"]],
+                    "/start/pip": ["post": ["summary": "Start picture-in-picture dual-window recording"]],
+                    "/window/focus": ["post": ["summary": "Bring app window to front"]],
+                    "/window/position": ["post": ["summary": "Set window position and size"]],
+                    "/window/hide-others": ["post": ["summary": "Hide all windows except one app"]],
+                    "/timeline": ["get": ["summary": "Get structured session timeline (chapters, notes, highlights)"]],
+                    "/recordings": ["get": ["summary": "List all recordings with metadata"]],
+                    "/recording": ["delete": ["summary": "Delete a recording by filename or path"]],
+                    "/stream": ["get": ["summary": "SSE live frame stream", "parameters": [["name":"fps","in":"query","schema":["type":"integer","default":2]], ["name":"scale","in":"query","schema":["type":"integer","default":1280]], ["name":"format","in":"query","schema":["type":"string","default":"jpeg"]]]]],
+                    "/stream/status": ["get": ["summary": "SSE stream health — active clients + frames sent"]],
+                    "/system/clipboard": ["get": ["summary": "Get current clipboard contents"]],
+                    "/system/active-window": ["get": ["summary": "Get frontmost window info"]],
+                    "/system/running-apps": ["get": ["summary": "List all running applications"]],
+                    "/status": ["get": ["summary": "Current recording state and elapsed time"]],
+                    "/windows": ["get": ["summary": "List all on-screen windows"]],
+                    "/logs": ["get": ["summary": "Query recent log entries"]],
+                    "/report": ["get": ["summary": "Human-readable session report"]],
+                    "/version": ["get": ["summary": "Server version + full endpoint list"]],
+                    "/openapi": ["get": ["summary": "This OpenAPI 3.0 specification"]]
+                ]
+            ]
+            guard let specData = try? JSONSerialization.data(withJSONObject: spec),
+                  let specStr = String(data: specData, encoding: .utf8) else {
+                sendResponse(connection: connection, status: 500, body: ["error": "spec serialization failed"])
+                return
+            }
+            let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(specStr)"
+            if let responseData = response.data(using: .utf8) {
+                connection.send(content: responseData, completion: .contentProcessed { _ in connection.cancel() })
+            }
+
         case ("GET", "/version"):
             // Build info — always know exactly what Vera is running.
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
@@ -1422,7 +1631,11 @@ public class ScreenMuseServer {
                     // Live stream
                     "GET /stream", "GET /stream/status",
                     // Session timeline + concat
-                    "GET /timeline", "POST /concat"
+                    "GET /timeline", "POST /concat",
+                    // Visual analysis
+                    "POST /thumbnail", "POST /ocr", "POST /crop",
+                    // OpenAPI spec
+                    "GET /openapi"
                 ]
             sendResponse(connection: connection, status: 200, body: [
                 "version": version,

@@ -164,6 +164,36 @@ curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json"
 curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json" \
   -d '{"windows": ["Google Chrome", "Terminal"], "layout": "side-by-side"}'
 
+# ── OCR (no API key, uses Apple Vision) ──
+
+# Read text from the current screen
+curl -X POST http://localhost:7823/ocr
+
+# Read text from a specific image file
+curl -X POST http://localhost:7823/ocr -H "Content-Type: application/json" \
+  -d '{"source":"/path/to/screenshot.png","level":"accurate"}'
+
+# Fast mode (lower accuracy, 3x faster)
+curl -X POST http://localhost:7823/ocr -H "Content-Type: application/json" \
+  -d '{"source":"screen","level":"fast","full_text_only":true}'
+
+# ── Thumbnail ──
+
+# Extract a frame from the last recording at 5 seconds
+curl -X POST http://localhost:7823/thumbnail -H "Content-Type: application/json" \
+  -d '{"time":5.0,"scale":800}'
+
+# ── Crop ──
+
+# Crop a 1280x720 region from the last recording
+curl -X POST http://localhost:7823/crop -H "Content-Type: application/json" \
+  -d '{"region":{"x":0,"y":0,"width":1280,"height":720}}'
+
+# ── OpenAPI Spec ──
+
+# Machine-readable API spec (for Postman, Claude, Cursor, etc.)
+curl http://localhost:7823/openapi
+
 # ── Region Recording ──
 
 # Record a specific 1280×720 area starting at (0, 0)
