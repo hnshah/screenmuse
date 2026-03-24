@@ -212,7 +212,8 @@ public final class WindowManager {
             let axApp = AXUIElementCreateApplication(frontApp.processIdentifier)
             var focusedWindowRef: AnyObject?
             if AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focusedWindowRef) == .success,
-               let axWindow = focusedWindowRef as? AXUIElement {
+               focusedWindowRef != nil {
+                let axWindow = focusedWindowRef as! AXUIElement  // Safe: .success guarantees AXUIElement
                 // Window title
                 var titleRef: AnyObject?
                 if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,

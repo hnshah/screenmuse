@@ -132,7 +132,7 @@ public final class ActivityAnalyzer {
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVLinearPCMBitDepthKey: 16,
             AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsSigned: true
+            AVLinearPCMIsNonInterleaved: false
         ]
         let output = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: outputSettings)
         output.alwaysCopiesSampleData = false

@@ -146,7 +146,7 @@ public final class iCloudUploader {
         let fileSize = (try? FileManager.default.attributesOfItem(atPath: destURL.path)[.size] as? Int) ?? 0
 
         // Relative path within iCloud Drive (for display)
-        let driveRoot = iCloudDriveURL?.path ?? ""
+        let driveRoot = Self.iCloudDriveURL?.path ?? ""
         let relativePath = destURL.path.hasPrefix(driveRoot)
             ? String(destURL.path.dropFirst(driveRoot.count + 1))
             : destURL.lastPathComponent

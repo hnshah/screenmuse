@@ -301,10 +301,11 @@ public final class GIFExporter {
                 let ciImage = CIImage(cgImage: rawImage)
                 let scaleX = CGFloat(outWidth) / ciImage.extent.width
                 let scaleY = CGFloat(outHeight) / ciImage.extent.height
-                let scaleFilter = CIFilter.lanczosScaleTransform()
-                scaleFilter.inputImage = ciImage
-                scaleFilter.scale = Float(scaleX)
-                scaleFilter.aspectRatio = Float(scaleY / scaleX)
+                // CIFilter.lanczosScaleTransform() typed accessor removed in newer SDKs — use name-based init
+                let scaleFilter = CIFilter(name: "CILanczosScaleTransform")!
+                scaleFilter.setValue(ciImage, forKey: kCIInputImageKey)
+                scaleFilter.setValue(Float(scaleX), forKey: kCIInputScaleKey)
+                scaleFilter.setValue(Float(scaleY / scaleX), forKey: kCIInputAspectRatioKey)
 
                 let scaledFrame: CGImage
                 if let outputCI = scaleFilter.outputImage,
