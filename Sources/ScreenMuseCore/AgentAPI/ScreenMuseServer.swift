@@ -5,13 +5,17 @@ import AppKit
 
 // Local HTTP server for programmatic agent control
 // Endpoints:
-//   POST /start    body: {"name": "recording-name"}  → {"session_id": "uuid", "status": "recording"}
-//   POST /stop     → {"video_path": "/path/video.mp4", "metadata": {...}}
-//   POST /chapter  body: {"name": "Chapter name"}   → {"ok": true}
-//   POST /highlight  → {"ok": true}
-//   POST /screenshot body: {"path": "/optional/path.png"}  → {"path": "...", "width": N, "height": N}
-//   GET  /status     → {"recording": true, "elapsed": 12.3, "chapters": [...]}
-//   GET  /status   → {"recording": true, "elapsed": 12.3, "chapters": [...]}
+//   POST /start       body: {"name": "recording-name"}               → {"session_id": "uuid", "status": "recording"}
+//   POST /stop        → {"video_path": "/path/video.mp4", "metadata": {...}}
+//   POST /pause       → {"status": "paused", "elapsed": N}
+//   POST /resume      → {"status": "recording", "elapsed": N}
+//   POST /chapter     body: {"name": "Chapter name"}                 → {"ok": true, "time": N}
+//   POST /highlight   → {"ok": true}
+//   POST /screenshot  body: {"path": "/optional/path.png"}           → {"path": "...", "width": N, "height": N}
+//   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
+//   GET  /windows     → {"windows": [...], "count": N}
+//   GET  /debug       → save dir, recent files, server state
+//   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
 
 @MainActor
 public class ScreenMuseServer {
@@ -33,6 +37,8 @@ public class ScreenMuseServer {
     public private(set) var chapters: [(name: String, time: TimeInterval)] = []
     public private(set) var highlightNextClick = false
 
+    private var requestCount = 0
+
     public func start() throws {
         let params = NWParameters.tcp
         listener = try NWListener(using: params, on: 7823)
@@ -42,10 +48,12 @@ public class ScreenMuseServer {
             }
         }
         listener?.start(queue: .main)
+        smLog.info("NWListener started on port 7823", category: .server)
     }
 
     public func stop() {
         listener?.cancel()
+        smLog.info("NWListener stopped", category: .server)
     }
 
     private func handleConnection(_ connection: NWConnection) {
@@ -56,6 +64,7 @@ public class ScreenMuseServer {
     private func receiveRequest(_ connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
             guard let self, let data, !data.isEmpty else {
+                if let error { smLog.debug("Connection closed with error: \(error)", category: .server) }
                 connection.cancel()
                 return
             }
@@ -66,7 +75,11 @@ public class ScreenMuseServer {
     }
 
     private func processHTTPRequest(data: Data, connection: NWConnection) async {
+        requestCount += 1
+        let reqID = requestCount
+
         guard let raw = String(data: data, encoding: .utf8) else {
+            smLog.error("[\(reqID)] Bad request — could not decode UTF-8", category: .server)
             sendResponse(connection: connection, status: 400, body: ["error": "bad request"])
             return
         }
@@ -88,10 +101,13 @@ public class ScreenMuseServer {
             }
         }
 
+        smLog.info("[\(reqID)] → \(method) \(path) body=\(body.isEmpty ? "{}" : "\(body)")", category: .server)
+
         switch (method, path) {
 
         case ("POST", "/start"):
             guard !isRecording else {
+                smLog.warning("[\(reqID)] /start rejected — already recording session=\(sessionID ?? "?")", category: .server)
                 sendResponse(connection: connection, status: 409, body: [
                     "error": "Already recording",
                     "code": "ALREADY_RECORDING",
@@ -103,17 +119,22 @@ public class ScreenMuseServer {
             let windowTitle = body["window_title"] as? String
             let windowPid = body["window_pid"] as? Int
             let quality = body["quality"] as? String
+            smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") windowPid=\(windowPid.map { "\($0)" } ?? "nil")", category: .server)
             do {
                 if let coord = coordinator {
+                    smLog.debug("[\(reqID)] Routing through coordinator (effects pipeline)", category: .server)
                     try await coord.startRecording(name: name, windowTitle: windowTitle, windowPid: windowPid, quality: quality)
                 } else {
-                    // Fallback: raw recording, no effects
+                    smLog.warning("[\(reqID)] No coordinator set — falling back to raw RecordingManager (no effects)", category: .server)
                     let source: CaptureSource
                     if let title = windowTitle {
+                        smLog.debug("[\(reqID)] Looking up window: '\(title)'", category: .capture)
                         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                         if let window = content.windows.first(where: { $0.title?.localizedCaseInsensitiveContains(title) ?? false }) {
+                            smLog.info("[\(reqID)] Found window: '\(window.title ?? "?")' pid=\(window.owningApplication?.processID ?? 0)", category: .capture)
                             source = .window(window)
                         } else {
+                            smLog.error("[\(reqID)] Window not found: '\(title)'", category: .capture)
                             sendResponse(connection: connection, status: 404, body: [
                                 "error": "Window not found: '\(title)'",
                                 "code": "WINDOW_NOT_FOUND",
@@ -122,6 +143,7 @@ public class ScreenMuseServer {
                             return
                         }
                     } else {
+                        smLog.debug("[\(reqID)] Using full screen capture", category: .capture)
                         source = .fullScreen
                     }
                     let resolvedQuality = RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
@@ -143,10 +165,13 @@ public class ScreenMuseServer {
                 ]
                 if let wt = windowTitle { resp["window_title"] = wt }
                 if let wp = windowPid { resp["window_pid"] = wp }
+                smLog.info("[\(reqID)] ✅ Recording started — session=\(sessionID!)", category: .server)
                 sendResponse(connection: connection, status: 200, body: resp)
             } catch let err as RecordingError {
+                smLog.error("[\(reqID)] /start failed (RecordingError): \(err.errorDescription ?? "\(err)")", category: .server)
                 sendResponse(connection: connection, status: 500, body: structuredError(err))
             } catch {
+                smLog.error("[\(reqID)] /start failed (unknown): \(error.localizedDescription)", category: .server)
                 sendResponse(connection: connection, status: 500, body: [
                     "error": error.localizedDescription,
                     "code": "UNKNOWN_ERROR"
@@ -155,10 +180,12 @@ public class ScreenMuseServer {
 
         case ("POST", "/stop"):
             guard isRecording else {
+                smLog.warning("[\(reqID)] /stop rejected — not currently recording", category: .server)
                 sendResponse(connection: connection, status: 409, body: ["error": "not recording"])
                 return
             }
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            smLog.info("[\(reqID)] Stopping recording session=\(sessionID ?? "?") elapsed=\(String(format: "%.1f", elapsed))s chapters=\(chapters.count)", category: .server)
             let metadata: [String: Any] = [
                 "session_id": sessionID ?? "",
                 "name": sessionName ?? "",
@@ -173,54 +200,64 @@ public class ScreenMuseServer {
             isRecording = false
 
             if let coord = coordinator {
-                // Full pipeline: waits for effects compositing to finish
+                smLog.debug("[\(reqID)] Awaiting coordinator.stopAndGetVideo() — effects compositing in progress...", category: .server)
                 if let url = await coord.stopAndGetVideo() {
                     currentVideoURL = url
+                    smLog.info("[\(reqID)] ✅ Video ready: \(url.path)", category: .server)
                     sendResponse(connection: connection, status: 200, body: [
                         "video_path": url.path,
                         "metadata": metadata
                     ])
                 } else {
+                    smLog.error("[\(reqID)] coordinator.stopAndGetVideo() returned nil — video finalization failed", category: .server)
                     sendResponse(connection: connection, status: 500, body: ["error": "Recording stopped but video could not be finalized"])
                 }
             } else {
-                // Fallback: raw stop, no effects
+                smLog.debug("[\(reqID)] No coordinator — using raw RecordingManager.stopRecording()", category: .server)
                 do {
                     let url = try await recordingManager.stopRecording()
                     currentVideoURL = url
+                    smLog.info("[\(reqID)] ✅ Video saved: \(url.path)", category: .server)
                     sendResponse(connection: connection, status: 200, body: [
                         "video_path": url.path,
                         "metadata": metadata
                     ])
                 } catch {
+                    smLog.error("[\(reqID)] stopRecording() threw: \(error.localizedDescription)", category: .server)
                     sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
                 }
             }
-            _ = capturedSessionID  // suppress unused warning
+            _ = capturedSessionID
             _ = capturedSessionName
 
         case ("POST", "/pause"):
             guard isRecording else {
+                smLog.warning("[\(reqID)] /pause rejected — not recording", category: .server)
                 sendResponse(connection: connection, status: 409, body: ["error": "Not recording", "code": "NOT_RECORDING"])
                 return
             }
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            smLog.info("[\(reqID)] Pausing at elapsed=\(String(format: "%.1f", elapsed))s", category: .server)
             do {
                 if let coord = coordinator {
                     try await coord.pauseRecording()
                 } else {
                     try await recordingManager.pauseRecording()
                 }
+                smLog.info("[\(reqID)] ✅ Paused", category: .server)
                 sendResponse(connection: connection, status: 200, body: ["status": "paused", "elapsed": elapsed])
             } catch {
+                smLog.error("[\(reqID)] /pause failed: \(error.localizedDescription)", category: .server)
                 sendResponse(connection: connection, status: 500, body: structuredError(error))
             }
 
         case ("POST", "/resume"):
             guard isRecording else {
+                smLog.warning("[\(reqID)] /resume rejected — not recording", category: .server)
                 sendResponse(connection: connection, status: 409, body: ["error": "Not recording", "code": "NOT_RECORDING"])
                 return
             }
+            smLog.info("[\(reqID)] Resuming recording", category: .server)
             do {
                 if let coord = coordinator {
                     try await coord.resumeRecording()
@@ -228,8 +265,10 @@ public class ScreenMuseServer {
                     try await recordingManager.resumeRecording()
                 }
                 let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                smLog.info("[\(reqID)] ✅ Resumed at elapsed=\(String(format: "%.1f", elapsed))s", category: .server)
                 sendResponse(connection: connection, status: 200, body: ["status": "recording", "elapsed": elapsed])
             } catch {
+                smLog.error("[\(reqID)] /resume failed: \(error.localizedDescription)", category: .server)
                 sendResponse(connection: connection, status: 500, body: structuredError(error))
             }
 
@@ -237,14 +276,17 @@ public class ScreenMuseServer {
             let name = body["name"] as? String ?? "Chapter"
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
             chapters.append((name: name, time: elapsed))
+            smLog.info("[\(reqID)] Chapter '\(name)' at \(String(format: "%.1f", elapsed))s (total chapters: \(chapters.count))", category: .server)
             sendResponse(connection: connection, status: 200, body: ["ok": true, "time": elapsed])
 
         case ("POST", "/highlight"):
             highlightNextClick = true
+            smLog.info("[\(reqID)] Highlight flag set — next click will be highlighted", category: .server)
             sendResponse(connection: connection, status: 200, body: ["ok": true])
 
         case ("GET", "/status"):
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            smLog.debug("[\(reqID)] /status — recording=\(isRecording) elapsed=\(String(format: "%.1f", elapsed))s", category: .server)
             sendResponse(connection: connection, status: 200, body: [
                 "recording": isRecording,
                 "elapsed": elapsed,
@@ -254,7 +296,7 @@ public class ScreenMuseServer {
             ])
 
         case ("GET", "/windows"):
-            // List on-screen windows available for capture
+            smLog.info("[\(reqID)] Enumerating on-screen windows", category: .capture)
             do {
                 let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                 let windows: [[String: Any]] = content.windows.compactMap { window in
@@ -276,27 +318,29 @@ public class ScreenMuseServer {
                     }
                     return entry
                 }
+                smLog.info("[\(reqID)] Found \(windows.count) windows", category: .capture)
                 sendResponse(connection: connection, status: 200, body: ["windows": windows, "count": windows.count])
             } catch {
+                smLog.error("[\(reqID)] /windows failed: \(error.localizedDescription)", category: .capture)
                 sendResponse(connection: connection, status: 500, body: structuredError(error))
             }
 
         case ("POST", "/screenshot"):
-            // One-shot screenshot using SCScreenshotManager (WWDC23)
-            // Optional body: {"path": "/full/path/to/save.png"}
+            smLog.info("[\(reqID)] Screenshot requested path=\(body["path"] as? String ?? "(auto)")", category: .capture)
             do {
                 let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                 guard let display = content.displays.first else {
+                    smLog.error("[\(reqID)] No display found for screenshot", category: .capture)
                     sendResponse(connection: connection, status: 500, body: ["error": "No display found"])
                     return
                 }
+                smLog.debug("[\(reqID)] Capture display \(display.width)x\(display.height)", category: .capture)
                 let filter = SCContentFilter(display: display, excludingWindows: [])
                 let config = SCStreamConfiguration()
                 config.width = display.width
                 config.height = display.height
                 config.pixelFormat = kCVPixelFormatType_32BGRA
 
-                // Determine save path
                 let savePath: URL
                 if let customPath = body["path"] as? String {
                     savePath = URL(fileURLWithPath: customPath)
@@ -311,13 +355,16 @@ public class ScreenMuseServer {
                 }
 
                 if #available(macOS 14.0, *) {
+                    smLog.debug("[\(reqID)] Calling SCScreenshotManager.captureImage()", category: .capture)
                     let cgImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
                     let rep = NSBitmapImageRep(cgImage: cgImage)
                     guard let pngData = rep.representation(using: .png, properties: [:]) else {
+                        smLog.error("[\(reqID)] PNG conversion failed", category: .capture)
                         sendResponse(connection: connection, status: 500, body: ["error": "PNG conversion failed"])
                         return
                     }
                     try pngData.write(to: savePath)
+                    smLog.info("[\(reqID)] ✅ Screenshot saved: \(savePath.path) (\(pngData.count) bytes, \(cgImage.width)x\(cgImage.height))", category: .capture)
                     sendResponse(connection: connection, status: 200, body: [
                         "path": savePath.path,
                         "width": cgImage.width,
@@ -325,14 +372,16 @@ public class ScreenMuseServer {
                         "size": pngData.count
                     ])
                 } else {
+                    smLog.error("[\(reqID)] Screenshot API requires macOS 14+", category: .capture)
                     sendResponse(connection: connection, status: 400, body: ["error": "Screenshot API requires macOS 14+"])
                 }
             } catch {
+                smLog.error("[\(reqID)] /screenshot failed: \(error.localizedDescription)", category: .capture)
                 sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
             }
 
         case ("GET", "/debug"):
-            // Diagnostic endpoint — shows save dir, recent recordings, permission status
+            smLog.debug("[\(reqID)] /debug requested", category: .server)
             let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
             let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse")
             var recentFiles: [String] = []
@@ -352,10 +401,40 @@ public class ScreenMuseServer {
                 "directory_exists": FileManager.default.fileExists(atPath: screenMuseDir.path),
                 "recent_recordings": recentFiles,
                 "last_video": currentVideoURL?.path ?? "",
-                "server_recording": isRecording
+                "server_recording": isRecording,
+                "request_count": requestCount,
+                "log_file": smLog.logFilePath,
+                "log_buffer_count": smLog.bufferCount
+            ])
+
+        case ("GET", "/logs"):
+            // Return recent log entries from the ring buffer.
+            // Query params supported (parsed from path):
+            //   ?limit=N      — max entries to return (default 200)
+            //   ?level=error  — minimum level filter (debug/info/warning/error)
+            //   ?category=X   — category filter
+            let queryString = path.contains("?") ? String(path.split(separator: "?", maxSplits: 1).last ?? "") : ""
+            var queryParams: [String: String] = [:]
+            for pair in queryString.split(separator: "&") {
+                let kv = pair.split(separator: "=", maxSplits: 1)
+                if kv.count == 2 { queryParams[String(kv[0])] = String(kv[1]) }
+            }
+
+            let limit = Int(queryParams["limit"] ?? "200") ?? 200
+            let minLevel = ScreenMuseLogger.Level(rawValue: queryParams["level"] ?? "debug") ?? .debug
+            let filterCategory = queryParams["category"].flatMap { ScreenMuseLogger.Category(rawValue: $0) }
+
+            smLog.debug("[\(reqID)] /logs limit=\(limit) minLevel=\(minLevel.rawValue) category=\(filterCategory?.rawValue ?? "all")", category: .server)
+
+            let entries = smLog.recentEntries(limit: limit, category: filterCategory, minLevel: minLevel)
+            sendResponse(connection: connection, status: 200, body: [
+                "count": entries.count,
+                "log_file": smLog.logFilePath,
+                "entries": entries
             ])
 
         default:
+            smLog.warning("[\(reqID)] 404 — \(method) \(path) not found", category: .server)
             sendResponse(connection: connection, status: 404, body: ["error": "not found"])
         }
     }

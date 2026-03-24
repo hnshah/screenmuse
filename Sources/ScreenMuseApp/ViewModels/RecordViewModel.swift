@@ -228,7 +228,7 @@ final class RecordViewModel: ObservableObject {
                 }
             }
         } catch {
-            print("Failed to start recording: \(error.localizedDescription)")
+            smLog.error("RecordViewModel: Failed to start recording: \(error.localizedDescription)", category: .recording)
         }
     }
 
@@ -261,11 +261,11 @@ final class RecordViewModel: ObservableObject {
                 return lastVideoURL ?? url
             } else {
                 lastVideoURL = url
-                print("Recording saved to \(url.path)")
+                smLog.info("RecordViewModel: Recording saved (no effects) to \(url.path)", category: .recording)
                 return url
             }
         } catch {
-            print("Failed to stop recording: \(error.localizedDescription)")
+            smLog.error("RecordViewModel: Failed to stop recording: \(error.localizedDescription)", category: .recording)
             return nil
         }
     }
@@ -347,14 +347,14 @@ final class RecordViewModel: ObservableObject {
             
             isProcessing = false
             lastVideoURL = outputURL
-            print("Processed video saved to \(outputURL.path)")
+            smLog.info("RecordViewModel: Processed video (with effects) saved to \(outputURL.path)", category: .effects)
             
             // Optionally show timeline editor
             // showTimeline = true
             
         } catch {
             isProcessing = false
-            print("Failed to process video: \(error.localizedDescription)")
+            smLog.error("RecordViewModel: Failed to process video with effects: \(error.localizedDescription)", category: .effects)
         }
     }
 
@@ -363,7 +363,7 @@ final class RecordViewModel: ObservableObject {
             let content = try await SCShareableContent.excludingDesktopWindows(true, onScreenWindowsOnly: true)
             availableWindows = content.windows.filter { $0.isOnScreen }
         } catch {
-            print("Failed to refresh windows: \(error.localizedDescription)")
+            smLog.warning("RecordViewModel: Failed to refresh windows: \(error.localizedDescription)", category: .capture)
         }
     }
     

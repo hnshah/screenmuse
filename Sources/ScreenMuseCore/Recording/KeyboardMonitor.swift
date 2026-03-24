@@ -19,7 +19,7 @@ public final class KeyboardMonitor: ObservableObject {
         let accessEnabled = AXIsProcessTrustedWithOptions(options)
         
         guard accessEnabled else {
-            print("⚠️ Accessibility permission required for keyboard monitoring")
+            smLog.warning("Accessibility permission required for keyboard monitoring — keystroke overlay will be disabled", category: .permissions)
             return
         }
         
@@ -40,7 +40,7 @@ public final class KeyboardMonitor: ObservableObject {
             },
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
-            print("⚠️ Failed to create event tap")
+            smLog.error("Failed to create CGEvent tap for keyboard monitoring — accessibility may not be granted", category: .permissions)
             return
         }
         

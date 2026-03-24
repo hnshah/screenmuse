@@ -27,11 +27,14 @@ public final class CombinedEffectsCompositor {
         outputURL: URL,
         progress: ((Double) -> Void)? = nil
     ) async throws {
+        smLog.info("CombinedEffectsCompositor.applyEffects() — source=\(sourceURL.lastPathComponent)", category: .effects)
         let asset = AVAsset(url: sourceURL)
         
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            smLog.error("No video track found in source: \(sourceURL.lastPathComponent)", category: .effects)
             throw EffectsError.noVideoTrack
         }
+        smLog.debug("Video track loaded from \(sourceURL.lastPathComponent)", category: .effects)
         
         let composition = AVMutableComposition()
         
@@ -98,8 +101,11 @@ public final class CombinedEffectsCompositor {
         export.outputFileType = .mp4
         export.videoComposition = videoComposition
         
+        smLog.info("Starting AVAssetExportSession (CombinedEffects) → \(outputURL.lastPathComponent)", category: .effects)
         // Monitor progress
-        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            let pct = Int(export.progress * 100)
+            if pct % 10 == 0 { smLog.debug("Effects export progress: \(pct)%", category: .effects) }
             progress?(Double(export.progress))
         }
         
@@ -107,8 +113,11 @@ public final class CombinedEffectsCompositor {
         progressTimer.invalidate()
         
         guard export.status == .completed else {
-            throw EffectsError.exportFailed(export.error?.localizedDescription ?? "Unknown error")
+            let errMsg = export.error?.localizedDescription ?? "Unknown error"
+            smLog.error("Effects export failed — status=\(export.status.rawValue) error=\(errMsg)", category: .effects)
+            throw EffectsError.exportFailed(errMsg)
         }
+        smLog.info("✅ CombinedEffects export complete — output=\(outputURL.lastPathComponent)", category: .effects)
     }
 }
 

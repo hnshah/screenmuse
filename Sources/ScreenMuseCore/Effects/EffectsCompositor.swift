@@ -29,9 +29,11 @@ public final class EffectsCompositor {
         outputURL: URL,
         progress: ((Double) -> Void)? = nil
     ) async throws {
+        smLog.info("EffectsCompositor.applyEffects() — source=\(sourceURL.lastPathComponent)", category: .effects)
         let asset = AVAsset(url: sourceURL)
         
         guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
+            smLog.error("No video track in source: \(sourceURL.lastPathComponent)", category: .effects)
             throw EffectsError.noVideoTrack
         }
         
@@ -99,8 +101,9 @@ public final class EffectsCompositor {
         export.outputFileType = .mp4
         export.videoComposition = videoComposition
         
+        smLog.info("Starting AVAssetExportSession (ClickEffects) → \(outputURL.lastPathComponent)", category: .effects)
         // Monitor progress
-        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak export] _ in
+        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak export] _ in
             guard let export = export else { return }
             Task { @MainActor in
                 progress?(Double(export.progress))
@@ -111,8 +114,11 @@ public final class EffectsCompositor {
         progressTimer.invalidate()
         
         guard export.status == .completed else {
-            throw EffectsError.exportFailed(export.error?.localizedDescription ?? "Unknown error")
+            let errMsg = export.error?.localizedDescription ?? "Unknown error"
+            smLog.error("ClickEffects export failed — status=\(export.status.rawValue) error=\(errMsg)", category: .effects)
+            throw EffectsError.exportFailed(errMsg)
         }
+        smLog.info("✅ ClickEffects export complete — output=\(outputURL.lastPathComponent)", category: .effects)
     }
 }
 

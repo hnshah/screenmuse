@@ -87,6 +87,40 @@ curl -X POST http://localhost:7823/stop
 
 Full API reference: [docs/AGENT_API.md](docs/AGENT_API.md)
 
+## Debugging & Logs
+
+ScreenMuse has structured logging built in. Three places to look:
+
+**Log file** — written automatically on every launch:
+```
+~/Movies/ScreenMuse/Logs/screenmuse-YYYY-MM-DD.log
+```
+
+**API endpoint** — get recent logs without leaving the terminal:
+```bash
+# Last 200 log entries (all levels)
+curl http://localhost:7823/logs | python3 -m json.tool
+
+# Errors only
+curl "http://localhost:7823/logs?level=error"
+
+# Filter by category (server / recording / effects / capture / permissions / lifecycle)
+curl "http://localhost:7823/logs?category=recording&level=warning"
+
+# Limit entries
+curl "http://localhost:7823/logs?limit=50"
+```
+
+**Console.app** — filter by subsystem for real-time streaming:
+```
+subsystem == "ai.screenmuse"
+```
+
+**When reporting a bug**, please attach:
+1. `~/Movies/ScreenMuse/Logs/screenmuse-YYYY-MM-DD.log`
+2. Output of `curl http://localhost:7823/debug`
+3. Output of `curl "http://localhost:7823/logs?level=warning"`
+
 ## Roadmap
 
 - Timeline editor with trim and speed controls
