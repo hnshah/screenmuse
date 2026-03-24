@@ -89,6 +89,27 @@ curl -X POST http://localhost:7823/stop
 # Drop a note into the log exactly when something feels off
 curl -X POST http://localhost:7823/note -H "Content-Type: application/json" -d '{"text": "audio dropped here"}'
 
+# ── Export ──
+
+# Export last recording as GIF (default: 10fps, 800px wide)
+curl -X POST http://localhost:7823/export
+
+# GIF with custom settings
+curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
+  -d '{"format":"gif","fps":10,"scale":800,"quality":"high"}'
+
+# WebP (~30% smaller than GIF at same quality)
+curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
+  -d '{"format":"webp","fps":12,"scale":1000}'
+
+# Trim + export in one call
+curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
+  -d '{"format":"gif","start":2.5,"end":30.0}'
+
+# Export a specific file
+curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
+  -d '{"source":"/Users/you/Movies/ScreenMuse/recording.mp4","format":"gif"}'
+
 # ── Window Management (native macOS — Playwright can't do this) ──
 
 # Bring an app to the front before recording

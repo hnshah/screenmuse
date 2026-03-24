@@ -13,6 +13,7 @@ import AppKit
 //   POST /highlight       → {"ok": true}
 //   POST /screenshot      body: {"path": "/optional/path.png"}           → {"path": "...", "width": N, "height": N}
 //   POST /note            body: {"text": "something felt wrong here"}    → {"ok": true, "timestamp": "..."}
+//   POST /export          body: {"format":"gif","fps":10,"scale":800,"start":0,"end":30} → {"path":...,"frames":N,"size_mb":N}
 //
 //   -- Window Management (native macOS, Playwright can't do these) --
 //   POST /window/focus    body: {"app": "Notes"}                         → {"ok": true, "app": "Notes"}
@@ -428,6 +429,94 @@ public class ScreenMuseServer {
                 sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
             }
 
+        // MARK: - Export
+
+        case ("POST", "/export"):
+            smLog.info("[\(reqID)] /export request", category: .server)
+
+            // Parse format
+            let formatStr = body["format"] as? String ?? "gif"
+            guard let format = GIFExporter.Config.Format(rawValue: formatStr.lowercased()) else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "Unsupported format '\(formatStr)'",
+                    "code": "UNSUPPORTED_FORMAT",
+                    "supported": ["gif", "webp"]
+                ])
+                return
+            }
+
+            // Resolve source video
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL?
+            if sourceStr == "last" {
+                sourceURL = await viewModel.lastVideoURL
+            } else {
+                sourceURL = URL(fileURLWithPath: sourceStr)
+            }
+            guard let resolvedSource = sourceURL,
+                  FileManager.default.fileExists(atPath: resolvedSource.path) else {
+                smLog.warning("[\(reqID)] /export no video source (source='\(sourceStr)')", category: .server)
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record something first, or pass 'source' with a file path.",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            // Build config
+            var config = GIFExporter.Config()
+            config.format = format
+            if let fps = body["fps"] as? Double { config.fps = fps }
+            else if let fps = body["fps"] as? Int { config.fps = Double(fps) }
+            if let scale = body["scale"] as? Int { config.scale = scale }
+            else if let scale = body["scale"] as? Double { config.scale = Int(scale) }
+            if let q = body["quality"] as? String,
+               let quality = GIFExporter.Config.Quality(rawValue: q.lowercased()) {
+                config.quality = quality
+            }
+            if let start = body["start"] as? Double,
+               let end = body["end"] as? Double {
+                config.timeRange = start...end
+            } else if let start = body["start"] as? Double {
+                config.timeRange = start...Double.infinity  // handled inside exporter
+            }
+
+            // Resolve output path
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir = moviesURL.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir, withIntermediateDirectories: true)
+
+            let outputURL: URL
+            if let customOutput = body["output"] as? String {
+                outputURL = URL(fileURLWithPath: customOutput)
+            } else {
+                outputURL = GIFExporter.defaultOutputURL(for: resolvedSource, format: format, exportsDir: exportsDir)
+            }
+
+            smLog.info("[\(reqID)] /export source=\(resolvedSource.lastPathComponent) format=\(format.rawValue) fps=\(config.fps) scale=\(config.scale) quality=\(config.quality.rawValue) → \(outputURL.lastPathComponent)", category: .server)
+
+            do {
+                let exporter = GIFExporter()
+                let result = try await exporter.export(
+                    sourceURL: resolvedSource,
+                    outputURL: outputURL,
+                    config: config,
+                    progress: { pct in
+                        smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
+                    }
+                )
+                sendResponse(connection: connection, status: 200, body: result.asDictionary())
+            } catch let err as GIFExporter.ExportError {
+                smLog.error("[\(reqID)] /export failed: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": "EXPORT_FAILED"
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /export error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
         // MARK: - System State
 
         case ("GET", "/system/clipboard"):
@@ -607,6 +696,8 @@ public class ScreenMuseServer {
                     // Recording
                     "POST /start", "POST /stop", "POST /pause", "POST /resume",
                     "POST /chapter", "POST /highlight", "POST /screenshot", "POST /note",
+                    // Export
+                    "POST /export",
                     // Window management
                     "POST /window/focus", "POST /window/position", "POST /window/hide-others",
                     // System state
