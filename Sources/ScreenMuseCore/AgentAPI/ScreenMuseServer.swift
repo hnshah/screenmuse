@@ -403,7 +403,7 @@ public class ScreenMuseServer {
             ]
             let capturedSessionID = sessionID
             let capturedSessionName = sessionName
-            let capturedNotes = sessionNotes
+            _ = sessionNotes
             _ = sessionHighlights
             let capturedChapters = chapters
             let capturedWebhook = pendingWebhookURL
@@ -1741,7 +1741,7 @@ public class ScreenMuseServer {
                     "/screenshot": ["post": ["summary": "Capture full-screen screenshot"]],
                     "/frame": ["post": ["summary": "Capture frame with recording context metadata"]],
                     "/thumbnail": ["post": ["summary": "Extract still frame from video at timestamp"]],
-                    "/ocr": ["post": ["summary": "OCR the screen or an image file (Vision framework)", "requestBody": ["content": ["application/json": ["schema": ["properties": ["source": ["type":"string","default":"screen"], "level": ["type":"string","enum":["accurate","fast"]]]]]]]]]],
+                    "/ocr": ["post": ["summary": "OCR the screen or an image file (Vision framework)", "requestBody": ["content": ["application/json": ["schema": ["properties": ["source": ["type":"string","default":"screen"], "level": ["type":"string","enum":["accurate","fast"]]]]]]]]],
                     "/export": ["post": ["summary": "Export recording as animated GIF or WebP"]],
                     "/trim": ["post": ["summary": "Trim video to time range (stream copy)"]],
                     "/speedramp": ["post": ["summary": "Auto-compress idle sections"]],
