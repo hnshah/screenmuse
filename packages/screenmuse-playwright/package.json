@@ -1,0 +1,46 @@
+{
+  "name": "screenmuse-playwright",
+  "version": "1.0.0",
+  "description": "Record Playwright browser automation sessions with ScreenMuse. Zero boilerplate — launch browser, detect window, record, export.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node examples/basic-demo.js"
+  },
+  "keywords": [
+    "screenmuse",
+    "playwright",
+    "screen-recording",
+    "automation",
+    "demo",
+    "gif",
+    "testing",
+    "macos"
+  ],
+  "author": "ScreenMuse",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.40.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": false
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hnshah/screenmuse.git",
+    "directory": "packages/screenmuse-playwright"
+  },
+  "homepage": "https://github.com/hnshah/screenmuse/tree/main/packages/screenmuse-playwright#readme",
+  "bugs": {
+    "url": "https://github.com/hnshah/screenmuse/issues"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ]
+}

@@ -1,8 +1,12 @@
 /**
  * screenmuse.js — lightweight ScreenMuse API wrapper for Node.js
  *
- * No dependencies. Drop this file into any project.
+ * Low-level helper for the ScreenMuse HTTP API. Drop into any project.
  * Compatible with Node 18+ (native fetch).
+ *
+ * 👉 For Playwright-specific recording (recordBrowser, auto-chapters, chained exports),
+ *    use the official package: packages/screenmuse-playwright/
+ *    It wraps this API with zero boilerplate and handles all the coordination.
  */
 
 class ScreenMuse {
