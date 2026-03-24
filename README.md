@@ -28,6 +28,10 @@ print(result["video_path"])  # → /Users/you/Movies/ScreenMuse/recording.mp4
 | Auto-Zoom | v0.1.0 | Camera follows clicks with spring easing |
 | Screen Capture | v0.1.0 | Full screen, window, and region via ScreenCaptureKit |
 | Recording | v0.1.0 | MP4 with system audio and microphone |
+| Structured Logging | v0.4.0 | File + Console.app + ring buffer; GET /logs, GET /report |
+| Annotations | v0.4.0 | POST /note — timestamped notes into usage log mid-session |
+| Notifications | v0.4.0 | Native macOS alert when video is ready (with file size) |
+| Finder Reveal | v0.4.0 | Finished video auto-selected in Finder on stop |
 
 ## Install
 
@@ -81,6 +85,12 @@ curl -X POST http://localhost:7823/screenshot
 
 # Stop and get video
 curl -X POST http://localhost:7823/stop
+
+# Drop a note into the log exactly when something feels off
+curl -X POST http://localhost:7823/note -H "Content-Type: application/json" -d '{"text": "audio dropped here"}'
+
+# Check what version is running
+curl http://localhost:7823/version
 ```
 
 **Clients:** [Python](clients/python) | [Node.js/TypeScript](clients/node)

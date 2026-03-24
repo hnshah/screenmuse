@@ -1,9 +1,19 @@
 import AppKit
 import ScreenMuseCore
+import UserNotifications
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         smLog.info("applicationDidFinishLaunching", category: .lifecycle)
+
+        // Request notification permission upfront so it's ready when video finishes
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if granted {
+                smLog.info("Notification permission granted", category: .permissions)
+            } else {
+                smLog.warning("Notification permission denied\(error.map { ": \($0.localizedDescription)" } ?? "") — video-ready alerts will be silent", category: .permissions)
+            }
+        }
 
         // Check permissions and warn if missing
         let hasScreen = CGPreflightScreenCaptureAccess()

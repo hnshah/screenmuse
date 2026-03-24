@@ -1,6 +1,8 @@
 import SwiftUI
 import ScreenCaptureKit
 import ScreenMuseCore
+import UserNotifications
+import AppKit
 
 @MainActor
 final class RecordViewModel: ObservableObject {
@@ -258,10 +260,16 @@ final class RecordViewModel: ObservableObject {
             if hasEffects {
                 await processRecordingWithEffects(rawVideoURL: url)
                 // lastVideoURL is set inside processRecordingWithEffects
+                if let finalURL = lastVideoURL ?? (url as URL?) {
+                    notifyVideoReady(url: finalURL)
+                    revealInFinder(url: finalURL)
+                }
                 return lastVideoURL ?? url
             } else {
                 lastVideoURL = url
                 smLog.info("RecordViewModel: Recording saved (no effects) to \(url.path)", category: .recording)
+                notifyVideoReady(url: url)
+                revealInFinder(url: url)
                 return url
             }
         } catch {
@@ -348,13 +356,65 @@ final class RecordViewModel: ObservableObject {
             isProcessing = false
             lastVideoURL = outputURL
             smLog.info("RecordViewModel: Processed video (with effects) saved to \(outputURL.path)", category: .effects)
-            
-            // Optionally show timeline editor
-            // showTimeline = true
+            // Notification + Finder reveal are called from stopAndGetVideo() after this returns
             
         } catch {
             isProcessing = false
             smLog.error("RecordViewModel: Failed to process video with effects: \(error.localizedDescription)", category: .effects)
+            notifyError("Effects compositing failed", detail: error.localizedDescription)
+        }
+    }
+
+    // MARK: - Notifications & Finder
+
+    /// Send a native macOS notification when the video file is ready.
+    private func notifyVideoReady(url: URL) {
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        let sizeMB = String(format: "%.1f", Double(fileSize) / 1_048_576)
+        smLog.info("Sending 'video ready' notification — \(url.lastPathComponent) (\(sizeMB)MB)", category: .lifecycle)
+
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else {
+                smLog.warning("Notification permission not granted — skipping video-ready notification", category: .permissions)
+                return
+            }
+            let content = UNMutableNotificationContent()
+            content.title = "Recording ready ✓"
+            content.body = "\(url.lastPathComponent) · \(sizeMB) MB"
+            content.sound = .default
+            let request = UNNotificationRequest(
+                identifier: "screenmuse.video-ready.\(url.lastPathComponent)",
+                content: content,
+                trigger: nil  // deliver immediately
+            )
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error {
+                    smLog.warning("Failed to deliver notification: \(error.localizedDescription)", category: .lifecycle)
+                }
+            }
+        }
+    }
+
+    /// Reveal the finished video in Finder, selected.
+    private func revealInFinder(url: URL) {
+        smLog.info("Revealing in Finder: \(url.lastPathComponent)", category: .lifecycle)
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    /// Send an error notification (e.g. when compositing fails).
+    private func notifyError(_ title: String, detail: String) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = "ScreenMuse — \(title)"
+            content.body = detail
+            content.sound = .defaultCritical
+            let request = UNNotificationRequest(
+                identifier: "screenmuse.error.\(Date().timeIntervalSince1970)",
+                content: content,
+                trigger: nil
+            )
+            UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
         }
     }
 

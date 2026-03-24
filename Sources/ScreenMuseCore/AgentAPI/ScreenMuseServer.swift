@@ -12,10 +12,13 @@ import AppKit
 //   POST /chapter     body: {"name": "Chapter name"}                 → {"ok": true, "time": N}
 //   POST /highlight   → {"ok": true}
 //   POST /screenshot  body: {"path": "/optional/path.png"}           → {"path": "...", "width": N, "height": N}
+//   POST /note        body: {"text": "something felt wrong here"}    → {"ok": true, "timestamp": "..."}
 //   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
 //   GET  /windows     → {"windows": [...], "count": N}
+//   GET  /version     → {"version": "0.4.0", "build": "...", "api_endpoints": [...]}
 //   GET  /debug       → save dir, recent files, server state
 //   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
+//   GET  /report      → clean session report for bug reports
 
 @MainActor
 public class ScreenMuseServer {
@@ -434,6 +437,44 @@ public class ScreenMuseServer {
                 "request_count": requestCount,
                 "log_file": smLog.logFilePath,
                 "log_buffer_count": smLog.bufferCount
+            ])
+
+        case ("POST", "/note"):
+            // Drop a timestamped annotation into the usage log mid-session.
+            // Vera (or an agent) calls this when something feels off — the note is
+            // stamped exactly when it happened, not reconstructed from memory later.
+            let text = body["text"] as? String ?? body["note"] as? String ?? ""
+            guard !text.isEmpty else {
+                smLog.warning("[\(reqID)] /note called with empty text", category: .server)
+                sendResponse(connection: connection, status: 400, body: ["error": "body must include 'text' field", "example": "{\"text\": \"audio dropped here\"}"])
+                return
+            }
+            let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            var noteDetails: [String: String] = ["text": text]
+            if isRecording { noteDetails["recording_elapsed"] = String(format: "%.0fs", elapsed) }
+            smLog.usage("📝 NOTE", details: noteDetails)
+            smLog.info("[\(reqID)] Note recorded: \"\(text)\"", category: .server)
+            sendResponse(connection: connection, status: 200, body: [
+                "ok": true,
+                "note": text,
+                "timestamp": ISO8601DateFormatter().string(from: Date()),
+                "recording_elapsed": isRecording ? elapsed : -1
+            ])
+
+        case ("GET", "/version"):
+            // Build info — always know exactly what Vera is running.
+            let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
+            smLog.debug("[\(reqID)] /version requested", category: .server)
+            sendResponse(connection: connection, status: 200, body: [
+                "version": version,
+                "build": build,
+                "min_macos": "14.0 (Sonoma)",
+                "api_endpoints": [
+                    "POST /start", "POST /stop", "POST /pause", "POST /resume",
+                    "POST /chapter", "POST /highlight", "POST /screenshot", "POST /note",
+                    "GET /status", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version"
+                ]
             ])
 
         case ("GET", "/report"):
