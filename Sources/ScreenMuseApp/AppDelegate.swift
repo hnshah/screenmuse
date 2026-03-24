@@ -10,9 +10,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hasAccessibility = AXIsProcessTrusted()
 
         smLog.info("Permission status — screenRecording=\(hasScreen) accessibility=\(hasAccessibility)", category: .permissions)
+        smLog.usage("APP LAUNCH", details: [
+            "screenRecording": hasScreen ? "✅ granted" : "❌ denied",
+            "accessibility": hasAccessibility ? "✅ granted" : "❌ denied"
+        ])
 
         if !hasScreen {
             smLog.warning("Screen Recording permission NOT granted — showing alert", category: .permissions)
+            smLog.usage("PERMISSION ALERT  Screen Recording not granted — user shown system dialog")
             showPermissionAlert()
         }
 
@@ -28,15 +33,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 smLog.info("Coordinator wired to RecordViewModel.shared", category: .server)
                 try ScreenMuseServer.shared.start()
                 smLog.info("Agent API server started on http://localhost:7823 (effects pipeline: enabled)", category: .server)
+                smLog.usage("SERVER READY", details: ["port": "7823", "pipeline": "effects enabled"])
                 smLog.info("Log file: \(smLog.logFilePath)", category: .lifecycle)
+                smLog.info("Usage log: \(smLog.usageLogFilePath)", category: .lifecycle)
             } catch {
                 smLog.error("Failed to start agent API server: \(error.localizedDescription)", category: .server)
+                smLog.usage("SERVER ERROR  Failed to start: \(error.localizedDescription)")
             }
         }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         smLog.info("applicationWillTerminate — stopping server", category: .lifecycle)
+        smLog.usage("APP QUIT")
         Task { @MainActor in
             ScreenMuseServer.shared.stop()
         }

@@ -94,9 +94,11 @@ public final class ScreenMuseLogger: @unchecked Sendable {
             osLoggers[cat] = os.Logger(subsystem: subsystem, category: cat.rawValue)
         }
         setupLogFile()
+        setupUsageLog()
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
         info("=== ScreenMuse \(version) logger initialised ===", category: .lifecycle)
         info("Log file: \(logFilePath)", category: .lifecycle)
+        info("Usage log: \(usageLogFilePath)", category: .lifecycle)
         info("Console.app filter: subsystem == \"ai.screenmuse\"", category: .lifecycle)
     }
 
@@ -195,11 +197,109 @@ public final class ScreenMuseLogger: @unchecked Sendable {
     /// Full path to today's log file.
     public var logFilePath: String { logFileURL?.path ?? "(not set)" }
 
+    /// Full path to the clean usage log file.
+    public var usageLogFilePath: String { usageFileURL?.path ?? "(not set)" }
+
     /// Number of entries in ring buffer.
     public var bufferCount: Int {
         lock.lock()
         defer { lock.unlock() }
         return buffer.count
+    }
+
+    // MARK: - Clean Usage Log
+
+    /// Separate file handle for the human-readable usage log.
+    /// Only key events are written here — one line per action.
+    private var usageFileURL: URL?
+    private var usageFileHandle: FileHandle?
+
+    private func setupUsageLog() {
+        let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+        let dir = moviesURL.appendingPathComponent("ScreenMuse/Logs", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        let url = dir.appendingPathComponent("screenmuse-usage-\(df.string(from: Date())).log")
+        usageFileURL = url
+
+        if !FileManager.default.fileExists(atPath: url.path) {
+            FileManager.default.createFile(atPath: url.path, contents: nil)
+        }
+        usageFileHandle = try? FileHandle(forWritingTo: url)
+        usageFileHandle?.seekToEndOfFile()
+    }
+
+    /// Write a clean, human-readable usage event.
+    /// These are the events Vera attaches to bug reports — keep them concise and plain English.
+    public func usage(_ event: String, details: [String: String] = [:]) {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let ts = df.string(from: Date())
+
+        var line = "[\(ts)] \(event)"
+        if !details.isEmpty {
+            let detailStr = details.map { "\($0.key)=\($0.value)" }.joined(separator: "  ")
+            line += "  |\t\(detailStr)"
+        }
+        line += "\n"
+
+        // Write to usage file
+        if let data = line.data(using: .utf8) {
+            usageFileHandle?.write(data)
+        }
+
+        // Also write to ring buffer as info (so GET /logs includes it)
+        log("USAGE: \(event)\(details.isEmpty ? "" : " — " + details.map { "\($0.key)=\($0.value)" }.joined(separator: ", "))",
+            level: .info, category: .lifecycle)
+
+        // Buffer usage events separately for GET /report
+        lock.lock()
+        usageBuffer.append(UsageEvent(timestamp: Date(), event: event, details: details))
+        if usageBuffer.count > 200 {
+            usageBuffer.removeFirst(usageBuffer.count - 200)
+        }
+        lock.unlock()
+    }
+
+    // MARK: - Usage event buffer
+
+    public struct UsageEvent: Sendable {
+        public let timestamp: Date
+        public let event: String
+        public let details: [String: String]
+
+        func formatted() -> String {
+            let df = DateFormatter()
+            df.dateFormat = "HH:mm:ss"
+            let ts = df.string(from: timestamp)
+            var line = "[\(ts)] \(event)"
+            if !details.isEmpty {
+                let detailStr = details.map { "\($0.key)=\($0.value)" }.joined(separator: "  ")
+                line += "\t| \(detailStr)"
+            }
+            return line
+        }
+
+        func asDictionary() -> [String: Any] {
+            let f = ISO8601DateFormatter()
+            f.formatOptions = [.withFullDate, .withTime, .withFractionalSeconds, .withColonSeparatorInTime]
+            var d: [String: Any] = [
+                "timestamp": f.string(from: timestamp),
+                "event": event
+            ]
+            if !details.isEmpty { d["details"] = details }
+            return d
+        }
+    }
+
+    private var usageBuffer: [UsageEvent] = []
+
+    public func recentUsageEvents(limit: Int = 100) -> [UsageEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return Array(usageBuffer.suffix(limit))
     }
 }
 

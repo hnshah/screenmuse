@@ -166,12 +166,17 @@ public class ScreenMuseServer {
                 if let wt = windowTitle { resp["window_title"] = wt }
                 if let wp = windowPid { resp["window_pid"] = wp }
                 smLog.info("[\(reqID)] ✅ Recording started — session=\(sessionID!)", category: .server)
+                var usageDetails: [String: String] = ["name": name, "quality": quality ?? "medium", "session": sessionID!]
+                if let wt = windowTitle { usageDetails["window"] = wt }
+                smLog.usage("RECORD START", details: usageDetails)
                 sendResponse(connection: connection, status: 200, body: resp)
             } catch let err as RecordingError {
                 smLog.error("[\(reqID)] /start failed (RecordingError): \(err.errorDescription ?? "\(err)")", category: .server)
+                smLog.usage("RECORD ERROR", details: ["code": "RecordingError", "reason": err.errorDescription ?? "\(err)"])
                 sendResponse(connection: connection, status: 500, body: structuredError(err))
             } catch {
                 smLog.error("[\(reqID)] /start failed (unknown): \(error.localizedDescription)", category: .server)
+                smLog.usage("RECORD ERROR", details: ["code": "unknown", "reason": error.localizedDescription])
                 sendResponse(connection: connection, status: 500, body: [
                     "error": error.localizedDescription,
                     "code": "UNKNOWN_ERROR"
@@ -201,15 +206,25 @@ public class ScreenMuseServer {
 
             if let coord = coordinator {
                 smLog.debug("[\(reqID)] Awaiting coordinator.stopAndGetVideo() — effects compositing in progress...", category: .server)
+                smLog.usage("EFFECTS COMPOSITING  started — applying zoom + click effects to raw video")
                 if let url = await coord.stopAndGetVideo() {
                     currentVideoURL = url
+                    let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+                    let sizeMB = String(format: "%.1f", Double(fileSize) / 1_048_576)
                     smLog.info("[\(reqID)] ✅ Video ready: \(url.path)", category: .server)
+                    smLog.usage("RECORD STOP", details: [
+                        "elapsed": String(format: "%.0fs", elapsed),
+                        "chapters": "\(chapters.count)",
+                        "size": "\(sizeMB)MB",
+                        "video": url.lastPathComponent
+                    ])
                     sendResponse(connection: connection, status: 200, body: [
                         "video_path": url.path,
                         "metadata": metadata
                     ])
                 } else {
                     smLog.error("[\(reqID)] coordinator.stopAndGetVideo() returned nil — video finalization failed", category: .server)
+                    smLog.usage("RECORD ERROR  Video finalization failed — coordinator returned nil")
                     sendResponse(connection: connection, status: 500, body: ["error": "Recording stopped but video could not be finalized"])
                 }
             } else {
@@ -217,13 +232,21 @@ public class ScreenMuseServer {
                 do {
                     let url = try await recordingManager.stopRecording()
                     currentVideoURL = url
+                    let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+                    let sizeMB = String(format: "%.1f", Double(fileSize) / 1_048_576)
                     smLog.info("[\(reqID)] ✅ Video saved: \(url.path)", category: .server)
+                    smLog.usage("RECORD STOP (raw)", details: [
+                        "elapsed": String(format: "%.0fs", elapsed),
+                        "size": "\(sizeMB)MB",
+                        "video": url.lastPathComponent
+                    ])
                     sendResponse(connection: connection, status: 200, body: [
                         "video_path": url.path,
                         "metadata": metadata
                     ])
                 } catch {
                     smLog.error("[\(reqID)] stopRecording() threw: \(error.localizedDescription)", category: .server)
+                    smLog.usage("RECORD ERROR  \(error.localizedDescription)")
                     sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
                 }
             }
@@ -245,6 +268,7 @@ public class ScreenMuseServer {
                     try await recordingManager.pauseRecording()
                 }
                 smLog.info("[\(reqID)] ✅ Paused", category: .server)
+                smLog.usage("PAUSED", details: ["at": String(format: "%.0fs", elapsed)])
                 sendResponse(connection: connection, status: 200, body: ["status": "paused", "elapsed": elapsed])
             } catch {
                 smLog.error("[\(reqID)] /pause failed: \(error.localizedDescription)", category: .server)
@@ -266,6 +290,7 @@ public class ScreenMuseServer {
                 }
                 let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
                 smLog.info("[\(reqID)] ✅ Resumed at elapsed=\(String(format: "%.1f", elapsed))s", category: .server)
+                smLog.usage("RESUMED", details: ["at": String(format: "%.0fs", elapsed)])
                 sendResponse(connection: connection, status: 200, body: ["status": "recording", "elapsed": elapsed])
             } catch {
                 smLog.error("[\(reqID)] /resume failed: \(error.localizedDescription)", category: .server)
@@ -277,11 +302,13 @@ public class ScreenMuseServer {
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
             chapters.append((name: name, time: elapsed))
             smLog.info("[\(reqID)] Chapter '\(name)' at \(String(format: "%.1f", elapsed))s (total chapters: \(chapters.count))", category: .server)
+            smLog.usage("CHAPTER", details: ["name": name, "at": String(format: "%.0fs", elapsed), "total": "\(chapters.count)"])
             sendResponse(connection: connection, status: 200, body: ["ok": true, "time": elapsed])
 
         case ("POST", "/highlight"):
             highlightNextClick = true
             smLog.info("[\(reqID)] Highlight flag set — next click will be highlighted", category: .server)
+            smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
             sendResponse(connection: connection, status: 200, body: ["ok": true])
 
         case ("GET", "/status"):
@@ -364,7 +391,9 @@ public class ScreenMuseServer {
                         return
                     }
                     try pngData.write(to: savePath)
+                    let sizeMB = String(format: "%.2f", Double(pngData.count) / 1_048_576)
                     smLog.info("[\(reqID)] ✅ Screenshot saved: \(savePath.path) (\(pngData.count) bytes, \(cgImage.width)x\(cgImage.height))", category: .capture)
+                    smLog.usage("SCREENSHOT", details: ["file": savePath.lastPathComponent, "size": "\(sizeMB)MB", "resolution": "\(cgImage.width)x\(cgImage.height)"])
                     sendResponse(connection: connection, status: 200, body: [
                         "path": savePath.path,
                         "width": cgImage.width,
@@ -405,6 +434,66 @@ public class ScreenMuseServer {
                 "request_count": requestCount,
                 "log_file": smLog.logFilePath,
                 "log_buffer_count": smLog.bufferCount
+            ])
+
+        case ("GET", "/report"):
+            // Clean human-readable session report — this is what Vera attaches to bug reports.
+            // Shows the full usage story: what happened, when, in plain English.
+            smLog.debug("[\(reqID)] /report requested", category: .server)
+            let usageEvents = smLog.recentUsageEvents(limit: 100)
+            let errors = smLog.recentEntries(limit: 50, minLevel: .warning)
+
+            // Build a clean text report
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            var reportLines: [String] = [
+                "═══════════════════════════════════════════════",
+                "  ScreenMuse Session Report",
+                "  Generated: \(df.string(from: Date()))",
+                "═══════════════════════════════════════════════",
+                "",
+                "── Usage Timeline ──────────────────────────────"
+            ]
+            if usageEvents.isEmpty {
+                reportLines.append("  (no usage events yet)")
+            } else {
+                for event in usageEvents {
+                    reportLines.append("  " + event.formatted())
+                }
+            }
+            reportLines += [
+                "",
+                "── Warnings & Errors ───────────────────────────"
+            ]
+            let warnErrors = errors.filter { $0["level"] == "warning" || $0["level"] == "error" }
+            if warnErrors.isEmpty {
+                reportLines.append("  ✅ No warnings or errors")
+            } else {
+                for e in warnErrors {
+                    let ts = String((e["timestamp"] ?? "").dropFirst(11).prefix(8))
+                    let lvl = (e["level"] ?? "").uppercased()
+                    let msg = e["message"] ?? ""
+                    reportLines.append("  [\(ts)] \(lvl)  \(msg)")
+                }
+            }
+            reportLines += [
+                "",
+                "── System Info ─────────────────────────────────",
+                "  Log file:   \(smLog.logFilePath)",
+                "  Usage log:  \(smLog.usageLogFilePath)",
+                "  Recording:  \(isRecording ? "▶ ACTIVE (session: \(sessionID ?? "?"))" : "⏹ idle")",
+                "  Last video: \(currentVideoURL?.path ?? "(none)")",
+                "═══════════════════════════════════════════════"
+            ]
+
+            let reportText = reportLines.joined(separator: "\n")
+
+            sendResponse(connection: connection, status: 200, body: [
+                "report": reportText,
+                "usage_events": usageEvents.map { $0.asDictionary() },
+                "warnings_and_errors": warnErrors,
+                "log_file": smLog.logFilePath,
+                "usage_log_file": smLog.usageLogFilePath
             ])
 
         case ("GET", "/logs"):

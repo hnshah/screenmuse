@@ -89,37 +89,50 @@ Full API reference: [docs/AGENT_API.md](docs/AGENT_API.md)
 
 ## Debugging & Logs
 
-ScreenMuse has structured logging built in. Three places to look:
+ScreenMuse has structured logging built in. Two log files and three API endpoints.
 
-**Log file** — written automatically on every launch:
-```
-~/Movies/ScreenMuse/Logs/screenmuse-YYYY-MM-DD.log
-```
+### Files (auto-created on launch)
 
-**API endpoint** — get recent logs without leaving the terminal:
+| File | What's in it |
+|------|-------------|
+| `~/Movies/ScreenMuse/Logs/screenmuse-YYYY-MM-DD.log` | Full debug log — every event, frame counts, errors |
+| `~/Movies/ScreenMuse/Logs/screenmuse-usage-YYYY-MM-DD.log` | Clean usage log — one line per action (launch, record start/stop, chapters, errors) |
+
+### API Endpoints
+
 ```bash
-# Last 200 log entries (all levels)
+# ★ REPORT — clean session summary, perfect for bug reports
+curl http://localhost:7823/report | python3 -c "import sys,json; print(json.load(sys.stdin)['report'])"
+
+# Full debug log (last 200 entries)
 curl http://localhost:7823/logs | python3 -m json.tool
 
-# Errors only
-curl "http://localhost:7823/logs?level=error"
+# Errors and warnings only
+curl "http://localhost:7823/logs?level=warning"
 
-# Filter by category (server / recording / effects / capture / permissions / lifecycle)
-curl "http://localhost:7823/logs?category=recording&level=warning"
+# Filter by subsystem: server / recording / effects / capture / permissions / lifecycle
+curl "http://localhost:7823/logs?category=recording"
 
-# Limit entries
-curl "http://localhost:7823/logs?limit=50"
+# System state snapshot
+curl http://localhost:7823/debug
 ```
 
-**Console.app** — filter by subsystem for real-time streaming:
+**Console.app** — filter for real-time streaming:
 ```
 subsystem == "ai.screenmuse"
 ```
 
-**When reporting a bug**, please attach:
-1. `~/Movies/ScreenMuse/Logs/screenmuse-YYYY-MM-DD.log`
-2. Output of `curl http://localhost:7823/debug`
-3. Output of `curl "http://localhost:7823/logs?level=warning"`
+### When reporting a bug
+
+Run these three commands and paste the output:
+
+```bash
+curl http://localhost:7823/report | python3 -c "import sys,json; print(json.load(sys.stdin)['report'])"
+curl "http://localhost:7823/logs?level=warning"
+curl http://localhost:7823/debug
+```
+
+Or attach `~/Movies/ScreenMuse/Logs/screenmuse-usage-YYYY-MM-DD.log` — it reads like a plain English timeline of everything you did.
 
 ## Roadmap
 
