@@ -404,7 +404,7 @@ public class ScreenMuseServer {
             let capturedSessionID = sessionID
             let capturedSessionName = sessionName
             let capturedNotes = sessionNotes
-            let capturedHighlights = sessionHighlights
+            _ = sessionHighlights
             let capturedChapters = chapters
             let capturedWebhook = pendingWebhookURL
             sessionID = nil
@@ -1559,11 +1559,19 @@ public class ScreenMuseServer {
                         stepResult["ok"] = true
 
                     case "pause":
-                        try await coordinator?.pauseRecording() ?? recordingManager.pauseRecording()
+                        if let coord = coordinator {
+                            try await coord.pauseRecording()
+                        } else {
+                            try await recordingManager.pauseRecording()
+                        }
                         stepResult["ok"] = true
 
                     case "resume":
-                        try await coordinator?.resumeRecording() ?? recordingManager.resumeRecording()
+                        if let coord = coordinator {
+                            try await coord.resumeRecording()
+                        } else {
+                            try await recordingManager.resumeRecording()
+                        }
                         stepResult["ok"] = true
 
                     case "chapter":
