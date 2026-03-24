@@ -36,8 +36,8 @@ final class RecordViewModel: ObservableObject {
     
     // MARK: - Managers
     internal let recordingManager = RecordingManager()
-    private let cursorTracker = CursorTracker()
-    private let keyboardMonitor = KeyboardMonitor()
+    let cursorTracker = CursorTracker()
+    let keyboardMonitor = KeyboardMonitor()
     private let clickEffectsManager = ClickEffectsManager()
     private let autoZoomManager = AutoZoomManager()
     private let cursorAnimationManager = CursorAnimationManager()
@@ -45,7 +45,7 @@ final class RecordViewModel: ObservableObject {
     let timelineManager = TimelineManager()
     
     internal var timer: Timer?
-    private var recordingStartTime: Date?
+    var recordingStartTime: Date?
     private var rawVideoURL: URL?
     /// The final video URL after effects are applied — set by stopRecording() / processRecordingWithEffects()
     @Published public private(set) var lastVideoURL: URL?

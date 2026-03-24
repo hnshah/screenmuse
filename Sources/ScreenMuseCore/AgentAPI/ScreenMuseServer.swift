@@ -1,7 +1,8 @@
+import AVFoundation
+import AppKit
 import Foundation
 import Network
 import ScreenCaptureKit
-import AppKit
 
 // Local HTTP server for programmatic agent control
 // Endpoints:
@@ -14,6 +15,8 @@ import AppKit
 //   POST /screenshot      body: {"path": "/optional/path.png"}           → {"path": "...", "width": N, "height": N}
 //   POST /note            body: {"text": "something felt wrong here"}    → {"ok": true, "timestamp": "..."}
 //   POST /export          body: {"format":"gif","fps":10,"scale":800,"start":0,"end":30} → {"path":...,"frames":N,"size_mb":N}
+//   POST /trim            body: {"start":3.5,"end":45.0}                                → {"path":...,"trimmed_duration":N}
+//   POST /speedramp       body: {"idle_speed":4.0,"idle_threshold_sec":2.0}             → {"output_duration":N,"compression_ratio":N}
 //
 //   -- Window Management (native macOS, Playwright can't do these) --
 //   POST /window/focus    body: {"app": "Notes"}                         → {"ok": true, "app": "Notes"}
@@ -325,6 +328,184 @@ public class ScreenMuseServer {
             smLog.info("[\(reqID)] Highlight flag set — next click will be highlighted", category: .server)
             smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
             sendResponse(connection: connection, status: 200, body: ["ok": true])
+
+        // MARK: - Speed Ramp
+
+        case ("POST", "/speedramp"):
+            smLog.info("[\(reqID)] /speedramp request", category: .server)
+
+            // Resolve source
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL?
+            if sourceStr == "last" {
+                sourceURL = await viewModel.lastVideoURL
+            } else {
+                sourceURL = URL(fileURLWithPath: sourceStr)
+            }
+            guard let resolvedSource = sourceURL,
+                  FileManager.default.fileExists(atPath: resolvedSource.path) else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record something first, or pass 'source' with a file path.",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            // Build ramp config
+            var rampConfig = SpeedRamper.Config()
+            if let v = body["idle_threshold_sec"] as? Double { rampConfig.idleThresholdSec = v }
+            if let v = body["idle_speed"] as? Double { rampConfig.idleSpeed = max(1.0, v) }
+            if let v = body["active_speed"] as? Double { rampConfig.activeSpeed = max(0.1, v) }
+            if let v = body["ramp_duration"] as? Double { rampConfig.rampDuration = max(0, v) }
+
+            // Gather event data from the viewModel
+            let cursorEvents = await viewModel.cursorTracker.events
+            let keystrokeTimestamps = await viewModel.keyboardMonitor.events.map { $0.timestamp }
+            let recordingStart = await viewModel.recordingStartTime
+
+            // Analyze activity
+            let analyzer = ActivityAnalyzer()
+            let asset = AVURLAsset(url: resolvedSource)
+            let assetDuration: Double
+            do {
+                let dur = try await asset.load(.duration)
+                assetDuration = CMTimeGetSeconds(dur)
+            } catch {
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": "Could not load video duration: \(error.localizedDescription)",
+                    "code": "ASSET_LOAD_FAILED"
+                ])
+                return
+            }
+
+            let segments: [ActivityAnalyzer.Segment]
+            if !cursorEvents.isEmpty || !keystrokeTimestamps.isEmpty, let start = recordingStart {
+                // Use agent event data
+                segments = analyzer.analyze(
+                    cursorEvents: cursorEvents,
+                    keystrokeTimestamps: keystrokeTimestamps,
+                    recordingStart: start,
+                    duration: assetDuration,
+                    idleThreshold: rampConfig.idleThresholdSec
+                )
+                smLog.info("[\(reqID)] /speedramp using agent event data (\(cursorEvents.count) cursor, \(keystrokeTimestamps.count) keystrokes)", category: .server)
+            } else {
+                // Fallback to audio analysis
+                smLog.info("[\(reqID)] /speedramp no event data — falling back to audio analysis", category: .server)
+                do {
+                    segments = try await analyzer.analyzeFromAudio(
+                        asset: asset,
+                        duration: assetDuration,
+                        idleThreshold: rampConfig.idleThresholdSec
+                    )
+                } catch {
+                    sendResponse(connection: connection, status: 500, body: [
+                        "error": "Activity analysis failed: \(error.localizedDescription)",
+                        "code": "ANALYSIS_FAILED"
+                    ])
+                    return
+                }
+            }
+
+            // Resolve output path
+            let moviesURL2 = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir2 = moviesURL2.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir2, withIntermediateDirectories: true)
+            let rampOutputURL: URL
+            if let customOut = body["output"] as? String {
+                rampOutputURL = URL(fileURLWithPath: customOut)
+            } else {
+                rampOutputURL = SpeedRamper.defaultOutputURL(for: resolvedSource, exportsDir: exportsDir2)
+            }
+
+            smLog.info("[\(reqID)] /speedramp segments=\(segments.count) idle=\(segments.filter{$0.isIdle}.count) → \(rampOutputURL.lastPathComponent)", category: .server)
+
+            do {
+                let ramper = SpeedRamper()
+                let result = try await ramper.ramp(
+                    sourceURL: resolvedSource,
+                    outputURL: rampOutputURL,
+                    segments: segments,
+                    config: rampConfig
+                )
+                sendResponse(connection: connection, status: 200, body: result.asDictionary())
+            } catch let err as SpeedRamper.SpeedRampError {
+                smLog.error("[\(reqID)] /speedramp failed: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": "SPEEDRAMP_FAILED"
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /speedramp error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
+        // MARK: - Trim
+
+        case ("POST", "/trim"):
+            smLog.info("[\(reqID)] /trim request", category: .server)
+
+            // Resolve source
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL?
+            if sourceStr == "last" {
+                sourceURL = await viewModel.lastVideoURL
+            } else {
+                sourceURL = URL(fileURLWithPath: sourceStr)
+            }
+            guard let resolvedSource = sourceURL,
+                  FileManager.default.fileExists(atPath: resolvedSource.path) else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record something first, or pass 'source' with a file path.",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            // Build config
+            var trimConfig = VideoTrimmer.Config()
+            if let start = body["start"] as? Double { trimConfig.start = start }
+            else if let start = body["start"] as? Int { trimConfig.start = Double(start) }
+            if let end = body["end"] as? Double { trimConfig.end = end }
+            else if let end = body["end"] as? Int { trimConfig.end = Double(end) }
+            if let reencode = body["reencode"] as? Bool { trimConfig.reencode = reencode }
+
+            // Resolve output
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir = moviesURL.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir, withIntermediateDirectories: true)
+
+            let outputURL: URL
+            if let customOut = body["output"] as? String {
+                outputURL = URL(fileURLWithPath: customOut)
+            } else {
+                outputURL = VideoTrimmer.defaultOutputURL(for: resolvedSource, exportsDir: exportsDir)
+            }
+
+            smLog.info("[\(reqID)] /trim source=\(resolvedSource.lastPathComponent) start=\(trimConfig.start) end=\(trimConfig.end.map{String($0)} ?? "full") reencode=\(trimConfig.reencode) → \(outputURL.lastPathComponent)", category: .server)
+
+            do {
+                let trimmer = VideoTrimmer()
+                let result = try await trimmer.trim(sourceURL: resolvedSource, outputURL: outputURL, config: trimConfig)
+                sendResponse(connection: connection, status: 200, body: result.asDictionary())
+            } catch let err as VideoTrimmer.TrimError {
+                let code: String
+                switch err {
+                case .noVideoSource: code = "NO_VIDEO"
+                case .invalidRange: code = "INVALID_RANGE"
+                case .exportFailed: code = "EXPORT_FAILED"
+                case .exportCancelled: code = "CANCELLED"
+                }
+                smLog.error("[\(reqID)] /trim failed [\(code)]: \(err.localizedDescription)", category: .server)
+                let status = (code == "INVALID_RANGE" || code == "NO_VIDEO") ? 400 : 500
+                sendResponse(connection: connection, status: status, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": code
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /trim error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
 
         // MARK: - Window Management
 
@@ -697,7 +878,7 @@ public class ScreenMuseServer {
                     "POST /start", "POST /stop", "POST /pause", "POST /resume",
                     "POST /chapter", "POST /highlight", "POST /screenshot", "POST /note",
                     // Export
-                    "POST /export",
+                    "POST /export", "POST /trim", "POST /speedramp",
                     // Window management
                     "POST /window/focus", "POST /window/position", "POST /window/hide-others",
                     // System state

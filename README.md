@@ -110,6 +110,29 @@ curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
 curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
   -d '{"source":"/Users/you/Movies/ScreenMuse/recording.mp4","format":"gif"}'
 
+# ── Trim ──
+
+# Trim to time range (stream copy — no re-encode, near instant)
+curl -X POST http://localhost:7823/trim -H "Content-Type: application/json" \
+  -d '{"start": 3.0, "end": 45.0}'
+
+# Trim only the beginning
+curl -X POST http://localhost:7823/trim -H "Content-Type: application/json" \
+  -d '{"start": 5.0}'
+
+# Frame-accurate trim (re-encode)
+curl -X POST http://localhost:7823/trim -H "Content-Type: application/json" \
+  -d '{"start": 3.0, "end": 45.0, "reencode": true}'
+
+# ── Speed Ramp ──
+
+# Auto-speed idle pauses at 4x (uses cursor + keyboard event data)
+curl -X POST http://localhost:7823/speedramp
+
+# More aggressive (8x idle, only ramp pauses > 1 second)
+curl -X POST http://localhost:7823/speedramp -H "Content-Type: application/json" \
+  -d '{"idle_speed": 8.0, "idle_threshold_sec": 1.0}'
+
 # ── Window Management (native macOS — Playwright can't do this) ──
 
 # Bring an app to the front before recording
