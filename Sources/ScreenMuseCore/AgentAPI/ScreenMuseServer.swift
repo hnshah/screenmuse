@@ -1724,56 +1724,14 @@ public class ScreenMuseServer {
 
         case ("GET", "/openapi"):
             // Machine-readable OpenAPI 3.0 spec for the full ScreenMuse API.
-            // Use with Postman, Claude, Cursor, or any OpenAPI-aware tool.
+            // Spec lives in OpenAPISpec.swift as a JSON string literal —
+            // no bracket counting, validated by any JSON linter.
             smLog.debug("[\(reqID)] /openapi spec requested", category: .server)
-            let spec: [String: Any] = [
-                "openapi": "3.0.3",
-                "info": ["title": "ScreenMuse Agent API", "version": "1.2", "description": "macOS screen recorder REST API for AI agents and automation workflows"],
-                "servers": [["url": "http://localhost:7823", "description": "Local ScreenMuse instance"]],
-                "paths": [
-                    "/start": ["post": ["summary": "Start recording", "requestBody": ["content": ["application/json": ["schema": ["properties": ["name": ["type":"string"], "quality": ["type":"string","enum":["low","medium","high","max"]], "region": ["type":"object","properties":["x":["type":"number"],"y":["type":"number"],"width":["type":"number"],"height":["type":"number"]]], "audio_source": ["type":"string"], "webhook": ["type":"string","format":"uri"]]]]]]]]],
-                    "/stop": ["post": ["summary": "Stop recording and get video path"]],
-                    "/pause": ["post": ["summary": "Pause current recording"]],
-                    "/resume": ["post": ["summary": "Resume paused recording"]],
-                    "/chapter": ["post": ["summary": "Add chapter marker", "requestBody": ["content": ["application/json": ["schema": ["properties": ["name": ["type":"string"]]]]]]]],
-                    "/note": ["post": ["summary": "Add timestamped annotation"]],
-                    "/highlight": ["post": ["summary": "Flag next click for highlight effect"]],
-                    "/screenshot": ["post": ["summary": "Capture full-screen screenshot"]],
-                    "/frame": ["post": ["summary": "Capture frame with recording context metadata"]],
-                    "/thumbnail": ["post": ["summary": "Extract still frame from video at timestamp"]],
-                    "/ocr": ["post": ["summary": "OCR the screen or an image file (Vision framework)", "requestBody": ["content": ["application/json": ["schema": ["properties": ["source": ["type":"string","default":"screen"], "level": ["type":"string","enum":["accurate","fast"]]]]]]]]],
-                    "/export": ["post": ["summary": "Export recording as animated GIF or WebP"]],
-                    "/trim": ["post": ["summary": "Trim video to time range (stream copy)"]],
-                    "/speedramp": ["post": ["summary": "Auto-compress idle sections"]],
-                    "/crop": ["post": ["summary": "Crop a region from an existing recording"]],
-                    "/concat": ["post": ["summary": "Concatenate multiple recordings"]],
-                    "/upload/icloud": ["post": ["summary": "Upload recording to iCloud Drive"]],
-                    "/start/pip": ["post": ["summary": "Start picture-in-picture dual-window recording"]],
-                    "/window/focus": ["post": ["summary": "Bring app window to front"]],
-                    "/window/position": ["post": ["summary": "Set window position and size"]],
-                    "/window/hide-others": ["post": ["summary": "Hide all windows except one app"]],
-                    "/timeline": ["get": ["summary": "Get structured session timeline (chapters, notes, highlights)"]],
-                    "/recordings": ["get": ["summary": "List all recordings with metadata"]],
-                    "/recording": ["delete": ["summary": "Delete a recording by filename or path"]],
-                    "/stream": ["get": ["summary": "SSE live frame stream", "parameters": [["name":"fps","in":"query","schema":["type":"integer","default":2]], ["name":"scale","in":"query","schema":["type":"integer","default":1280]], ["name":"format","in":"query","schema":["type":"string","default":"jpeg"]]]]],
-                    "/stream/status": ["get": ["summary": "SSE stream health — active clients + frames sent"]],
-                    "/system/clipboard": ["get": ["summary": "Get current clipboard contents"]],
-                    "/system/active-window": ["get": ["summary": "Get frontmost window info"]],
-                    "/system/running-apps": ["get": ["summary": "List all running applications"]],
-                    "/status": ["get": ["summary": "Current recording state and elapsed time"]],
-                    "/windows": ["get": ["summary": "List all on-screen windows"]],
-                    "/logs": ["get": ["summary": "Query recent log entries"]],
-                    "/report": ["get": ["summary": "Human-readable session report"]],
-                    "/version": ["get": ["summary": "Server version + full endpoint list"]],
-                    "/openapi": ["get": ["summary": "This OpenAPI 3.0 specification"]]
-                ]
-            ]
-            guard let specData = try? JSONSerialization.data(withJSONObject: spec),
-                  let specStr = String(data: specData, encoding: .utf8) else {
-                sendResponse(connection: connection, status: 500, body: ["error": "spec serialization failed"])
+            guard let specData = OpenAPISpec.json.data(using: .utf8) else {
+                sendResponse(connection: connection, status: 500, body: ["error": "spec encoding failed"])
                 return
             }
-            let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(specStr)"
+            let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(OpenAPISpec.json)"
             if let responseData = response.data(using: .utf8) {
                 connection.send(content: responseData, completion: .contentProcessed { _ in connection.cancel() })
             }
