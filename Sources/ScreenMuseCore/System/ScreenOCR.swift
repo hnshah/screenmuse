@@ -74,7 +74,10 @@ public final class ScreenOCR {
                 "block_count": blocks.count,
                 "blocks": blocks.map { block in
                     [
-                        "text": block.text,
+                        "text": block.text
+                            .components(separatedBy: CharacterSet.controlCharacters.subtracting(CharacterSet(charactersIn: "\t\n\r")))
+                            .joined()
+                            .replacingOccurrences(of: "\u{FFFC}", with: ""),
                         "confidence": Double(block.confidence),
                         "box": [
                             "x": block.boundingBox.minX,
@@ -146,7 +149,16 @@ public final class ScreenOCR {
                         boundingBox: obs.boundingBox
                     )
                 }
-                let fullText = blocks.map { $0.text }.joined(separator: "\n")
+                // Sanitize: remove stray control chars (U+0000–U+001F) except tab + newline.
+                // Vision OCR can return U+FFFC (object replacement) and other non-printables
+                // that trip up JSON parsers and tools like jq.
+                func sanitize(_ s: String) -> String {
+                    var allowed = CharacterSet.controlCharacters
+                    allowed.remove(charactersIn: "\t\n\r")
+                    return s.components(separatedBy: allowed).joined()
+                        .replacingOccurrences(of: "\u{FFFC}", with: "")  // object replacement char
+                }
+                let fullText = blocks.map { sanitize($0.text) }.joined(separator: "\n")
                 smLog.info("ScreenOCR: ✅ \(blocks.count) blocks, \(fullText.count) chars from \(source == "screen" ? "screen" : URL(fileURLWithPath: source).lastPathComponent)", category: .capture)
                 smLog.usage("OCR", details: ["source": source == "screen" ? "screen" : "file", "blocks": "\(blocks.count)", "chars": "\(fullText.count)"])
                 continuation.resume(returning: OCRResult(

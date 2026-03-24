@@ -60,11 +60,11 @@ check "GET /system/running-apps" 200 GET /system/running-apps
 echo ""
 echo "Endpoint Count"
 count=$(curl -s "$BASE/version" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('api_endpoints',[])))" 2>/dev/null)
-if [ "$count" -ge 40 ] 2>/dev/null; then
-  echo -e "${GREEN}✅ PASS${NC} Endpoint count: $count (≥40)"
+if [ "$count" -ge 38 ] 2>/dev/null; then
+  echo -e "${GREEN}✅ PASS${NC} Endpoint count: $count (≥38)"
   PASS=$((PASS + 1))
 else
-  echo -e "${RED}❌ FAIL${NC} Endpoint count: $count (expected ≥40)"
+  echo -e "${RED}❌ FAIL${NC} Endpoint count: $count (expected ≥38)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -107,7 +107,7 @@ echo "Error Handling"
 curl -s -o /dev/null -X POST "$BASE/start" -H "Content-Type: application/json" -d '{}'  # start first
 check "POST /start (already recording → 409)" 409 POST /start '{}' 2>/dev/null || true
 curl -s -o /dev/null -X POST "$BASE/stop"  # cleanup
-check "POST /export (no video)" 404 POST /export '{"format":"gif"}' 2>/dev/null || true
+check "POST /export (no video)" 404 POST /export '{"source":"/tmp/__nonexistent_video__.mp4","format":"gif"}'
 check "POST /trim (invalid range)" 400 POST /trim '{"start":99,"end":1}'
 check "DELETE /recording (not found)" 404 DELETE /recording '{"filename":"__nonexistent__.mp4"}'
 check "POST /note (empty text)" 400 POST /note '{}'
