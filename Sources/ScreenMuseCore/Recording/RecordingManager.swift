@@ -91,7 +91,20 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         streamConfig.height = height
         streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.fps))
         streamConfig.pixelFormat = kCVPixelFormatType_32BGRA
-        streamConfig.capturesAudio = config.includeSystemAudio
+        // Audio configuration — supports full system audio, app-specific, or none
+        switch config.audioSource {
+        case .system:
+            streamConfig.capturesAudio = config.includeSystemAudio
+        case .appOnly(let appQuery):
+            // App-specific audio: SCStream will capture audio for the content in the filter.
+            // We already built the filter above; if the filter covers only the target app's
+            // windows, SCStream isolates that app's audio automatically.
+            streamConfig.capturesAudio = true
+            streamConfig.excludesCurrentProcessAudio = true
+            smLog.info("Audio source: app-only '\(appQuery)'", category: .recording)
+        case .none:
+            streamConfig.capturesAudio = false
+        }
         streamConfig.queueDepth = 5  // Apple recommended: 5 frames in queue for smooth capture
 
         if case .region(let rect) = config.captureSource {

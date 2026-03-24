@@ -133,6 +133,35 @@ curl -X POST http://localhost:7823/speedramp
 curl -X POST http://localhost:7823/speedramp -H "Content-Type: application/json" \
   -d '{"idle_speed": 8.0, "idle_threshold_sec": 1.0}'
 
+# ── Multi-Window / PiP ──
+
+# Record two windows simultaneously (PiP layout — default)
+curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json" \
+  -d '{"windows": ["Google Chrome", "Terminal"], "layout": "picture-in-picture"}'
+
+# Side-by-side layout
+curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json" \
+  -d '{"windows": ["Google Chrome", "Terminal"], "layout": "side-by-side"}'
+
+# ── App-Specific Audio ──
+
+# Record only Chrome's audio (not system sounds, not other apps)
+curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
+  -d '{"name": "chrome-demo", "audio_source": "Google Chrome"}'
+
+# No audio at all
+curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
+  -d '{"name": "silent-demo", "audio_source": "none"}'
+
+# ── Recording Management ──
+
+# List all recordings with size + date metadata
+curl http://localhost:7823/recordings
+
+# Delete a recording by filename
+curl -X DELETE http://localhost:7823/recording -H "Content-Type: application/json" \
+  -d '{"filename": "ScreenMuse_2026-03-24.mp4"}'
+
 # ── iCloud Upload ──
 
 # Upload last recording to iCloud Drive → ScreenMuse folder

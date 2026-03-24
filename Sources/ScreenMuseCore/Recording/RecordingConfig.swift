@@ -29,23 +29,37 @@ public struct RecordingConfig: @unchecked Sendable {
         }
     }
 
+    /// Audio source for the recording.
+    public enum AudioSource: @unchecked Sendable, Equatable {
+        /// Record all system audio (default)
+        case system
+        /// Record audio from a specific application only (app name or bundle ID)
+        case appOnly(String)
+        /// No audio
+        case none
+    }
+
     public let captureSource: CaptureSource
     public let includeSystemAudio: Bool
     public let includeMicrophone: Bool
     public let fps: Int
     public let quality: Quality
+    /// Fine-grained audio source control. Overrides `includeSystemAudio` when set.
+    public let audioSource: AudioSource
 
     public init(
         captureSource: CaptureSource,
         includeSystemAudio: Bool = true,
         includeMicrophone: Bool = false,
         fps: Int = 30,
-        quality: Quality = .medium
+        quality: Quality = .medium,
+        audioSource: AudioSource = .system
     ) {
         self.captureSource = captureSource
         self.includeSystemAudio = includeSystemAudio
         self.includeMicrophone = includeMicrophone
         self.fps = fps
         self.quality = quality
+        self.audioSource = audioSource
     }
 }

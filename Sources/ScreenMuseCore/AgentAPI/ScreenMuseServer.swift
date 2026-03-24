@@ -6,7 +6,7 @@ import ScreenCaptureKit
 
 // Local HTTP server for programmatic agent control
 // Endpoints:
-//   POST /start           body: {"name": "recording-name"}               → {"session_id": "uuid", "status": "recording"}
+//   POST /start           body: {"name":"...","quality":"high","audio_source":"Chrome"}  → {"session_id": "uuid", "status": "recording"}
 //   POST /stop            → {"video_path": "/path/video.mp4", "metadata": {...}}
 //   POST /pause           → {"status": "paused", "elapsed": N}
 //   POST /resume          → {"status": "recording", "elapsed": N}
@@ -18,6 +18,13 @@ import ScreenCaptureKit
 //   POST /trim            body: {"start":3.5,"end":45.0}                                → {"path":...,"trimmed_duration":N}
 //   POST /speedramp       body: {"idle_speed":4.0,"idle_threshold_sec":2.0}             → {"output_duration":N,"compression_ratio":N}
 //   POST /upload/icloud   body: {"source":"last","filename":"demo.mp4"}                 → {"local_path":...,"syncing_to_cloud":true}
+//
+//   -- Multi-Window --
+//   POST /start/pip       body: {"windows":["Chrome","Terminal"],"layout":"picture-in-picture"} → {"session_id":...}
+//
+//   -- Recording Management --
+//   GET  /recordings      → list all recordings with metadata
+//   DELETE /recording     body: {"filename":"..."} or {"path":"..."} → {"ok":true}
 //
 //   -- Window Management (native macOS, Playwright can't do these) --
 //   POST /window/focus    body: {"app": "Notes"}                         → {"ok": true, "app": "Notes"}
@@ -43,6 +50,7 @@ public class ScreenMuseServer {
     private var listener: NWListener?
     // recordingManager used when coordinator is not set (e.g. headless/test mode)
     private let recordingManager = RecordingManager()
+    private let pipManager = PiPRecordingManager()
     /// Set this at app launch to route API calls through the full effects pipeline.
     /// When set, /start and /stop go through RecordViewModel (effects compositing included).
     /// When nil, falls back to raw RecordingManager (no effects).
@@ -138,6 +146,8 @@ public class ScreenMuseServer {
             let windowTitle = body["window_title"] as? String
             let windowPid = body["window_pid"] as? Int
             let quality = body["quality"] as? String
+            // audio_source: "system" (default), "none", or app name/bundle ID for app-only audio
+            let audioSourceStr = body["audio_source"] as? String
             smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") windowPid=\(windowPid.map { "\($0)" } ?? "nil")", category: .server)
             do {
                 if let coord = coordinator {
@@ -166,7 +176,20 @@ public class ScreenMuseServer {
                         source = .fullScreen
                     }
                     let resolvedQuality = RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
-                    let config = RecordingConfig(captureSource: source, includeSystemAudio: true, quality: resolvedQuality)
+                    let resolvedAudioSource: RecordingConfig.AudioSource
+                    switch audioSourceStr?.lowercased() {
+                    case "none", "off", "silent": resolvedAudioSource = .none
+                    case nil, "system", "all": resolvedAudioSource = .system
+                    default:
+                        // Treat as app name / bundle ID
+                        resolvedAudioSource = .appOnly(audioSourceStr!)
+                    }
+                    let config = RecordingConfig(
+                        captureSource: source,
+                        includeSystemAudio: resolvedAudioSource != RecordingConfig.AudioSource.none,
+                        quality: resolvedQuality,
+                        audioSource: resolvedAudioSource
+                    )
                     try await recordingManager.startRecording(config: config)
                 }
                 sessionID = UUID().uuidString
@@ -202,7 +225,127 @@ public class ScreenMuseServer {
                 ])
             }
 
+        // MARK: - PiP Recording
+
+        case ("POST", "/start/pip"):
+            guard !isRecording else {
+                sendResponse(connection: connection, status: 409, body: [
+                    "error": "Already recording. Stop the current session first.",
+                    "code": "ALREADY_RECORDING"
+                ])
+                return
+            }
+
+            // Parse windows: ["Chrome", "Terminal"] or ["com.google.Chrome", "com.apple.Terminal"]
+            let windowNames = body["windows"] as? [String] ?? []
+            guard windowNames.count >= 2 else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'windows' must be an array of at least 2 app names or titles",
+                    "example": "{\"windows\": [\"Google Chrome\", \"Terminal\"], \"layout\": \"picture-in-picture\"}"
+                ])
+                return
+            }
+
+            let layoutStr = body["layout"] as? String ?? "picture-in-picture"
+            let layout = PiPRecordingManager.Layout(rawValue: layoutStr) ?? .pictureInPicture
+            let quality = RecordingConfig.Quality(rawValue: body["quality"] as? String ?? "medium") ?? .medium
+            let fps = body["fps"] as? Int ?? 30
+            let overlayScale = body["overlay_scale"] as? Double ?? 0.25
+            let includeAudio = body["include_audio"] as? Bool ?? true
+
+            smLog.info("[\(reqID)] /start/pip windows=\(windowNames) layout=\(layoutStr)", category: .server)
+
+            do {
+                // Find both windows via SCShareableContent
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+
+                func findWindow(_ query: String) -> SCWindow? {
+                    // Try window title, then app name, then bundle ID
+                    content.windows.first(where: { $0.title?.localizedCaseInsensitiveContains(query) ?? false })
+                    ?? content.windows.first(where: { $0.owningApplication?.applicationName.localizedCaseInsensitiveContains(query) ?? false })
+                    ?? content.windows.first(where: { $0.owningApplication?.bundleIdentifier.localizedCaseInsensitiveContains(query) ?? false })
+                }
+
+                guard let primaryWindow = findWindow(windowNames[0]) else {
+                    sendResponse(connection: connection, status: 404, body: [
+                        "error": "Primary window not found: '\(windowNames[0])'",
+                        "code": "WINDOW_NOT_FOUND",
+                        "tip": "Use GET /windows to see available windows"
+                    ])
+                    return
+                }
+                guard let overlayWindow = findWindow(windowNames[1]) else {
+                    sendResponse(connection: connection, status: 404, body: [
+                        "error": "Overlay window not found: '\(windowNames[1])'",
+                        "code": "WINDOW_NOT_FOUND",
+                        "tip": "Use GET /windows to see available windows"
+                    ])
+                    return
+                }
+
+                var pipConfig = PiPRecordingManager.PiPConfig()
+                pipConfig.layout = layout
+                pipConfig.quality = quality
+                pipConfig.fps = fps
+                pipConfig.overlayScale = overlayScale
+                pipConfig.includeAudio = includeAudio
+
+                try await pipManager.startRecording(
+                    primaryWindow: primaryWindow,
+                    overlayWindow: overlayWindow,
+                    config: pipConfig
+                )
+
+                sessionID = UUID().uuidString
+                sessionName = body["name"] as? String ?? "pip-recording"
+                startTime = Date()
+                isRecording = true
+
+                sendResponse(connection: connection, status: 200, body: [
+                    "session_id": sessionID!,
+                    "status": "recording",
+                    "mode": "pip",
+                    "layout": layoutStr,
+                    "primary_window": primaryWindow.title ?? windowNames[0],
+                    "overlay_window": overlayWindow.title ?? windowNames[1]
+                ])
+            } catch let err as PiPRecordingManager.PiPError {
+                smLog.error("[\(reqID)] /start/pip failed: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": "PIP_FAILED"
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /start/pip error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
         case ("POST", "/stop"):
+            // Handle PiP stop
+            if pipManager.isRecording {
+                smLog.info("[\(reqID)] Stopping PiP session", category: .server)
+                do {
+                    let url = try await pipManager.stopRecording()
+                    isRecording = false
+                    let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                    await viewModel.setLastVideoURL(url)
+                    smLog.usage("RECORD STOP (PiP)", details: ["elapsed": "\(Int(elapsed))s", "file": url.lastPathComponent])
+                    sendResponse(connection: connection, status: 200, body: [
+                        "video_path": url.path,
+                        "session_id": sessionID ?? "",
+                        "elapsed": elapsed,
+                        "mode": "pip"
+                    ])
+                    sessionID = nil
+                    startTime = nil
+                    chapters.removeAll()
+                } catch {
+                    smLog.error("[\(reqID)] PiP stop failed: \(error.localizedDescription)", category: .server)
+                    sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+                }
+                return
+            }
+
             guard isRecording else {
                 smLog.warning("[\(reqID)] /stop rejected — not currently recording", category: .server)
                 sendResponse(connection: connection, status: 409, body: ["error": "not recording"])
@@ -329,6 +472,124 @@ public class ScreenMuseServer {
             smLog.info("[\(reqID)] Highlight flag set — next click will be highlighted", category: .server)
             smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
             sendResponse(connection: connection, status: 200, body: ["ok": true])
+
+        // MARK: - Recordings Management
+
+        case ("GET", "/recordings"):
+            // List all recordings in ~/Movies/ScreenMuse/ with metadata.
+            smLog.debug("[\(reqID)] /recordings list", category: .server)
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse", isDirectory: true)
+            let exportsDir = screenMuseDir.appendingPathComponent("Exports", isDirectory: true)
+
+            var recordings: [[String: Any]] = []
+            let fm = FileManager.default
+
+            // Scan main folder + Exports subfolder
+            let scanDirs = [screenMuseDir, exportsDir].filter { fm.fileExists(atPath: $0.path) }
+            for dir in scanDirs {
+                guard let contents = try? fm.contentsOfDirectory(
+                    at: dir,
+                    includingPropertiesForKeys: [.fileSizeKey, .creationDateKey, .contentModificationDateKey],
+                    options: [.skipsHiddenFiles]
+                ) else { continue }
+
+                for url in contents.sorted(by: { $0.lastPathComponent > $1.lastPathComponent }) {
+                    let ext = url.pathExtension.lowercased()
+                    guard ["mp4", "mov", "gif", "webp"].contains(ext) else { continue }
+                    let attrs = try? url.resourceValues(forKeys: [.fileSizeKey, .creationDateKey])
+                    let fileSize = attrs?.fileSize ?? 0
+                    let sizeMB = (Double(fileSize) / 1_048_576 * 100).rounded() / 100
+                    var rec: [String: Any] = [
+                        "path": url.path,
+                        "filename": url.lastPathComponent,
+                        "format": ext,
+                        "size": fileSize,
+                        "size_mb": sizeMB,
+                        "folder": dir.lastPathComponent == "ScreenMuse" ? "recordings" : dir.lastPathComponent.lowercased()
+                    ]
+                    if let created = attrs?.creationDate {
+                        rec["created_at"] = ISO8601DateFormatter().string(from: created)
+                    }
+                    // Mark which one is currently loaded as lastVideoURL
+                    if let last = await viewModel.lastVideoURL, last.path == url.path {
+                        rec["is_last"] = true
+                    }
+                    recordings.append(rec)
+                }
+            }
+
+            smLog.debug("[\(reqID)] /recordings found \(recordings.count) files", category: .server)
+            sendResponse(connection: connection, status: 200, body: [
+                "recordings": recordings,
+                "count": recordings.count,
+                "directory": screenMuseDir.path
+            ])
+
+        case ("DELETE", "/recording"):
+            // Delete a recording by path or filename.
+            // Body: {"path": "/abs/path.mp4"} OR {"filename": "ScreenMuse_2026-03-24.mp4"}
+            let pathStr = body["path"] as? String
+            let filenameStr = body["filename"] as? String
+
+            guard pathStr != nil || filenameStr != nil else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "Provide 'path' or 'filename'",
+                    "example_path": "{\"path\": \"/Users/you/Movies/ScreenMuse/recording.mp4\"}",
+                    "example_filename": "{\"filename\": \"ScreenMuse_2026-03-24.mp4\"}"
+                ])
+                return
+            }
+
+            let fm = FileManager.default
+            let targetURL: URL?
+            if let p = pathStr {
+                targetURL = URL(fileURLWithPath: p)
+            } else if let name = filenameStr {
+                let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+                let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse", isDirectory: true)
+                // Search main dir + Exports
+                let candidates = [
+                    screenMuseDir.appendingPathComponent(name),
+                    screenMuseDir.appendingPathComponent("Exports/\(name)")
+                ]
+                targetURL = candidates.first { fm.fileExists(atPath: $0.path) }
+            } else {
+                targetURL = nil
+            }
+
+            guard let url = targetURL, fm.fileExists(atPath: url.path) else {
+                smLog.warning("[\(reqID)] /recording DELETE — file not found", category: .server)
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "Recording not found",
+                    "code": "NOT_FOUND",
+                    "tip": "Use GET /recordings to list available files"
+                ])
+                return
+            }
+
+            // Refuse to delete the currently loaded video
+            if let last = await viewModel.lastVideoURL, last.path == url.path {
+                sendResponse(connection: connection, status: 409, body: [
+                    "error": "Cannot delete the currently loaded recording. Stop and start a new session first.",
+                    "code": "IN_USE"
+                ])
+                return
+            }
+
+            smLog.info("[\(reqID)] Deleting recording: \(url.lastPathComponent)", category: .server)
+            do {
+                try fm.removeItem(at: url)
+                smLog.usage("DELETE RECORDING", details: ["file": url.lastPathComponent])
+                sendResponse(connection: connection, status: 200, body: [
+                    "ok": true,
+                    "deleted": url.lastPathComponent,
+                    "path": url.path
+                ])
+            } catch {
+                smLog.error("[\(reqID)] Delete failed: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
 
         // MARK: - iCloud Upload
 
@@ -1027,6 +1288,10 @@ public class ScreenMuseServer {
                     "POST /frame",
                     // Cloud
                     "POST /upload/icloud",
+                    // Multi-window
+                    "POST /start/pip",
+                    // Recording management
+                    "GET /recordings", "DELETE /recording",
                     // Window management
                     "POST /window/focus", "POST /window/position", "POST /window/hide-others",
                     // System state

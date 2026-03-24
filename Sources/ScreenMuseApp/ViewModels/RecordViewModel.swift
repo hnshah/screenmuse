@@ -50,6 +50,11 @@ final class RecordViewModel: ObservableObject {
     /// The final video URL after effects are applied — set by stopRecording() / processRecordingWithEffects()
     @Published public private(set) var lastVideoURL: URL?
 
+    /// Set lastVideoURL from external sources (e.g. PiP recording manager)
+    public func setLastVideoURL(_ url: URL) {
+        lastVideoURL = url
+    }
+
     var formattedDuration: String {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
