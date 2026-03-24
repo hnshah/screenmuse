@@ -758,6 +758,101 @@ public class ScreenMuseServer {
                 sendResponse(connection: connection, status: 500, body: structuredError(error))
             }
 
+        // MARK: - Frame (recording-context-aware screenshot)
+
+        case ("POST", "/frame"):
+            // Like /screenshot but annotated with recording context.
+            // Returns elapsed, session_id, current_chapter alongside the image path.
+            // Useful for agents to verify recording content mid-session or build thumbnails.
+            smLog.info("[\(reqID)] /frame requested", category: .capture)
+            // Read recording state from server's own properties (not viewModel)
+            let frameIsRecording = isRecording
+            let frameIsPaused = !isRecording && startTime != nil
+
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                guard let display = content.displays.first else {
+                    sendResponse(connection: connection, status: 500, body: ["error": "No display found"])
+                    return
+                }
+
+                // Support jpeg format for smaller thumbnails
+                let formatStr = (body["format"] as? String ?? "png").lowercased()
+                let useJPEG = formatStr == "jpeg" || formatStr == "jpg"
+                let jpegQuality = body["quality"] as? Double ?? 0.85
+
+                let filter = SCContentFilter(display: display, excludingWindows: [])
+                let config = SCStreamConfiguration()
+                config.width = display.width
+                config.height = display.height
+                config.pixelFormat = kCVPixelFormatType_32BGRA
+
+                // Resolve output path
+                let ext = useJPEG ? "jpg" : "png"
+                let savePath: URL
+                if let customPath = body["path"] as? String {
+                    savePath = URL(fileURLWithPath: customPath)
+                } else {
+                    let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+                    let framesDir = moviesURL.appendingPathComponent("ScreenMuse/Frames", isDirectory: true)
+                    try FileManager.default.createDirectory(at: framesDir, withIntermediateDirectories: true)
+                    let formatter = ISO8601DateFormatter()
+                    formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+                    let ts = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
+                    savePath = framesDir.appendingPathComponent("frame-\(ts).\(ext)")
+                }
+
+                if #available(macOS 14.0, *) {
+                    let cgImage = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+                    let rep = NSBitmapImageRep(cgImage: cgImage)
+
+                    let imageData: Data?
+                    if useJPEG {
+                        imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: jpegQuality])
+                    } else {
+                        imageData = rep.representation(using: .png, properties: [:])
+                    }
+
+                    guard let data = imageData else {
+                        sendResponse(connection: connection, status: 500, body: ["error": "Image conversion failed"])
+                        return
+                    }
+                    try data.write(to: savePath)
+
+                    // Build recording context
+                    var response: [String: Any] = [
+                        "path": savePath.path,
+                        "format": ext,
+                        "width": cgImage.width,
+                        "height": cgImage.height,
+                        "size": data.count
+                    ]
+
+                    let frameElapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                    if frameIsRecording || frameIsPaused {
+                        response["recording"] = true
+                        response["paused"] = frameIsPaused
+                        response["recording_elapsed"] = frameElapsed
+                        if let sid = sessionID { response["session_id"] = sid }
+                        // Current chapter (last chapter whose time <= elapsed)
+                        if let currentChapter = chapters.last(where: { $0.time <= frameElapsed }) {
+                            response["current_chapter"] = currentChapter.name
+                        }
+                    } else {
+                        response["recording"] = false
+                    }
+
+                    smLog.info("[\(reqID)] ✅ /frame saved \(savePath.lastPathComponent) \(cgImage.width)×\(cgImage.height) recording=\(frameIsRecording)", category: .capture)
+                    smLog.usage("FRAME CAPTURE", details: ["file": savePath.lastPathComponent, "format": ext, "recording": "\(frameIsRecording)"])
+                    sendResponse(connection: connection, status: 200, body: response)
+                } else {
+                    sendResponse(connection: connection, status: 400, body: ["error": "Frame capture requires macOS 14+"])
+                }
+            } catch {
+                smLog.error("[\(reqID)] /frame failed: \(error.localizedDescription)", category: .capture)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
         case ("POST", "/screenshot"):
             smLog.info("[\(reqID)] Screenshot requested path=\(body["path"] as? String ?? "(auto)")", category: .capture)
             do {
@@ -879,6 +974,8 @@ public class ScreenMuseServer {
                     "POST /chapter", "POST /highlight", "POST /screenshot", "POST /note",
                     // Export
                     "POST /export", "POST /trim", "POST /speedramp",
+                    // Frame capture
+                    "POST /frame",
                     // Window management
                     "POST /window/focus", "POST /window/position", "POST /window/hide-others",
                     // System state
