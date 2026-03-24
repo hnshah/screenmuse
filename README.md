@@ -164,6 +164,34 @@ curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json"
 curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json" \
   -d '{"windows": ["Google Chrome", "Terminal"], "layout": "side-by-side"}'
 
+# ── Region Recording ──
+
+# Record a specific 1280×720 area starting at (0, 0)
+curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
+  -d '{"name":"region-demo","region":{"x":0,"y":0,"width":1280,"height":720}}'
+
+# ── Webhooks ──
+
+# Get a callback when recording stops (POST to your URL with video path)
+curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
+  -d '{"name":"demo","webhook":"https://your-server.com/recording-complete"}'
+# Payload: {"event":"recording.complete","video_path":"...","session_id":"...","elapsed":42.3}
+
+# ── Timeline ──
+
+# Get structured JSON of all chapters, notes, highlights (live or after stop)
+curl http://localhost:7823/timeline
+
+# ── Concat ──
+
+# Combine two recordings into one
+curl -X POST http://localhost:7823/concat -H "Content-Type: application/json" \
+  -d '{"sources":["/path/to/part1.mp4","/path/to/part2.mp4"]}'
+
+# Use "last" to reference the most recent recording
+curl -X POST http://localhost:7823/concat -H "Content-Type: application/json" \
+  -d '{"sources":["last","/path/to/part2.mp4"]}'
+
 # ── App-Specific Audio ──
 
 # Record only Chrome's audio (not system sounds, not other apps)

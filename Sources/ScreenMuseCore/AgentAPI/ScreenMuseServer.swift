@@ -63,7 +63,11 @@ public class ScreenMuseServer {
     public private(set) var startTime: Date?
     public private(set) var currentVideoURL: URL?
     public private(set) var chapters: [(name: String, time: TimeInterval)] = []
+    public private(set) var sessionNotes: [(text: String, time: TimeInterval)] = []
+    public private(set) var sessionHighlights: [TimeInterval] = []
     public private(set) var highlightNextClick = false
+    // Webhook fired when recording stops
+    private var pendingWebhookURL: URL?
 
     private var requestCount = 0
 
@@ -169,7 +173,20 @@ public class ScreenMuseServer {
             let quality = body["quality"] as? String
             // audio_source: "system" (default), "none", or app name/bundle ID for app-only audio
             let audioSourceStr = body["audio_source"] as? String
-            smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") windowPid=\(windowPid.map { "\($0)" } ?? "nil")", category: .server)
+            // region: {"x":0,"y":0,"width":1280,"height":720} — capture a specific display area
+            let regionDict = body["region"] as? [String: Any]
+            let regionRect: CGRect? = regionDict.flatMap { d in
+                guard let w = (d["width"] as? Double) ?? (d["width"] as? Int).map(Double.init),
+                      let h = (d["height"] as? Double) ?? (d["height"] as? Int).map(Double.init),
+                      w > 0, h > 0 else { return nil }
+                let x = (d["x"] as? Double) ?? (d["x"] as? Int).map(Double.init) ?? 0
+                let y = (d["y"] as? Double) ?? (d["y"] as? Int).map(Double.init) ?? 0
+                return CGRect(x: x, y: y, width: w, height: h)
+            }
+            // webhook: URL to POST to when recording stops
+            let webhookURL: URL? = (body["webhook"] as? String).flatMap { URL(string: $0) }
+            if let wh = webhookURL { self.pendingWebhookURL = wh }
+            smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") region=\(regionRect.map { "\(Int($0.width))x\(Int($0.height))" } ?? "full")", category: .server)
             do {
                 if let coord = coordinator {
                     smLog.debug("[\(reqID)] Routing through coordinator (effects pipeline)", category: .server)
@@ -192,6 +209,9 @@ public class ScreenMuseServer {
                             ])
                             return
                         }
+                    } else if let rect = regionRect {
+                        smLog.debug("[\(reqID)] Region capture: \(Int(rect.width))×\(Int(rect.height)) at (\(Int(rect.origin.x)),\(Int(rect.origin.y)))", category: .capture)
+                        source = .region(rect)
                     } else {
                         smLog.debug("[\(reqID)] Using full screen capture", category: .capture)
                         source = .fullScreen
@@ -382,10 +402,17 @@ public class ScreenMuseServer {
             ]
             let capturedSessionID = sessionID
             let capturedSessionName = sessionName
+            let capturedNotes = sessionNotes
+            let capturedHighlights = sessionHighlights
+            let capturedChapters = chapters
+            let capturedWebhook = pendingWebhookURL
             sessionID = nil
             sessionName = nil
             startTime = nil
             isRecording = false
+            sessionNotes.removeAll()
+            sessionHighlights.removeAll()
+            pendingWebhookURL = nil
 
             if let coord = coordinator {
                 smLog.debug("[\(reqID)] Awaiting coordinator.stopAndGetVideo() — effects compositing in progress...", category: .server)
@@ -397,7 +424,7 @@ public class ScreenMuseServer {
                     smLog.info("[\(reqID)] ✅ Video ready: \(url.path)", category: .server)
                     smLog.usage("RECORD STOP", details: [
                         "elapsed": String(format: "%.0fs", elapsed),
-                        "chapters": "\(chapters.count)",
+                        "chapters": "\(capturedChapters.count)",
                         "size": "\(sizeMB)MB",
                         "video": url.lastPathComponent
                     ])
@@ -405,6 +432,7 @@ public class ScreenMuseServer {
                         "video_path": url.path,
                         "metadata": metadata
                     ])
+                    fireWebhook(capturedWebhook, videoURL: url, sessionID: capturedSessionID, elapsed: elapsed)
                 } else {
                     smLog.error("[\(reqID)] coordinator.stopAndGetVideo() returned nil — video finalization failed", category: .server)
                     smLog.usage("RECORD ERROR  Video finalization failed — coordinator returned nil")
@@ -427,6 +455,7 @@ public class ScreenMuseServer {
                         "video_path": url.path,
                         "metadata": metadata
                     ])
+                    fireWebhook(capturedWebhook, videoURL: url, sessionID: capturedSessionID, elapsed: elapsed)
                 } catch {
                     smLog.error("[\(reqID)] stopRecording() threw: \(error.localizedDescription)", category: .server)
                     smLog.usage("RECORD ERROR  \(error.localizedDescription)")
@@ -490,9 +519,11 @@ public class ScreenMuseServer {
 
         case ("POST", "/highlight"):
             highlightNextClick = true
+            let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            sessionHighlights.append(elapsed)
             smLog.info("[\(reqID)] Highlight flag set — next click will be highlighted", category: .server)
             smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
-            sendResponse(connection: connection, status: 200, body: ["ok": true])
+            sendResponse(connection: connection, status: 200, body: ["ok": true, "timestamp": elapsed])
 
         // MARK: - Recordings Management
 
@@ -838,6 +869,75 @@ public class ScreenMuseServer {
                 ])
             } catch {
                 smLog.error("[\(reqID)] /trim error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
+        // MARK: - Concat
+
+        case ("POST", "/concat"):
+            // Concatenate multiple recordings into one.
+            // {"sources": ["/path/1.mp4", "/path/2.mp4"], "output": "/optional/out.mp4"}
+            // "sources" can also be ["last"] to use currentVideoURL as first input.
+            smLog.info("[\(reqID)] /concat request", category: .server)
+
+            guard let rawSources = body["sources"] as? [String], !rawSources.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'sources' must be a non-empty array of file paths",
+                    "example": "{\"sources\": [\"/path/1.mp4\", \"/path/2.mp4\"]}"
+                ])
+                return
+            }
+
+            // Resolve "last" token to currentVideoURL
+            var sourceURLs: [URL] = []
+            for s in rawSources {
+                if s == "last" {
+                    guard let last = currentVideoURL else {
+                        sendResponse(connection: connection, status: 404, body: [
+                            "error": "No recent recording available for 'last'",
+                            "code": "NO_VIDEO"
+                        ])
+                        return
+                    }
+                    sourceURLs.append(last)
+                } else {
+                    sourceURLs.append(URL(fileURLWithPath: s))
+                }
+            }
+
+            // Build output URL
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir = moviesURL.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir, withIntermediateDirectories: true)
+            let outputURL: URL
+            if let customOut = body["output"] as? String {
+                outputURL = URL(fileURLWithPath: customOut)
+            } else {
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+                let ts = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
+                outputURL = exportsDir.appendingPathComponent("ScreenMuse_\(ts).concat.mp4")
+            }
+
+            do {
+                let concatenator = VideoConcatenator()
+                let result = try await concatenator.concatenate(sources: sourceURLs, outputURL: outputURL)
+                currentVideoURL = outputURL
+                sendResponse(connection: connection, status: 200, body: [
+                    "path": result.outputURL.path,
+                    "duration": result.duration,
+                    "source_count": result.sourceCount,
+                    "size_mb": result.fileSizeMB
+                ])
+            } catch let err as VideoConcatenator.ConcatError {
+                smLog.error("[\(reqID)] /concat failed: \(err.localizedDescription)", category: .server)
+                let status = (err.localizedDescription.contains("not found")) ? 404 : 500
+                sendResponse(connection: connection, status: status, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": "CONCAT_FAILED"
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /concat error: \(error.localizedDescription)", category: .server)
                 sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
             }
 
@@ -1282,6 +1382,7 @@ public class ScreenMuseServer {
                 return
             }
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            sessionNotes.append((text: text, time: elapsed))
             var noteDetails: [String: String] = ["text": text]
             if isRecording { noteDetails["recording_elapsed"] = String(format: "%.0fs", elapsed) }
             smLog.usage("📝 NOTE", details: noteDetails)
@@ -1319,7 +1420,9 @@ public class ScreenMuseServer {
                     // Info / debug
                     "GET /status", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version",
                     // Live stream
-                    "GET /stream", "GET /stream/status"
+                    "GET /stream", "GET /stream/status",
+                    // Session timeline + concat
+                    "GET /timeline", "POST /concat"
                 ]
             sendResponse(connection: connection, status: 200, body: [
                 "version": version,
@@ -1406,6 +1509,31 @@ public class ScreenMuseServer {
                 "entries": entries
             ])
 
+        // MARK: - Timeline
+
+        case ("GET", "/timeline"):
+            // Returns the full structured timeline of the current (or last) session:
+            // chapters, notes, highlights — all with timestamps.
+            // Perfect for agents that need to build summaries or reference specific moments.
+            let sid = sessionID ?? "last"
+            let sessionStart = startTime
+            let elapsed = sessionStart.map { Date().timeIntervalSince($0) } ?? 0
+
+            let chaptersJSON: [[String: Any]] = chapters.map { ["name": $0.name, "time": $0.time] }
+            let notesJSON: [[String: Any]] = sessionNotes.map { ["text": $0.text, "time": $0.time] }
+            let highlightsJSON: [Double] = sessionHighlights
+
+            sendResponse(connection: connection, status: 200, body: [
+                "session_id": sid,
+                "recording": isRecording,
+                "elapsed": isRecording ? elapsed : -1,
+                "start_time": sessionStart.map { ISO8601DateFormatter().string(from: $0) } ?? "",
+                "chapters": chaptersJSON,
+                "notes": notesJSON,
+                "highlights": highlightsJSON,
+                "event_count": chaptersJSON.count + notesJSON.count + highlightsJSON.count
+            ])
+
         // MARK: - SSE Live Stream
 
         case ("GET", "/stream"):
@@ -1438,6 +1566,40 @@ public class ScreenMuseServer {
         default:
             smLog.warning("[\(reqID)] 404 — \(method) \(cleanPath) not found", category: .server)
             sendResponse(connection: connection, status: 404, body: ["error": "not found"])
+        }
+    }
+
+    /// POST the recording-complete payload to a webhook URL.
+    /// Fires-and-forgets — does not block the response to the caller.
+    private func fireWebhook(_ webhookURL: URL?, videoURL: URL, sessionID: String?, elapsed: TimeInterval) {
+        guard let url = webhookURL else { return }
+        smLog.info("Webhook: firing → \(url.absoluteString)", category: .server)
+        let payload: [String: Any] = [
+            "event": "recording.complete",
+            "video_path": videoURL.path,
+            "session_id": sessionID ?? "",
+            "elapsed": elapsed,
+            "size_mb": (try? FileManager.default.attributesOfItem(atPath: videoURL.path)[.size] as? Int)
+                .flatMap { $0 }.map { Double($0) / 1_048_576 } ?? 0,
+            "timestamp": ISO8601DateFormatter().string(from: Date())
+        ]
+        guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+
+        Task {
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("ScreenMuse/1.1", forHTTPHeaderField: "User-Agent")
+            request.timeoutInterval = 10
+            do {
+                let (_, response) = try await URLSession.shared.data(for: request)
+                let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+                smLog.info("Webhook: delivered → \(url.host ?? url.absoluteString) HTTP \(code)", category: .server)
+                smLog.usage("WEBHOOK FIRED", details: ["url": url.host ?? "?", "status": "\(code)"])
+            } catch {
+                smLog.warning("Webhook: delivery failed → \(url.absoluteString): \(error.localizedDescription)", category: .server)
+            }
         }
     }
 
