@@ -89,7 +89,32 @@ curl -X POST http://localhost:7823/stop
 # Drop a note into the log exactly when something feels off
 curl -X POST http://localhost:7823/note -H "Content-Type: application/json" -d '{"text": "audio dropped here"}'
 
-# Check what version is running
+# ── Window Management (native macOS — Playwright can't do this) ──
+
+# Bring an app to the front before recording
+curl -X POST http://localhost:7823/window/focus -H "Content-Type: application/json" \
+  -d '{"app": "Notes"}'
+
+# Set window size and position
+curl -X POST http://localhost:7823/window/position -H "Content-Type: application/json" \
+  -d '{"app": "Google Chrome", "x": 0, "y": 0, "width": 1440, "height": 900}'
+
+# Hide all other apps — clean desktop for recording
+curl -X POST http://localhost:7823/window/hide-others -H "Content-Type: application/json" \
+  -d '{"app": "Notes"}'
+
+# ── System State ──
+
+# Read clipboard
+curl http://localhost:7823/system/clipboard
+
+# Which window has focus?
+curl http://localhost:7823/system/active-window
+
+# What apps are running?
+curl http://localhost:7823/system/running-apps
+
+# Check version + all endpoints
 curl http://localhost:7823/version
 ```
 

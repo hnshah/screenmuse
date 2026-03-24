@@ -5,17 +5,28 @@ import AppKit
 
 // Local HTTP server for programmatic agent control
 // Endpoints:
-//   POST /start       body: {"name": "recording-name"}               → {"session_id": "uuid", "status": "recording"}
-//   POST /stop        → {"video_path": "/path/video.mp4", "metadata": {...}}
-//   POST /pause       → {"status": "paused", "elapsed": N}
-//   POST /resume      → {"status": "recording", "elapsed": N}
-//   POST /chapter     body: {"name": "Chapter name"}                 → {"ok": true, "time": N}
-//   POST /highlight   → {"ok": true}
-//   POST /screenshot  body: {"path": "/optional/path.png"}           → {"path": "...", "width": N, "height": N}
-//   POST /note        body: {"text": "something felt wrong here"}    → {"ok": true, "timestamp": "..."}
+//   POST /start           body: {"name": "recording-name"}               → {"session_id": "uuid", "status": "recording"}
+//   POST /stop            → {"video_path": "/path/video.mp4", "metadata": {...}}
+//   POST /pause           → {"status": "paused", "elapsed": N}
+//   POST /resume          → {"status": "recording", "elapsed": N}
+//   POST /chapter         body: {"name": "Chapter name"}                 → {"ok": true, "time": N}
+//   POST /highlight       → {"ok": true}
+//   POST /screenshot      body: {"path": "/optional/path.png"}           → {"path": "...", "width": N, "height": N}
+//   POST /note            body: {"text": "something felt wrong here"}    → {"ok": true, "timestamp": "..."}
+//
+//   -- Window Management (native macOS, Playwright can't do these) --
+//   POST /window/focus    body: {"app": "Notes"}                         → {"ok": true, "app": "Notes"}
+//   POST /window/position body: {"app": "Notes", "x":0,"y":0,"width":1440,"height":900} → {"ok": true}
+//   POST /window/hide-others body: {"app": "Notes"}                      → {"ok": true, "hidden": N}
+//
+//   -- System State --
+//   GET  /system/clipboard      → {"type": "text", "text": "...", "length": N}
+//   GET  /system/active-window  → {"app": "...", "window_title": "...", "bundle_id": "..."}
+//   GET  /system/running-apps   → {"apps": [...], "count": N}
+//
 //   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
 //   GET  /windows     → {"windows": [...], "count": N}
-//   GET  /version     → {"version": "0.4.0", "build": "...", "api_endpoints": [...]}
+//   GET  /version     → {"version": "0.5.0", "build": "...", "api_endpoints": [...]}
 //   GET  /debug       → save dir, recent files, server state
 //   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
 //   GET  /report      → clean session report for bug reports
@@ -314,6 +325,128 @@ public class ScreenMuseServer {
             smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
             sendResponse(connection: connection, status: 200, body: ["ok": true])
 
+        // MARK: - Window Management
+
+        case ("POST", "/window/focus"):
+            let appName = body["app"] as? String ?? ""
+            guard !appName.isEmpty else {
+                smLog.warning("[\(reqID)] /window/focus missing 'app' field", category: .server)
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "body must include 'app' field",
+                    "example": "{\"app\": \"Notes\"}",
+                    "tip": "Use app display name (\"Notes\", \"Google Chrome\") or bundle ID (\"com.apple.Notes\")"
+                ])
+                return
+            }
+            smLog.info("[\(reqID)] /window/focus app='\(appName)'", category: .server)
+            do {
+                try WindowManager.focus(app: appName)
+                let resolvedName = WindowManager.findApp(named: appName)?.localizedName ?? appName
+                smLog.usage("WINDOW FOCUS", details: ["app": resolvedName])
+                sendResponse(connection: connection, status: 200, body: [
+                    "ok": true,
+                    "app": resolvedName
+                ])
+            } catch let err as WindowError {
+                smLog.error("[\(reqID)] /window/focus failed: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": "APP_NOT_FOUND"
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /window/focus error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
+        case ("POST", "/window/position"):
+            let appName = body["app"] as? String ?? ""
+            guard !appName.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "body must include 'app'",
+                    "example": "{\"app\":\"Google Chrome\",\"x\":0,\"y\":0,\"width\":1440,\"height\":900}"
+                ])
+                return
+            }
+            let x = body["x"] as? CGFloat ?? (body["x"] as? Double).map { CGFloat($0) } ?? 0
+            let y = body["y"] as? CGFloat ?? (body["y"] as? Double).map { CGFloat($0) } ?? 0
+            let width = body["width"] as? CGFloat ?? (body["width"] as? Double).map { CGFloat($0) } ?? 1440
+            let height = body["height"] as? CGFloat ?? (body["height"] as? Double).map { CGFloat($0) } ?? 900
+            smLog.info("[\(reqID)] /window/position app='\(appName)' x=\(x) y=\(y) \(Int(width))×\(Int(height))", category: .server)
+            do {
+                try WindowManager.position(app: appName, x: x, y: y, width: width, height: height)
+                let resolvedName = WindowManager.findApp(named: appName)?.localizedName ?? appName
+                smLog.usage("WINDOW POSITION", details: ["app": resolvedName, "size": "\(Int(width))×\(Int(height))", "pos": "(\(Int(x)),\(Int(y)))"])
+                sendResponse(connection: connection, status: 200, body: [
+                    "ok": true,
+                    "app": resolvedName,
+                    "x": x, "y": y, "width": width, "height": height
+                ])
+            } catch let err as WindowError {
+                let code: String
+                switch err {
+                case .accessibilityRequired: code = "ACCESSIBILITY_REQUIRED"
+                case .appNotFound: code = "APP_NOT_FOUND"
+                case .noWindowAvailable: code = "NO_WINDOW"
+                default: code = "WINDOW_ERROR"
+                }
+                smLog.error("[\(reqID)] /window/position failed [\(code)]: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": code
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /window/position error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
+        case ("POST", "/window/hide-others"):
+            let appName = body["app"] as? String ?? ""
+            guard !appName.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "body must include 'app'",
+                    "example": "{\"app\": \"Notes\"}"
+                ])
+                return
+            }
+            smLog.info("[\(reqID)] /window/hide-others keeping='\(appName)'", category: .server)
+            do {
+                try WindowManager.hideOthers(keeping: appName)
+                let resolvedName = WindowManager.findApp(named: appName)?.localizedName ?? appName
+                smLog.usage("HIDE OTHERS", details: ["keeping": resolvedName])
+                sendResponse(connection: connection, status: 200, body: [
+                    "ok": true,
+                    "kept_visible": resolvedName
+                ])
+            } catch let err as WindowError {
+                smLog.error("[\(reqID)] /window/hide-others failed: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": "APP_NOT_FOUND"
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /window/hide-others error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
+        // MARK: - System State
+
+        case ("GET", "/system/clipboard"):
+            smLog.debug("[\(reqID)] /system/clipboard", category: .server)
+            let contents = SystemState.clipboardContents()
+            sendResponse(connection: connection, status: 200, body: contents)
+
+        case ("GET", "/system/active-window"):
+            smLog.debug("[\(reqID)] /system/active-window", category: .server)
+            let info = SystemState.activeWindow()
+            sendResponse(connection: connection, status: 200, body: info)
+
+        case ("GET", "/system/running-apps"):
+            smLog.debug("[\(reqID)] /system/running-apps", category: .server)
+            let apps = SystemState.runningApps()
+            sendResponse(connection: connection, status: 200, body: ["apps": apps, "count": apps.count])
+
+        // MARK: - Status / Recording Control
+
         case ("GET", "/status"):
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
             smLog.debug("[\(reqID)] /status — recording=\(isRecording) elapsed=\(String(format: "%.1f", elapsed))s", category: .server)
@@ -471,8 +604,14 @@ public class ScreenMuseServer {
                 "build": build,
                 "min_macos": "14.0 (Sonoma)",
                 "api_endpoints": [
+                    // Recording
                     "POST /start", "POST /stop", "POST /pause", "POST /resume",
                     "POST /chapter", "POST /highlight", "POST /screenshot", "POST /note",
+                    // Window management
+                    "POST /window/focus", "POST /window/position", "POST /window/hide-others",
+                    // System state
+                    "GET /system/clipboard", "GET /system/active-window", "GET /system/running-apps",
+                    // Info / debug
                     "GET /status", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version"
                 ]
             ])

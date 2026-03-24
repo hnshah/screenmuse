@@ -1,0 +1,13 @@
+{
+  "name": "screenmuse-playwright-demo",
+  "version": "1.0.0",
+  "description": "Example: Playwright + ScreenMuse for automated demo recordings",
+  "main": "demo.js",
+  "scripts": {
+    "demo": "node demo.js",
+    "install-browsers": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.42.0"
+  }
+}
