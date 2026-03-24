@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: swift build (macOS)
+    runs-on: macos-14          # Sonoma — matches minimum deployment target
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build ScreenMuseApp
+        run: swift build --product ScreenMuseApp 2>&1
+
+      - name: Build ScreenMuseCore
+        run: swift build --target ScreenMuseCore 2>&1

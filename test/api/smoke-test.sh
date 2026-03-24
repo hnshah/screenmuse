@@ -60,11 +60,11 @@ check "GET /system/running-apps" 200 GET /system/running-apps
 echo ""
 echo "Endpoint Count"
 count=$(curl -s "$BASE/version" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('api_endpoints',[])))" 2>/dev/null)
-if [ "$count" -ge 28 ] 2>/dev/null; then
-  echo -e "${GREEN}✅ PASS${NC} Endpoint count: $count (≥28)"
+if [ "$count" -ge 40 ] 2>/dev/null; then
+  echo -e "${GREEN}✅ PASS${NC} Endpoint count: $count (≥40)"
   PASS=$((PASS + 1))
 else
-  echo -e "${RED}❌ FAIL${NC} Endpoint count: $count (expected ≥28)"
+  echo -e "${RED}❌ FAIL${NC} Endpoint count: $count (expected ≥40)"
   FAIL=$((FAIL + 1))
 fi
 
