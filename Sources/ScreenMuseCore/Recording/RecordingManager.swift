@@ -12,7 +12,12 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
     @Published public var duration: TimeInterval = 0
 
     private var stream: SCStream?
+    private var streamConfig: SCStreamConfiguration?
+    private var streamFilter: SCContentFilter?
     private var timer: Timer?
+    public private(set) var isPaused = false
+    private var pauseStartTime: CMTime = .zero
+    private var totalPausedDuration: CMTime = .zero
 
     // Accessed from SCStreamOutput callback (background queue) -- nonisolated(unsafe)
     nonisolated(unsafe) private var assetWriter: AVAssetWriter?
@@ -21,6 +26,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
     nonisolated(unsafe) private var audioInput: AVAssetWriterInput?
     nonisolated(unsafe) private var sessionStarted = false
     nonisolated(unsafe) private var frameCount = 0
+    nonisolated(unsafe) private var isPausedCallback = false  // read from callback queue
 
     public override init() {
         super.init()
@@ -69,6 +75,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         }
 
         let streamConfig = SCStreamConfiguration()
+        self.streamConfig = streamConfig
         streamConfig.width = width
         streamConfig.height = height
         streamConfig.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(config.fps))
@@ -148,6 +155,10 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         try await scStream.startCapture()
         print("✅ SCStream.startCapture() succeeded")
         stream = scStream
+        self.streamFilter = filter
+        isPaused = false
+        isPausedCallback = false
+        totalPausedDuration = .zero
         isRecording = true
         duration = 0
 
@@ -218,6 +229,47 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         let fileSize = (try? FileManager.default.attributesOfItem(atPath: outputURL.path)[.size] as? Int) ?? 0
         print("✅ Recording saved to: \(outputURL.path) (\(fileSize) bytes, \(frameCount) frames)")
         return outputURL
+    }
+}
+
+    // MARK: - Pause / Resume
+
+    @MainActor
+    public func pauseRecording() async throws {
+        guard isRecording, !isPaused else {
+            throw RecordingError.invalidState(isPaused ? "Already paused" : "Not recording")
+        }
+        guard let stream else { throw RecordingError.notRecording }
+        try await stream.stopCapture()
+        isPaused = true
+        isPausedCallback = true
+        timer?.invalidate()
+        print("⏸️ Recording paused at \(duration)s")
+    }
+
+    @MainActor
+    public func resumeRecording() async throws {
+        guard isRecording, isPaused else {
+            throw RecordingError.invalidState(isPaused ? "Not recording" : "Not paused")
+        }
+        guard let filter = streamFilter, let streamConf = streamConfig else {
+            throw RecordingError.writerNotConfigured
+        }
+        // Restart stream with same filter/config
+        let newStream = SCStream(filter: filter, configuration: streamConf, delegate: self)
+        try newStream.addStreamOutput(self, type: .screen, sampleHandlerQueue: .global(qos: .userInteractive))
+        try await newStream.startCapture()
+        stream = newStream
+        isPaused = false
+        isPausedCallback = false
+        print("▶️ Recording resumed")
+
+        // Restart duration timer
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.duration += 1
+            }
+        }
     }
 }
 
@@ -310,6 +362,7 @@ public enum RecordingError: Error, LocalizedError {
     case permissionDenied(String)
     case noFramesCaptured
     case windowNotFound(String)
+    case invalidState(String)
 
     public var errorDescription: String? {
         switch self {
@@ -327,6 +380,8 @@ public enum RecordingError: Error, LocalizedError {
             return "No frames were captured — Screen Recording permission may not be granted, or the stream delivered no content. Grant permission in System Settings → Privacy & Security → Screen Recording, then relaunch."
         case .windowNotFound(let query):
             return "Window not found: '\(query)'. Use GET /windows to list available windows."
+        case .invalidState(let msg):
+            return "Invalid state: \(msg)"
         }
     }
 }

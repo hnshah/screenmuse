@@ -10,4 +10,6 @@ public protocol RecordingCoordinating: AnyObject {
     /// quality is the RecordingConfig.Quality rawValue string ("low"/"medium"/"high"/"max").
     func startRecording(name: String, windowTitle: String?, windowPid: Int?, quality: String?) async throws
     func stopAndGetVideo() async -> URL?
+    func pauseRecording() async throws
+    func resumeRecording() async throws
 }

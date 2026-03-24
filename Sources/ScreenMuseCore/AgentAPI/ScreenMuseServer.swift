@@ -199,6 +199,40 @@ public class ScreenMuseServer {
             _ = capturedSessionID  // suppress unused warning
             _ = capturedSessionName
 
+        case ("POST", "/pause"):
+            guard isRecording else {
+                sendResponse(connection: connection, status: 409, body: ["error": "Not recording", "code": "NOT_RECORDING"])
+                return
+            }
+            let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            do {
+                if let coord = coordinator {
+                    try await coord.pauseRecording()
+                } else {
+                    try await recordingManager.pauseRecording()
+                }
+                sendResponse(connection: connection, status: 200, body: ["status": "paused", "elapsed": elapsed])
+            } catch {
+                sendResponse(connection: connection, status: 500, body: structuredError(error))
+            }
+
+        case ("POST", "/resume"):
+            guard isRecording else {
+                sendResponse(connection: connection, status: 409, body: ["error": "Not recording", "code": "NOT_RECORDING"])
+                return
+            }
+            do {
+                if let coord = coordinator {
+                    try await coord.resumeRecording()
+                } else {
+                    try await recordingManager.resumeRecording()
+                }
+                let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                sendResponse(connection: connection, status: 200, body: ["status": "recording", "elapsed": elapsed])
+            } catch {
+                sendResponse(connection: connection, status: 500, body: structuredError(error))
+            }
+
         case ("POST", "/chapter"):
             let name = body["name"] as? String ?? "Chapter"
             let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
