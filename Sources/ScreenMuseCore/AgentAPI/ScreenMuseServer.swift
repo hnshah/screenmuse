@@ -1440,6 +1440,173 @@ public class ScreenMuseServer {
                 sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
             }
 
+        // MARK: - Annotate
+
+        case ("POST", "/annotate"):
+            // Burn text overlays into a video at specific timestamps.
+            // {"source":"last","overlays":[{"text":"Step 1","start":2,"end":8,"position":"bottom"}]}
+            smLog.info("[\(reqID)] /annotate request", category: .server)
+
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
+            guard let src = sourceURL else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+            guard let overlayDicts = body["overlays"] as? [[String: Any]], !overlayDicts.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'overlays' must be a non-empty array",
+                    "example": "{\"overlays\":[{\"text\":\"Step 1\",\"start\":2,\"end\":8,\"position\":\"bottom\"}]}"
+                ])
+                return
+            }
+
+            let quality = RecordingConfig.Quality(rawValue: body["quality"] as? String ?? "medium") ?? .medium
+            let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir = moviesURL.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir, withIntermediateDirectories: true)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+            let ts = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
+            let outputURL = exportsDir.appendingPathComponent("ScreenMuse_\(ts).annotated.mp4")
+
+            do {
+                let annotator = VideoAnnotator()
+                let result = try await annotator.annotate(
+                    sourceURL: src,
+                    overlays: overlayDicts,
+                    outputURL: outputURL,
+                    quality: quality
+                )
+                currentVideoURL = outputURL
+                sendResponse(connection: connection, status: 200, body: [
+                    "path": result.outputURL.path,
+                    "overlay_count": result.overlayCount,
+                    "duration": result.duration,
+                    "size_mb": result.fileSizeMB
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /annotate failed: \(error.localizedDescription)", category: .server)
+                let status = error.localizedDescription.contains("required") ? 400 : 500
+                sendResponse(connection: connection, status: status, body: ["error": error.localizedDescription])
+            }
+
+        // MARK: - Script (Batch Runner)
+
+        case ("POST", "/script"):
+            // Execute a sequence of ScreenMuse commands as a transaction.
+            // {"commands":[{"action":"start","name":"demo"},{"sleep":5},{"action":"chapter","name":"Step 1"},{"action":"stop"}]}
+            // Supported actions: start, stop, pause, resume, chapter, note, highlight, sleep
+            smLog.info("[\(reqID)] /script request", category: .server)
+
+            guard let commands = body["commands"] as? [[String: Any]], !commands.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'commands' must be a non-empty array",
+                    "example": "{\"commands\":[{\"action\":\"start\"},{\"sleep\":5},{\"action\":\"chapter\",\"name\":\"Step 1\"},{\"action\":\"stop\"}]}"
+                ])
+                return
+            }
+
+            var scriptResults: [[String: Any]] = []
+            var scriptError: String? = nil
+
+            for (idx, cmd) in commands.enumerated() {
+                let action = cmd["action"] as? String ?? ""
+
+                // sleep is a special non-action command
+                if let sleepSeconds = cmd["sleep"] as? Double ?? (cmd["sleep"] as? Int).map(Double.init) {
+                    try? await Task.sleep(nanoseconds: UInt64(sleepSeconds * 1_000_000_000))
+                    scriptResults.append(["step": idx + 1, "action": "sleep", "seconds": sleepSeconds, "ok": true])
+                    continue
+                }
+
+                var stepResult: [String: Any] = ["step": idx + 1, "action": action]
+                do {
+                    switch action {
+                    case "start":
+                        let name = cmd["name"] as? String ?? "script-recording"
+                        let quality = cmd["quality"] as? String
+                        if let coord = coordinator {
+                            try await coord.startRecording(name: name, windowTitle: cmd["window_title"] as? String, windowPid: nil, quality: quality)
+                        } else {
+                            try await recordingManager.startRecording(config: RecordingConfig(
+                                captureSource: .fullScreen,
+                                includeSystemAudio: true,
+                                quality: RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
+                            ))
+                        }
+                        sessionID = UUID().uuidString
+                        sessionName = name
+                        startTime = Date()
+                        isRecording = true
+                        stepResult["ok"] = true
+
+                    case "stop":
+                        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        if let coord = coordinator, let url = await coord.stopAndGetVideo() {
+                            currentVideoURL = url
+                            stepResult["video_path"] = url.path
+                        } else {
+                            let url = try await recordingManager.stopRecording()
+                            currentVideoURL = url
+                            stepResult["video_path"] = url.path
+                        }
+                        isRecording = false
+                        stepResult["elapsed"] = elapsed
+                        stepResult["ok"] = true
+
+                    case "pause":
+                        try await coordinator?.pauseRecording() ?? recordingManager.pauseRecording()
+                        stepResult["ok"] = true
+
+                    case "resume":
+                        try await coordinator?.resumeRecording() ?? recordingManager.resumeRecording()
+                        stepResult["ok"] = true
+
+                    case "chapter":
+                        let chapterName = cmd["name"] as? String ?? "Chapter \(chapters.count + 1)"
+                        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        chapters.append((name: chapterName, time: elapsed))
+                        smLog.usage("CHAPTER \(chapterName)  t=\(String(format:"%.1f",elapsed))s")
+                        stepResult["name"] = chapterName
+                        stepResult["timestamp"] = elapsed
+                        stepResult["ok"] = true
+
+                    case "note":
+                        let noteText = cmd["text"] as? String ?? ""
+                        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        sessionNotes.append((text: noteText, time: elapsed))
+                        smLog.usage("📝 NOTE", details: ["text": noteText])
+                        stepResult["ok"] = true
+
+                    case "highlight":
+                        highlightNextClick = true
+                        stepResult["ok"] = true
+
+                    default:
+                        stepResult["ok"] = false
+                        stepResult["error"] = "Unknown action '\(action)'. Supported: start, stop, pause, resume, chapter, note, highlight, sleep"
+                    }
+                } catch {
+                    stepResult["ok"] = false
+                    stepResult["error"] = error.localizedDescription
+                    scriptError = "Step \(idx + 1) (\(action)) failed: \(error.localizedDescription)"
+                    scriptResults.append(stepResult)
+                    break // stop on error
+                }
+                scriptResults.append(stepResult)
+            }
+
+            sendResponse(connection: connection, status: scriptError == nil ? 200 : 500, body: [
+                "ok": scriptError == nil,
+                "steps_run": scriptResults.count,
+                "steps": scriptResults,
+                "error": scriptError as Any
+            ])
+
         case ("POST", "/screenshot"):
             smLog.info("[\(reqID)] Screenshot requested path=\(body["path"] as? String ?? "(auto)")", category: .capture)
             do {
@@ -1634,6 +1801,10 @@ public class ScreenMuseServer {
                     "GET /timeline", "POST /concat",
                     // Visual analysis
                     "POST /thumbnail", "POST /ocr", "POST /crop",
+                    // Video editing
+                    "POST /annotate",
+                    // Batch runner
+                    "POST /script",
                     // OpenAPI spec
                     "GET /openapi"
                 ]
