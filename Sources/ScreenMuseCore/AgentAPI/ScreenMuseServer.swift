@@ -38,7 +38,7 @@ import ScreenCaptureKit
 //
 //   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
 //   GET  /windows     → {"windows": [...], "count": N}
-//   GET  /version     → {"version": "0.5.0", "build": "...", "api_endpoints": [...]}
+//   GET  /version     → {"version": "1.0.2", "build": "...", "api_endpoints": [...], "endpoint_count": 28}
 //   GET  /debug       → save dir, recent files, server state
 //   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
 //   GET  /report      → clean session report for bug reports
@@ -1277,11 +1277,7 @@ public class ScreenMuseServer {
             let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
             let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
             smLog.debug("[\(reqID)] /version requested", category: .server)
-            sendResponse(connection: connection, status: 200, body: [
-                "version": version,
-                "build": build,
-                "min_macos": "14.0 (Sonoma)",
-                "api_endpoints": [
+            let endpoints: [String] = [
                     // Recording
                     "POST /start", "POST /stop", "POST /pause", "POST /resume",
                     "POST /chapter", "POST /highlight", "POST /screenshot", "POST /note",
@@ -1302,6 +1298,12 @@ public class ScreenMuseServer {
                     // Info / debug
                     "GET /status", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version"
                 ]
+            sendResponse(connection: connection, status: 200, body: [
+                "version": version,
+                "build": build,
+                "min_macos": "14.0 (Sonoma)",
+                "endpoint_count": endpoints.count,
+                "api_endpoints": endpoints
             ])
 
         case ("GET", "/report"):
