@@ -183,6 +183,126 @@ class ScreenMuse {
   }
 }
 
+  // ── Live Stream ──────────────────────────────────────────────────────────────
+
+  /**
+   * Subscribe to real-time frame events via Server-Sent Events.
+   *
+   * Each frame is delivered as a parsed object:
+   *   { ts, width, height, format, size, data: Buffer }
+   *
+   * @param {object}   opts
+   * @param {number}   [opts.fps=2]      - Frames per second (1–30)
+   * @param {number}   [opts.scale=1280] - Max output width in pixels
+   * @param {string}   [opts.format='jpeg'] - 'jpeg' or 'png'
+   * @param {number}   [opts.quality=60] - JPEG quality 0–100
+   * @param {Function} opts.onFrame      - Called with each frame object
+   * @param {Function} [opts.onError]    - Called on stream errors
+   * @param {AbortSignal} [opts.signal]  - Pass an AbortController.signal to stop
+   * @returns {Promise<void>}            - Resolves when stream ends
+   *
+   * @example
+   * const controller = new AbortController();
+   * sm.stream({ fps: 2, scale: 640, onFrame: (f) => {
+   *   fs.writeFileSync('/tmp/latest.jpg', f.data);
+   *   console.log(`Frame ${f.width}×${f.height} ${f.size} bytes`);
+   * }, signal: controller.signal });
+   *
+   * // Stop after 30s
+   * setTimeout(() => controller.abort(), 30000);
+   */
+  async stream(opts = {}) {
+    const { fps = 2, scale = 1280, format = 'jpeg', quality = 60,
+            onFrame, onError, signal } = opts;
+
+    if (typeof onFrame !== 'function') throw new Error('stream() requires opts.onFrame callback');
+
+    const params = new URLSearchParams({ fps, scale, format, quality });
+    const url = `${this.baseURL}/stream?${params}`;
+
+    const http = require('http');
+    return new Promise((resolve, reject) => {
+      const req = http.get(url, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`Stream returned HTTP ${res.statusCode}`));
+          return;
+        }
+
+        let buffer = '';
+        let currentEvent = 'message';
+        let currentData = '';
+
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => {
+          buffer += chunk;
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // keep incomplete last line
+
+          for (const line of lines) {
+            if (line.startsWith('event:')) {
+              currentEvent = line.slice(6).trim();
+            } else if (line.startsWith('data:')) {
+              currentData = line.slice(5).trim();
+            } else if (line.startsWith(':')) {
+              // heartbeat — ignore
+            } else if (line === '') {
+              // End of event
+              if (currentData && currentEvent === 'frame') {
+                try {
+                  const payload = JSON.parse(currentData);
+                  const frame = {
+                    ts: payload.ts,
+                    width: payload.width,
+                    height: payload.height,
+                    format: payload.format,
+                    size: payload.size,
+                    data: Buffer.from(payload.data, 'base64'),
+                  };
+                  onFrame(frame);
+                } catch (e) {
+                  if (onError) onError(e);
+                }
+              }
+              currentEvent = 'message';
+              currentData = '';
+            }
+          }
+        });
+
+        res.on('end', () => resolve());
+        res.on('error', (err) => {
+          if (onError) onError(err);
+          resolve(); // don't reject — stream end is expected
+        });
+      });
+
+      req.on('error', reject);
+
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          req.destroy();
+          resolve();
+        });
+      }
+    });
+  }
+
+  /**
+   * Capture frames for a fixed duration, returning an array of frame objects.
+   *
+   * @param {number} durationMs   - How long to stream in milliseconds
+   * @param {object} [opts={}]    - Same opts as stream() except onFrame/signal
+   * @returns {Promise<Array>}    - Array of frame objects
+   */
+  async captureFrames(durationMs, opts = {}) {
+    const frames = [];
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), durationMs);
+    await this.stream({ ...opts, onFrame: (f) => frames.push(f), signal: controller.signal });
+    return frames;
+  }
+}
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }

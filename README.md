@@ -133,6 +133,27 @@ curl -X POST http://localhost:7823/speedramp
 curl -X POST http://localhost:7823/speedramp -H "Content-Type: application/json" \
   -d '{"idle_speed": 8.0, "idle_threshold_sec": 1.0}'
 
+# ── Live Frame Stream (SSE) ──
+
+# Subscribe to real-time frames (stays open until you cancel)
+curl -N http://localhost:7823/stream
+
+# Higher fps, smaller size
+curl -N "http://localhost:7823/stream?fps=5&scale=640&quality=80"
+
+# PNG format
+curl -N "http://localhost:7823/stream?fps=2&format=png"
+
+# Check how many clients are connected
+curl http://localhost:7823/stream/status
+
+# Node.js (no dependencies — uses built-in http module)
+# const { ScreenMuse } = require('./screenmuse.js');
+# const sm = new ScreenMuse();
+# sm.stream({ fps: 2, scale: 640, onFrame: (f) => {
+#   fs.writeFileSync('/tmp/latest.jpg', f.data);
+# }});
+
 # ── Multi-Window / PiP ──
 
 # Record two windows simultaneously (PiP layout — default)

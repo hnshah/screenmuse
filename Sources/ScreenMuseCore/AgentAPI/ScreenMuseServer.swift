@@ -51,6 +51,7 @@ public class ScreenMuseServer {
     // recordingManager used when coordinator is not set (e.g. headless/test mode)
     private let recordingManager = RecordingManager()
     private let pipManager = PiPRecordingManager()
+    private let streamManager = SSEStreamManager()
     /// Set this at app launch to route API calls through the full effects pipeline.
     /// When set, /start and /stop go through RecordViewModel (effects compositing included).
     /// When nil, falls back to raw RecordingManager (no effects).
@@ -128,9 +129,29 @@ public class ScreenMuseServer {
             }
         }
 
-        smLog.info("[\(reqID)] → \(method) \(path) body=\(body.isEmpty ? "{}" : "\(body)")", category: .server)
+        // Strip query string from path and merge into body (GET params override JSON body)
+        let cleanPath: String
+        if let qIdx = path.firstIndex(of: "?") {
+            let queryString = String(path[path.index(after: qIdx)...])
+            cleanPath = String(path[..<qIdx])
+            for pair in queryString.split(separator: "&") {
+                let kv = pair.split(separator: "=", maxSplits: 1)
+                if kv.count == 2 {
+                    let k = String(kv[0])
+                    let v = String(kv[1]).removingPercentEncoding ?? String(kv[1])
+                    // Coerce to Int/Double if possible, otherwise String
+                    if let n = Int(v) { body[k] = n }
+                    else if let d = Double(v) { body[k] = d }
+                    else { body[k] = v }
+                }
+            }
+        } else {
+            cleanPath = path
+        }
 
-        switch (method, path) {
+        smLog.info("[\(reqID)] → \(method) \(cleanPath) body=\(body.isEmpty ? "{}" : "\(body)")", category: .server)
+
+        switch (method, cleanPath) {
 
         case ("POST", "/start"):
             guard !isRecording else {
@@ -1296,7 +1317,9 @@ public class ScreenMuseServer {
                     // System state
                     "GET /system/clipboard", "GET /system/active-window", "GET /system/running-apps",
                     // Info / debug
-                    "GET /status", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version"
+                    "GET /status", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version",
+                    // Live stream
+                    "GET /stream", "GET /stream/status"
                 ]
             sendResponse(connection: connection, status: 200, body: [
                 "version": version,
@@ -1368,20 +1391,11 @@ public class ScreenMuseServer {
 
         case ("GET", "/logs"):
             // Return recent log entries from the ring buffer.
-            // Query params supported (parsed from path):
-            //   ?limit=N      — max entries to return (default 200)
-            //   ?level=error  — minimum level filter (debug/info/warning/error)
-            //   ?category=X   — category filter
-            let queryString = path.contains("?") ? String(path.split(separator: "?", maxSplits: 1).last ?? "") : ""
-            var queryParams: [String: String] = [:]
-            for pair in queryString.split(separator: "&") {
-                let kv = pair.split(separator: "=", maxSplits: 1)
-                if kv.count == 2 { queryParams[String(kv[0])] = String(kv[1]) }
-            }
-
-            let limit = Int(queryParams["limit"] ?? "200") ?? 200
-            let minLevel = ScreenMuseLogger.Level(rawValue: queryParams["level"] ?? "debug") ?? .debug
-            let filterCategory = queryParams["category"].flatMap { ScreenMuseLogger.Category(rawValue: $0) }
+            // Query params: ?limit=N  ?level=error  ?category=X
+            // (parsed from URL query string via body map above)
+            let limit = body["limit"] as? Int ?? 200
+            let minLevel = ScreenMuseLogger.Level(rawValue: body["level"] as? String ?? "debug") ?? .debug
+            let filterCategory = (body["category"] as? String).flatMap { ScreenMuseLogger.Category(rawValue: $0) }
 
             smLog.debug("[\(reqID)] /logs limit=\(limit) minLevel=\(minLevel.rawValue) category=\(filterCategory?.rawValue ?? "all")", category: .server)
 
@@ -1392,8 +1406,37 @@ public class ScreenMuseServer {
                 "entries": entries
             ])
 
+        // MARK: - SSE Live Stream
+
+        case ("GET", "/stream"):
+            // Server-Sent Events — real-time frame push.
+            // Query params: ?fps=2 &scale=1280 &format=jpeg &quality=60
+            // Connection stays open; frames pushed until client disconnects.
+            // Usage: curl -N http://localhost:7823/stream
+            // Usage: curl -N "http://localhost:7823/stream?fps=5&scale=640&quality=80"
+            let fps   = body["fps"] as? Int    ?? 2
+            let scale = body["scale"] as? Int  ?? 1280
+            let fmt   = SSEStreamManager.StreamConfig.Format(rawValue: body["format"] as? String ?? "jpeg") ?? .jpeg
+            let qual  = body["quality"] as? Int ?? 60
+
+            let config = SSEStreamManager.StreamConfig(fps: fps, scale: scale, format: fmt, quality: qual)
+            smLog.info("[\(reqID)] /stream — fps=\(fps) scale=\(scale) format=\(fmt.rawValue) quality=\(qual) active=\(streamManager.activeClientCount)", category: .server)
+            smLog.usage("STREAM START", details: ["fps": "\(fps)", "scale": "\(scale)"])
+
+            // Send SSE handshake (keeps connection open — do NOT call sendResponse)
+            streamManager.sendSSEHandshake(to: connection)
+            streamManager.addClient(connection, config: config)
+            // Do NOT close — streamManager owns this connection until client disconnects
+
+        case ("GET", "/stream/status"):
+            // Quick health check for the stream subsystem
+            sendResponse(connection: connection, status: 200, body: [
+                "active_clients": streamManager.activeClientCount,
+                "total_frames_sent": streamManager.totalFramesSent
+            ])
+
         default:
-            smLog.warning("[\(reqID)] 404 — \(method) \(path) not found", category: .server)
+            smLog.warning("[\(reqID)] 404 — \(method) \(cleanPath) not found", category: .server)
             sendResponse(connection: connection, status: 404, body: ["error": "not found"])
         }
     }
