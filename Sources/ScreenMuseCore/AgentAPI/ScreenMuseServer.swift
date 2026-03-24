@@ -328,7 +328,7 @@ public class ScreenMuseServer {
                     let url = try await pipManager.stopRecording()
                     isRecording = false
                     let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
-                    await viewModel.setLastVideoURL(url)
+                    currentVideoURL = url
                     smLog.usage("RECORD STOP (PiP)", details: ["elapsed": "\(Int(elapsed))s", "file": url.lastPathComponent])
                     sendResponse(connection: connection, status: 200, body: [
                         "video_path": url.path,
@@ -512,7 +512,7 @@ public class ScreenMuseServer {
                         rec["created_at"] = ISO8601DateFormatter().string(from: created)
                     }
                     // Mark which one is currently loaded as lastVideoURL
-                    if let last = await viewModel.lastVideoURL, last.path == url.path {
+                    if let last = currentVideoURL, last.path == url.path {
                         rec["is_last"] = true
                     }
                     recordings.append(rec)
@@ -569,7 +569,7 @@ public class ScreenMuseServer {
             }
 
             // Refuse to delete the currently loaded video
-            if let last = await viewModel.lastVideoURL, last.path == url.path {
+            if let last = currentVideoURL, last.path == url.path {
                 sendResponse(connection: connection, status: 409, body: [
                     "error": "Cannot delete the currently loaded recording. Stop and start a new session first.",
                     "code": "IN_USE"
@@ -600,7 +600,7 @@ public class ScreenMuseServer {
             let sourceStr = body["source"] as? String ?? "last"
             let sourceURL: URL?
             if sourceStr == "last" {
-                sourceURL = await viewModel.lastVideoURL
+                sourceURL = currentVideoURL
             } else {
                 sourceURL = URL(fileURLWithPath: sourceStr)
             }
@@ -649,7 +649,7 @@ public class ScreenMuseServer {
             let sourceStr = body["source"] as? String ?? "last"
             let sourceURL: URL?
             if sourceStr == "last" {
-                sourceURL = await viewModel.lastVideoURL
+                sourceURL = currentVideoURL
             } else {
                 sourceURL = URL(fileURLWithPath: sourceStr)
             }
@@ -668,10 +668,13 @@ public class ScreenMuseServer {
             if let v = body["idle_speed"] as? Double { rampConfig.idleSpeed = max(1.0, v) }
             if let v = body["active_speed"] as? Double { rampConfig.activeSpeed = max(0.1, v) }
 
-            // Gather event data from the viewModel
-            let cursorEvents = await viewModel.cursorTracker.events
-            let keystrokeTimestamps = await viewModel.keyboardMonitor.events.map { $0.timestamp }
-            let recordingStart = await viewModel.recordingStartTime
+            // Event data for activity analysis.
+            // ScreenMuseServer doesn't hold cursor/keyboard event arrays directly — those live
+            // in RecordViewModel which is in the App layer. Without them, ActivityAnalyzer
+            // falls back to audio amplitude analysis automatically.
+            let cursorEvents: [CursorEvent] = []
+            let keystrokeTimestamps: [Date] = []
+            let recordingStart = startTime
 
             // Analyze activity
             let analyzer = ActivityAnalyzer()
@@ -759,7 +762,7 @@ public class ScreenMuseServer {
             let sourceStr = body["source"] as? String ?? "last"
             let sourceURL: URL?
             if sourceStr == "last" {
-                sourceURL = await viewModel.lastVideoURL
+                sourceURL = currentVideoURL
             } else {
                 sourceURL = URL(fileURLWithPath: sourceStr)
             }
@@ -940,7 +943,7 @@ public class ScreenMuseServer {
             let sourceStr = body["source"] as? String ?? "last"
             let sourceURL: URL?
             if sourceStr == "last" {
-                sourceURL = await viewModel.lastVideoURL
+                sourceURL = currentVideoURL
             } else {
                 sourceURL = URL(fileURLWithPath: sourceStr)
             }
