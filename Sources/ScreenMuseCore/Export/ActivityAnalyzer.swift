@@ -76,17 +76,12 @@ public final class ActivityAnalyzer {
         var cursor: Double = 0
 
         for t in eventTimes {
-            guard t > cursor else { continue }
+            guard t > cursor else { continue }  // skip duplicate/same-time events
             let gap = t - cursor
-            if gap > idleThreshold {
-                // Active up to the start of the gap
-                if cursor < t - gap {
-                    rawSegments.append(Segment(start: cursor, end: t - gap, isIdle: false))
-                }
-                rawSegments.append(Segment(start: t - gap, end: t, isIdle: true))
-            } else {
-                rawSegments.append(Segment(start: cursor, end: t, isIdle: false))
-            }
+            // The span [cursor, t] is a gap between consecutive events.
+            // If the gap exceeds idleThreshold, classify it as idle.
+            // Otherwise classify as active (user was typing/moving between events).
+            rawSegments.append(Segment(start: cursor, end: t, isIdle: gap > idleThreshold))
             cursor = t
         }
 

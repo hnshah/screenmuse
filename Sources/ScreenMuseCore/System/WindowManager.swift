@@ -207,31 +207,35 @@ public final class WindowManager {
             "pid": frontApp.processIdentifier
         ]
 
-        // Try to get window title via AX (best-effort — may fail without permission)
+        // Try to get window title + frame via AX (best-effort — may fail without permission)
         if AXIsProcessTrusted() {
             let axApp = AXUIElementCreateApplication(frontApp.processIdentifier)
-            var focusedWindow: AnyObject?
-            if AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focusedWindow) == .success,
-               let window = focusedWindow {
-                var titleValue: AnyObject?
-                if AXUIElementCopyAttributeValue(window as! AXUIElement, kAXTitleAttribute as CFString, &titleValue) == .success,
-                   let title = titleValue as? String {
+            var focusedWindowRef: AnyObject?
+            if AXUIElementCopyAttributeValue(axApp, kAXFocusedWindowAttribute as CFString, &focusedWindowRef) == .success,
+               let axWindow = focusedWindowRef as? AXUIElement {
+                // Window title
+                var titleRef: AnyObject?
+                if AXUIElementCopyAttributeValue(axWindow, kAXTitleAttribute as CFString, &titleRef) == .success,
+                   let title = titleRef as? String {
                     info["window_title"] = title
                 }
-                // Get window frame
-                var posValue: AnyObject?
-                var sizeValue: AnyObject?
-                var pos = CGPoint.zero
-                var size = CGSize.zero
-                if AXUIElementCopyAttributeValue(window as! AXUIElement, kAXPositionAttribute as CFString, &posValue) == .success,
-                   let pv = posValue {
-                    AXValueGetValue(pv as! AXValue, .cgPoint, &pos)
+                // Window position
+                var posRef: AnyObject?
+                if AXUIElementCopyAttributeValue(axWindow, kAXPositionAttribute as CFString, &posRef) == .success,
+                   let axPosValue = posRef,
+                   CFGetTypeID(axPosValue) == AXValueGetTypeID() {
+                    var pos = CGPoint.zero
+                    AXValueGetValue(axPosValue as! AXValue, .cgPoint, &pos)
                     info["window_x"] = pos.x
                     info["window_y"] = pos.y
                 }
-                if AXUIElementCopyAttributeValue(window as! AXUIElement, kAXSizeAttribute as CFString, &sizeValue) == .success,
-                   let sv = sizeValue {
-                    AXValueGetValue(sv as! AXValue, .cgSize, &size)
+                // Window size
+                var sizeRef: AnyObject?
+                if AXUIElementCopyAttributeValue(axWindow, kAXSizeAttribute as CFString, &sizeRef) == .success,
+                   let axSizeValue = sizeRef,
+                   CFGetTypeID(axSizeValue) == AXValueGetTypeID() {
+                    var size = CGSize.zero
+                    AXValueGetValue(axSizeValue as! AXValue, .cgSize, &size)
                     info["window_width"] = size.width
                     info["window_height"] = size.height
                 }

@@ -3,7 +3,7 @@ import Foundation
 
 /// Trim a video to a time range using AVFoundation.
 ///
-/// Default path: stream copy (AVAssetExportPresetPassthrough) — no re-encode,
+/// Default path: stream copy (AVAssetExportPresetPassthrough) - no re-encode,
 /// near-instantaneous, zero quality loss. Trim point snaps to nearest keyframe.
 ///
 /// Re-encode path (reencode: true): frame-accurate trim with
@@ -87,9 +87,11 @@ public final class VideoTrimmer {
         }
         let totalSeconds = CMTimeGetSeconds(assetDuration)
 
-        // Validate and clamp range
+        // Validate and clamp range.
+        // Clamp end to totalSeconds with a small epsilon for floating point robustness
+        // (e.g. user passes end=45.0 but asset duration is 44.9997s due to frame rounding)
         let startSec = config.start
-        let endSec = config.end ?? totalSeconds
+        let endSec = min(config.end ?? totalSeconds, totalSeconds)
 
         guard startSec >= 0 else {
             throw TrimError.invalidRange("start (\(startSec)s) must be >= 0")
@@ -100,10 +102,7 @@ public final class VideoTrimmer {
         guard startSec < totalSeconds else {
             throw TrimError.invalidRange("start (\(startSec)s) exceeds video duration (\(String(format:"%.1f",totalSeconds))s)")
         }
-        guard endSec <= totalSeconds else {
-            throw TrimError.invalidRange("end (\(endSec)s) exceeds video duration (\(String(format:"%.1f",totalSeconds))s). Pass end=\(String(format:"%.1f",totalSeconds)) or omit it.")
-        }
-
+        
         // Build CMTimeRange
         let startTime = CMTime(seconds: startSec, preferredTimescale: 600)
         let endTime = CMTime(seconds: endSec, preferredTimescale: 600)
@@ -125,7 +124,7 @@ public final class VideoTrimmer {
         session.outputFileType = .mp4
         session.timeRange = timeRange
 
-        smLog.info("VideoTrimmer: exporting \(String(format:"%.1f",startSec))s–\(String(format:"%.1f",endSec))s (\(String(format:"%.1f",endSec-startSec))s) preset=\(presetName)", category: .recording)
+        smLog.info("VideoTrimmer: exporting \(String(format:"%.1f",startSec))s-\(String(format:"%.1f",endSec))s (\(String(format:"%.1f",endSec-startSec))s) preset=\(presetName)", category: .recording)
 
         // Export
         await session.export()
@@ -137,7 +136,7 @@ public final class VideoTrimmer {
             throw TrimError.exportCancelled
         case .failed:
             let msg = session.error?.localizedDescription ?? "unknown error"
-            smLog.error("VideoTrimmer: export failed — \(msg)", category: .recording)
+            smLog.error("VideoTrimmer: export failed - \(msg)", category: .recording)
             throw TrimError.exportFailed(msg)
         default:
             throw TrimError.exportFailed("Unexpected export status: \(session.status.rawValue)")
@@ -154,10 +153,10 @@ public final class VideoTrimmer {
             fileSize: fileSize
         )
 
-        smLog.info("VideoTrimmer: ✅ trim done — \(outputURL.lastPathComponent) \(String(format:"%.1f",trimmedDuration))s \(String(format:"%.2f",result.sizeMB))MB", category: .recording)
+        smLog.info("VideoTrimmer: ✅ trim done - \(outputURL.lastPathComponent) \(String(format:"%.1f",trimmedDuration))s \(String(format:"%.2f",result.sizeMB))MB", category: .recording)
         smLog.usage("TRIM", details: [
             "file": outputURL.lastPathComponent,
-            "range": "\(String(format:"%.1f",startSec))–\(String(format:"%.1f",endSec))s",
+            "range": "\(String(format:"%.1f",startSec))-\(String(format:"%.1f",endSec))s",
             "duration": "\(String(format:"%.1f",trimmedDuration))s",
             "size": "\(String(format:"%.2f",result.sizeMB))MB"
         ])

@@ -133,6 +133,19 @@ curl -X POST http://localhost:7823/speedramp
 curl -X POST http://localhost:7823/speedramp -H "Content-Type: application/json" \
   -d '{"idle_speed": 8.0, "idle_threshold_sec": 1.0}'
 
+# ── iCloud Upload ──
+
+# Upload last recording to iCloud Drive → ScreenMuse folder
+curl -X POST http://localhost:7823/upload/icloud
+
+# Upload with custom filename
+curl -X POST http://localhost:7823/upload/icloud -H "Content-Type: application/json" \
+  -d '{"filename": "product-demo-2026-03-24.mp4"}'
+
+# Upload a specific file
+curl -X POST http://localhost:7823/upload/icloud -H "Content-Type: application/json" \
+  -d '{"source": "/Users/you/Movies/ScreenMuse/recording.mp4"}'
+
 # ── Window Management (native macOS — Playwright can't do this) ──
 
 # Bring an app to the front before recording

@@ -21,8 +21,6 @@ public final class SpeedRamper {
         public var idleSpeed: Double = 4.0
         /// Speed multiplier for active sections. Default 1.0x (no change).
         public var activeSpeed: Double = 1.0
-        /// Seconds to ramp in/out at speed boundaries. Default 0.3s.
-        public var rampDuration: Double = 0.3
 
         public init() {}
     }
@@ -133,64 +131,28 @@ public final class SpeedRamper {
             throw SpeedRampError.compositionFailed("insertTimeRange failed: \(error.localizedDescription)")
         }
 
-        // Apply speed scaling — process segments in REVERSE order so earlier scaleTimeRange
-        // calls don't shift the composition positions for later ones
+        // Apply speed scaling — process segments in REVERSE order (last segment first).
+        // This is critical: scaleTimeRange shifts everything AFTER the scaled range.
+        // By processing in reverse, each operation only affects segments we've already
+        // handled (which are later in time), leaving earlier segments at their correct positions.
+        //
+        // NOTE: Smooth speed ramping (gradual acceleration at boundaries) is intentionally
+        // omitted here. It requires careful composition-time tracking after each scale operation.
+        // The current approach applies uniform speed to the full segment — clean cuts with no
+        // jarring effect in practice since idle sections (by definition) have no visual action.
         let sortedSegments = segments.sorted { $0.start > $1.start }
 
         for segment in sortedSegments {
             let speed = segment.isIdle ? config.idleSpeed : config.activeSpeed
-            guard speed != 1.0 else { continue }  // skip if no change
+            guard speed != 1.0, segment.duration > 0.05 else { continue }  // skip no-ops and micro-segments
 
-            // Add brief ramp zones at boundaries for smooth transition
-            // Main zone: clip ramp_duration from each edge
-            let ramp = min(config.rampDuration, segment.duration / 4)
-            let mainStart = segment.start + ramp
-            let mainEnd = segment.end - ramp
+            let segStart = CMTime(seconds: segment.start, preferredTimescale: 600)
+            let segEnd = CMTime(seconds: segment.end, preferredTimescale: 600)
+            let segRange = CMTimeRange(start: segStart, end: segEnd)
+            let scaledDuration = CMTime(seconds: segment.duration / speed, preferredTimescale: 600)
 
-            // Scale main idle section
-            if mainEnd > mainStart {
-                let mainSourceStart = CMTime(seconds: mainStart, preferredTimescale: 600)
-                let mainSourceEnd = CMTime(seconds: mainEnd, preferredTimescale: 600)
-                let mainSourceRange = CMTimeRange(start: mainSourceStart, end: mainSourceEnd)
-                let mainDuration = CMTime(
-                    seconds: (mainEnd - mainStart) / speed,
-                    preferredTimescale: 600
-                )
-                composition.scaleTimeRange(mainSourceRange, toDuration: mainDuration)
-            }
-
-            // Ramp in (leading edge): gradually accelerate from 1x to idleSpeed
-            if ramp > 0 && segment.start >= 0 {
-                let rampSteps = 5
-                let stepDuration = ramp / Double(rampSteps)
-                // Process leading ramp in reverse so positions stay stable
-                for i in stride(from: rampSteps - 1, through: 0, by: -1) {
-                    let t = segment.start + Double(i) * stepDuration
-                    let stepSpeed = 1.0 + (speed - 1.0) * (Double(i) / Double(rampSteps))
-                    guard stepSpeed > 1.0 else { continue }
-                    let rangeStart = CMTime(seconds: t, preferredTimescale: 600)
-                    let rangeEnd = CMTime(seconds: t + stepDuration, preferredTimescale: 600)
-                    let range = CMTimeRange(start: rangeStart, end: rangeEnd)
-                    let scaledDuration = CMTime(seconds: stepDuration / stepSpeed, preferredTimescale: 600)
-                    composition.scaleTimeRange(range, toDuration: scaledDuration)
-                }
-            }
-
-            // Ramp out (trailing edge): gradually decelerate from idleSpeed to 1x
-            if ramp > 0 && mainEnd < totalSeconds {
-                let rampSteps = 5
-                let stepDuration = ramp / Double(rampSteps)
-                for i in stride(from: rampSteps - 1, through: 0, by: -1) {
-                    let t = mainEnd + Double(i) * stepDuration
-                    let stepSpeed = speed - (speed - 1.0) * (Double(i) / Double(rampSteps))
-                    guard stepSpeed > 1.0 else { continue }
-                    let rangeStart = CMTime(seconds: t, preferredTimescale: 600)
-                    let rangeEnd = CMTime(seconds: t + stepDuration, preferredTimescale: 600)
-                    let range = CMTimeRange(start: rangeStart, end: rangeEnd)
-                    let scaledDuration = CMTime(seconds: stepDuration / stepSpeed, preferredTimescale: 600)
-                    composition.scaleTimeRange(range, toDuration: scaledDuration)
-                }
-            }
+            composition.scaleTimeRange(segRange, toDuration: scaledDuration)
+            smLog.debug("SpeedRamper: scaled [\(String(format:"%.1f",segment.start))–\(String(format:"%.1f",segment.end))]s isIdle=\(segment.isIdle) \(speed)x → \(String(format:"%.1f",segment.duration/speed))s", category: .recording)
         }
 
         // Compute output duration from composition

@@ -191,15 +191,36 @@ public final class GIFExporter {
             throw ExportError.exportFailed("No frames to export in time range \(startSeconds)–\(endSeconds)s")
         }
 
-        // Create image destination
+        // Create image destination.
+        // CGImageDestination with public.webp supports animated WebP on macOS 14+.
+        // If creation fails (e.g., unsupported system config), fall back to GIF automatically.
         let destinationUTType = config.format.utType
-        guard let destination = CGImageDestinationCreateWithURL(
-            outputURL as CFURL,
+
+        // Resolve effective output URL — may change if WebP falls back to GIF
+        var effectiveOutputURL = outputURL
+        var effectiveFormat = config.format
+
+        var destination = CGImageDestinationCreateWithURL(
+            effectiveOutputURL as CFURL,
             destinationUTType.identifier as CFString,
             frameTimes.count,
             nil
-        ) else {
-            throw ExportError.destinationCreateFailed(outputURL)
+        )
+
+        if destination == nil && config.format == .webp {
+            smLog.warning("GIFExporter: animated WebP not supported on this system — falling back to GIF", category: .recording)
+            effectiveFormat = .gif
+            effectiveOutputURL = outputURL.deletingPathExtension().appendingPathExtension("gif")
+            destination = CGImageDestinationCreateWithURL(
+                effectiveOutputURL as CFURL,
+                UTType.gif.identifier as CFString,
+                frameTimes.count,
+                nil
+            )
+        }
+
+        guard let destination else {
+            throw ExportError.destinationCreateFailed(effectiveOutputURL)
         }
 
         // Set animated GIF/WebP container properties
@@ -207,7 +228,7 @@ public final class GIFExporter {
         let containerProps: [String: Any]
         let frameProps: [String: Any]
 
-        switch config.format {
+        switch effectiveFormat {
         case .gif:
             containerProps = [
                 kCGImagePropertyGIFDictionary as String: [
@@ -307,10 +328,10 @@ public final class GIFExporter {
             smLog.warning("GIFExporter: export completed with \(state.written) frames but had frame errors: \(e.localizedDescription)", category: .recording)
         }
 
-        let fileSize = (try? FileManager.default.attributesOfItem(atPath: outputURL.path)[.size] as? Int) ?? 0
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: effectiveOutputURL.path)[.size] as? Int) ?? 0
         let result = ExportResult(
-            outputURL: outputURL,
-            format: config.format,
+            outputURL: effectiveOutputURL,
+            format: effectiveFormat,
             width: outWidth,
             height: outHeight,
             frameCount: state.written,
@@ -319,9 +340,9 @@ public final class GIFExporter {
             fileSize: fileSize
         )
 
-        smLog.info("GIFExporter: ✅ export done — \(outputURL.lastPathComponent) \(result.width)×\(result.height) \(state.written) frames \(String(format:"%.2f",result.sizeMB))MB", category: .recording)
-        smLog.usage("EXPORT \(config.format.rawValue.uppercased())", details: [
-            "file": outputURL.lastPathComponent,
+        smLog.info("GIFExporter: ✅ export done — \(effectiveOutputURL.lastPathComponent) \(result.width)×\(result.height) \(state.written) frames \(String(format:"%.2f",result.sizeMB))MB", category: .recording)
+        smLog.usage("EXPORT \(effectiveFormat.rawValue.uppercased())", details: [
+            "file": effectiveOutputURL.lastPathComponent,
             "size": "\(String(format:"%.2f",result.sizeMB))MB",
             "frames": "\(state.written)",
             "duration": "\(String(format:"%.1f",exportDuration))s"

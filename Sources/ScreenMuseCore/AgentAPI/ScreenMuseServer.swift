@@ -17,6 +17,7 @@ import ScreenCaptureKit
 //   POST /export          body: {"format":"gif","fps":10,"scale":800,"start":0,"end":30} → {"path":...,"frames":N,"size_mb":N}
 //   POST /trim            body: {"start":3.5,"end":45.0}                                → {"path":...,"trimmed_duration":N}
 //   POST /speedramp       body: {"idle_speed":4.0,"idle_threshold_sec":2.0}             → {"output_duration":N,"compression_ratio":N}
+//   POST /upload/icloud   body: {"source":"last","filename":"demo.mp4"}                 → {"local_path":...,"syncing_to_cloud":true}
 //
 //   -- Window Management (native macOS, Playwright can't do these) --
 //   POST /window/focus    body: {"app": "Notes"}                         → {"ok": true, "app": "Notes"}
@@ -329,6 +330,55 @@ public class ScreenMuseServer {
             smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
             sendResponse(connection: connection, status: 200, body: ["ok": true])
 
+        // MARK: - iCloud Upload
+
+        case ("POST", "/upload/icloud"):
+            smLog.info("[\(reqID)] /upload/icloud request", category: .server)
+
+            // Resolve source
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL?
+            if sourceStr == "last" {
+                sourceURL = await viewModel.lastVideoURL
+            } else {
+                sourceURL = URL(fileURLWithPath: sourceStr)
+            }
+            guard let resolvedSource = sourceURL,
+                  FileManager.default.fileExists(atPath: resolvedSource.path) else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record something first, or pass 'source' with a file path.",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            let filename = body["filename"] as? String
+            let overwrite = body["overwrite"] as? Bool ?? false
+
+            smLog.info("[\(reqID)] /upload/icloud source=\(resolvedSource.lastPathComponent) overwrite=\(overwrite)", category: .server)
+
+            do {
+                let uploader = iCloudUploader()
+                let result = try uploader.upload(sourceURL: resolvedSource, filename: filename, overwrite: overwrite)
+                sendResponse(connection: connection, status: 200, body: result.asDictionary())
+            } catch let err as iCloudUploader.UploadError {
+                let code: String
+                let status: Int
+                switch err {
+                case .sourceNotFound: code = "SOURCE_NOT_FOUND"; status = 404
+                case .iCloudDriveNotAvailable: code = "ICLOUD_NOT_AVAILABLE"; status = 503
+                case .copyFailed: code = "COPY_FAILED"; status = 500
+                }
+                smLog.error("[\(reqID)] /upload/icloud failed [\(code)]: \(err.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: status, body: [
+                    "error": err.errorDescription ?? err.localizedDescription,
+                    "code": code
+                ])
+            } catch {
+                smLog.error("[\(reqID)] /upload/icloud error: \(error.localizedDescription)", category: .server)
+                sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+            }
+
         // MARK: - Speed Ramp
 
         case ("POST", "/speedramp"):
@@ -356,7 +406,6 @@ public class ScreenMuseServer {
             if let v = body["idle_threshold_sec"] as? Double { rampConfig.idleThresholdSec = v }
             if let v = body["idle_speed"] as? Double { rampConfig.idleSpeed = max(1.0, v) }
             if let v = body["active_speed"] as? Double { rampConfig.activeSpeed = max(0.1, v) }
-            if let v = body["ramp_duration"] as? Double { rampConfig.rampDuration = max(0, v) }
 
             // Gather event data from the viewModel
             let cursorEvents = await viewModel.cursorTracker.events
@@ -976,6 +1025,8 @@ public class ScreenMuseServer {
                     "POST /export", "POST /trim", "POST /speedramp",
                     // Frame capture
                     "POST /frame",
+                    // Cloud
+                    "POST /upload/icloud",
                     // Window management
                     "POST /window/focus", "POST /window/position", "POST /window/hide-others",
                     // System state
