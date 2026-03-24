@@ -76,7 +76,7 @@ public final class ThumbnailExtractor {
 
         // Encode
         let mutableData = NSMutableData()
-        let utType: CFString = (format == "png") ? "public.png" : "public.jpeg"
+        let utType = (format == "png") ? "public.png" as CFString : "public.jpeg" as CFString
         guard let dest = CGImageDestinationCreateWithData(mutableData as CFMutableData, utType, 1, nil)
         else { throw ThumbnailError.encodingFailed }
 
