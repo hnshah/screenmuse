@@ -1,173 +1,70 @@
-# ScreenMuse Agent API Reference
+# Agent API Reference
 
-ScreenMuse exposes a local HTTP server on **port 7823** so AI agents can programmatically control screen recordings. This is the core differentiator: agents record themselves, mark chapters, highlight important clicks, and retrieve the finished video — all through simple HTTP calls.
+> **The live API reference is the OpenAPI spec served by ScreenMuse itself.**
+>
+> ```bash
+> curl http://localhost:7823/openapi
+> ```
+>
+> Load it into Postman, Claude, Cursor, or any OpenAPI-compatible tool for a full, always-up-to-date reference.
 
-## Why Port 7823?
+This document is kept for historical context. For the current endpoint list, use `/openapi` or see the [README](../README.md#api-reference).
 
-The server binds to `localhost:7823` by default. The port was chosen to avoid conflicts with common development servers. Only local connections are accepted.
+## Quick Reference
 
-## Endpoints
+ScreenMuse runs on **port 7823**. All endpoints accept and return JSON.
 
-### POST /start
+### Recording
+- `POST /start` — start recording (`name`, `region`, `audio_source`, `webhook`)
+- `POST /stop` — stop and finalize
+- `POST /pause` / `POST /resume`
+- `POST /chapter` — mark a named chapter
+- `POST /highlight` — flag next click for auto-zoom + enhanced effect
+- `POST /screenshot` — capture without recording
+- `POST /note` — timestamped note to usage log
 
-Start a new recording session.
+### Export & Edit
+- `POST /export` — GIF or WebP (`format`, `fps`, `scale`, `quality`, `start`, `end`)
+- `POST /trim` — stream-copy trim (`start`, `end`, `reencode`)
+- `POST /speedramp` — auto-speed idle pauses
+- `POST /crop` — crop rectangular region
+- `POST /thumbnail` — extract frame at timecode
+- `POST /concat` — combine recordings
 
-**Request body:**
-```json
-{"name": "my-demo-recording"}
-```
+### Multi-Window
+- `POST /start/pip` — two windows, PiP or side-by-side layout
 
-**Response:**
-```json
-{"session_id": "uuid", "status": "recording", "name": "my-demo-recording"}
-```
+### Window Management
+- `POST /window/focus` — bring app to front
+- `POST /window/position` — set size and position
+- `POST /window/hide-others` — clear desktop
 
-**curl example:**
-```bash
-curl -X POST http://localhost:7823/start \
-  -H "Content-Type: application/json" \
-  -d '{"name": "feature-walkthrough"}'
-```
+### System State
+- `GET /system/clipboard`
+- `GET /system/active-window`
+- `GET /system/running-apps`
 
-### POST /stop
+### Vision
+- `POST /ocr` — Apple Vision OCR (screen or image file)
 
-Stop the current recording and get the video path.
+### Streaming
+- `GET /stream` — SSE real-time frames
+- `GET /stream/status`
 
-**Response:**
-```json
-{
-  "video_path": "/Users/you/Movies/ScreenMuse/recording.mp4",
-  "metadata": {
-    "session_id": "uuid",
-    "name": "feature-walkthrough",
-    "elapsed": 45.2,
-    "chapters": [
-      {"name": "Login flow", "time": 5.1},
-      {"name": "Dashboard", "time": 18.3}
-    ]
-  }
-}
-```
+### Files
+- `GET /recordings` — list all
+- `DELETE /recording` — delete by filename
+- `POST /upload/icloud`
 
-**curl example:**
-```bash
-curl -X POST http://localhost:7823/stop
-```
+### Info & Debug
+- `GET /status` — recording state, elapsed, chapters
+- `GET /version` — version, build, all endpoint names
+- `GET /timeline` — chapters, highlights, notes as JSON
+- `GET /debug` — save dir, recent files, server state
+- `GET /logs` — log entries (`level=`, `category=`, `limit=`)
+- `GET /report` — session summary for bug reports
+- `GET /openapi` — OpenAPI spec (JSON)
 
-### POST /chapter
-
-Mark a chapter at the current timestamp. Chapters appear in the video timeline.
-
-**Request body:**
-```json
-{"name": "Chapter name"}
-```
-
-**Response:**
-```json
-{"ok": true, "time": 12.5}
-```
-
-**curl example:**
-```bash
-curl -X POST http://localhost:7823/chapter \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Login flow"}'
-```
-
-### POST /highlight
-
-Flag the next click as important. ScreenMuse will apply auto-zoom and enhanced click effects to the next mouse click.
-
-**Response:**
-```json
-{"ok": true}
-```
-
-**curl example:**
-```bash
-curl -X POST http://localhost:7823/highlight
-```
-
-### GET /status
-
-Get current recording status.
-
-**Response:**
-```json
-{
-  "recording": true,
-  "elapsed": 12.3,
-  "session_id": "uuid",
-  "chapters": [
-    {"name": "Intro", "time": 2.1}
-  ]
-}
-```
-
-**curl example:**
-```bash
-curl http://localhost:7823/status
-```
-
-## Python Quickstart
-
-```bash
-pip install -e clients/python
-```
-
-```python
-from screenmuse import ScreenMuse
-
-sm = ScreenMuse()
-sm.start("my-demo")
-sm.mark_chapter("Setup")
-sm.highlight_next_click()
-# ... do things ...
-result = sm.stop()
-print(result["video_path"])
-```
-
-## Node.js / TypeScript Quickstart
-
-```bash
-cd clients/node && npm install && npm run build
-```
-
-```typescript
-import { ScreenMuse } from "screenmuse";
-
-const sm = new ScreenMuse();
-await sm.start("my-demo");
-await sm.markChapter("Setup");
-await sm.highlightNextClick();
-// ... do things ...
-const result = await sm.stop();
-console.log(result.video_path);
-```
-
-## OpenClaw Integration
-
-Use ScreenMuse from an OpenClaw skill to record agent workflows:
-
-```python
-from screenmuse import ScreenMuse
-
-sm = ScreenMuse()
-
-# Start recording before the agent runs
-sm.start("openclaw-skill-demo")
-sm.mark_chapter("Starting task")
-
-# ... agent does its work ...
-sm.highlight_next_click()  # highlight the important action
-# ... agent clicks the button ...
-
-sm.mark_chapter("Task complete")
-result = sm.stop()
-
-# result["video_path"] has the recording
-# result["metadata"]["chapters"] has the timeline
-```
-
-This gives you a video with chapters, highlighted clicks, and auto-zoom — ready to share as a demo or attach to a PR.
+### Scripting
+- `POST /script` — run shell command
+- `POST /script/batch` — run list of commands

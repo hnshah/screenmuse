@@ -2,40 +2,11 @@
 
 **The screen recorder built for AI agents.**
 
-ScreenMuse is a native macOS screen recorder that AI agents can control via a local HTTP API. Record demos, mark chapters, highlight important clicks, and get back polished videos — all programmatically.
+ScreenMuse is a native macOS screen recorder that AI agents control via a local HTTP API on port 7823. Record demos, mark chapters, highlight clicks, export GIFs — all programmatically. No UI required.
+
+Built on ScreenCaptureKit, AVFoundation, and Metal. Requires macOS 14 (Sonoma)+.
 
 ## Quick Start
-
-```python
-from screenmuse import ScreenMuse
-
-sm = ScreenMuse()
-sm.start("my-feature-demo")
-sm.mark_chapter("Login flow")
-sm.highlight_next_click()
-# ... agent does its work ...
-result = sm.stop()
-print(result["video_path"])  # → /Users/you/Movies/ScreenMuse/recording.mp4
-```
-
-## Features
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Agent API | v0.1.0 | HTTP server on port 7823 — start/stop/chapter/highlight |
-| Click Effects | v0.1.0 | Ripple, glow, particle burst, ring, and sonar presets |
-| Cursor Tracking | v0.1.0 | Records cursor position and clicks for post-processing |
-| Auto-Zoom | v0.1.0 | Camera follows clicks with spring easing |
-| Screen Capture | v0.1.0 | Full screen, window, and region via ScreenCaptureKit |
-| Recording | v0.1.0 | MP4 with system audio and microphone |
-| Structured Logging | v0.4.0 | File + Console.app + ring buffer; GET /logs, GET /report |
-| Annotations | v0.4.0 | POST /note — timestamped notes into usage log mid-session |
-| Notifications | v0.4.0 | Native macOS alert when video is ready (with file size) |
-| Finder Reveal | v0.4.0 | Finished video auto-selected in Finder on stop |
-
-## Install
-
-**Requirements:** macOS 14.0 (Sonoma) or later, Xcode 15.0+
 
 ```bash
 git clone https://github.com/hnshah/screenmuse
@@ -43,311 +14,204 @@ cd screenmuse
 ./scripts/dev-run.sh
 ```
 
-Or open `Package.swift` in Xcode and press Cmd+R.
+On first launch, macOS will prompt for Screen Recording permission. Grant it, then relaunch.
 
-On first launch, macOS will prompt for screen recording permission. Grant it, then relaunch.
+> **Use `dev-run.sh` or Xcode, not `swift build`.** Ad-hoc signed binaries get a new code signature hash on every rebuild. macOS TCC identifies apps by hash, so screen recording permission needs re-granting after each `swift build`. The script uses xcodebuild for a consistent signature. If permissions get stuck: `./scripts/reset-permissions.sh`
 
-> **Note on `swift build`:** Using `swift build` directly produces an ad-hoc signed binary whose code signature hash changes on every rebuild. macOS TCC (Screen Recording permission) identifies apps by signature hash, so permissions must be re-granted after each rebuild. Use `./scripts/dev-run.sh` (xcodebuild) or Xcode to avoid this — it produces a consistently-signed app that TCC recognizes between builds.
->
-> If permissions get stuck: `./scripts/reset-permissions.sh`
-
-## Click Effects
-
-| Preset | Description |
-|--------|-------------|
-| `ripple` | Expanding rings from click point with spring easing |
-| `glow` | Soft radial glow that fades out |
-| `particleBurst` | Particles explode outward from click |
-| `ring` | Single expanding ring |
-| `sonar` | Pulsing sonar-style rings |
-
-Effects are composited onto the recorded video during export using Metal-accelerated Core Image.
-
-## Agent API
-
-ScreenMuse runs a local HTTP server on **port 7823** for programmatic control:
+## Basic Usage
 
 ```bash
 # Start recording
-curl -X POST http://localhost:7823/start -H "Content-Type: application/json" -d '{"name": "demo"}'
+curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
+  -d '{"name": "my-demo"}'
 
 # Mark a chapter
-curl -X POST http://localhost:7823/chapter -H "Content-Type: application/json" -d '{"name": "Setup"}'
+curl -X POST http://localhost:7823/chapter -H "Content-Type: application/json" \
+  -d '{"name": "Step 1"}'
 
-# Highlight next click (auto-zoom + enhanced effect)
+# Highlight the next click (auto-zoom + enhanced effect)
 curl -X POST http://localhost:7823/highlight
 
-# Check status
-curl http://localhost:7823/status
-
-# Take a screenshot (macOS 14+, no recording required)
-curl -X POST http://localhost:7823/screenshot
-
-# Stop and get video
+# Stop and get video path
 curl -X POST http://localhost:7823/stop
 
-# Drop a note into the log exactly when something feels off
-curl -X POST http://localhost:7823/note -H "Content-Type: application/json" -d '{"text": "audio dropped here"}'
-
-# ── Export ──
-
-# Export last recording as GIF (default: 10fps, 800px wide)
-curl -X POST http://localhost:7823/export
-
-# GIF with custom settings
+# Export as GIF
 curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
-  -d '{"format":"gif","fps":10,"scale":800,"quality":"high"}'
-
-# WebP (~30% smaller than GIF at same quality)
-curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
-  -d '{"format":"webp","fps":12,"scale":1000}'
-
-# Trim + export in one call
-curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
-  -d '{"format":"gif","start":2.5,"end":30.0}'
-
-# Export a specific file
-curl -X POST http://localhost:7823/export -H "Content-Type: application/json" \
-  -d '{"source":"/Users/you/Movies/ScreenMuse/recording.mp4","format":"gif"}'
-
-# ── Trim ──
-
-# Trim to time range (stream copy — no re-encode, near instant)
-curl -X POST http://localhost:7823/trim -H "Content-Type: application/json" \
-  -d '{"start": 3.0, "end": 45.0}'
-
-# Trim only the beginning
-curl -X POST http://localhost:7823/trim -H "Content-Type: application/json" \
-  -d '{"start": 5.0}'
-
-# Frame-accurate trim (re-encode)
-curl -X POST http://localhost:7823/trim -H "Content-Type: application/json" \
-  -d '{"start": 3.0, "end": 45.0, "reencode": true}'
-
-# ── Speed Ramp ──
-
-# Auto-speed idle pauses at 4x (uses cursor + keyboard event data)
-curl -X POST http://localhost:7823/speedramp
-
-# More aggressive (8x idle, only ramp pauses > 1 second)
-curl -X POST http://localhost:7823/speedramp -H "Content-Type: application/json" \
-  -d '{"idle_speed": 8.0, "idle_threshold_sec": 1.0}'
-
-# ── Live Frame Stream (SSE) ──
-
-# Subscribe to real-time frames (stays open until you cancel)
-curl -N http://localhost:7823/stream
-
-# Higher fps, smaller size
-curl -N "http://localhost:7823/stream?fps=5&scale=640&quality=80"
-
-# PNG format
-curl -N "http://localhost:7823/stream?fps=2&format=png"
-
-# Check how many clients are connected
-curl http://localhost:7823/stream/status
-
-# Node.js (no dependencies — uses built-in http module)
-# const { ScreenMuse } = require('./screenmuse.js');
-# const sm = new ScreenMuse();
-# sm.stream({ fps: 2, scale: 640, onFrame: (f) => {
-#   fs.writeFileSync('/tmp/latest.jpg', f.data);
-# }});
-
-# ── Multi-Window / PiP ──
-
-# Record two windows simultaneously (PiP layout — default)
-curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json" \
-  -d '{"windows": ["Google Chrome", "Terminal"], "layout": "picture-in-picture"}'
-
-# Side-by-side layout
-curl -X POST http://localhost:7823/start/pip -H "Content-Type: application/json" \
-  -d '{"windows": ["Google Chrome", "Terminal"], "layout": "side-by-side"}'
-
-# ── OCR (no API key, uses Apple Vision) ──
-
-# Read text from the current screen
-curl -X POST http://localhost:7823/ocr
-
-# Read text from a specific image file
-curl -X POST http://localhost:7823/ocr -H "Content-Type: application/json" \
-  -d '{"source":"/path/to/screenshot.png","level":"accurate"}'
-
-# Fast mode (lower accuracy, 3x faster)
-curl -X POST http://localhost:7823/ocr -H "Content-Type: application/json" \
-  -d '{"source":"screen","level":"fast","full_text_only":true}'
-
-# ── Thumbnail ──
-
-# Extract a frame from the last recording at 5 seconds
-curl -X POST http://localhost:7823/thumbnail -H "Content-Type: application/json" \
-  -d '{"time":5.0,"scale":800}'
-
-# ── Crop ──
-
-# Crop a 1280x720 region from the last recording
-curl -X POST http://localhost:7823/crop -H "Content-Type: application/json" \
-  -d '{"region":{"x":0,"y":0,"width":1280,"height":720}}'
-
-# ── OpenAPI Spec ──
-
-# Machine-readable API spec (for Postman, Claude, Cursor, etc.)
-curl http://localhost:7823/openapi
-
-# ── Region Recording ──
-
-# Record a specific 1280×720 area starting at (0, 0)
-curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
-  -d '{"name":"region-demo","region":{"x":0,"y":0,"width":1280,"height":720}}'
-
-# ── Webhooks ──
-
-# Get a callback when recording stops (POST to your URL with video path)
-curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
-  -d '{"name":"demo","webhook":"https://your-server.com/recording-complete"}'
-# Payload: {"event":"recording.complete","video_path":"...","session_id":"...","elapsed":42.3}
-
-# ── Timeline ──
-
-# Get structured JSON of all chapters, notes, highlights (live or after stop)
-curl http://localhost:7823/timeline
-
-# ── Concat ──
-
-# Combine two recordings into one
-curl -X POST http://localhost:7823/concat -H "Content-Type: application/json" \
-  -d '{"sources":["/path/to/part1.mp4","/path/to/part2.mp4"]}'
-
-# Use "last" to reference the most recent recording
-curl -X POST http://localhost:7823/concat -H "Content-Type: application/json" \
-  -d '{"sources":["last","/path/to/part2.mp4"]}'
-
-# ── App-Specific Audio ──
-
-# Record only Chrome's audio (not system sounds, not other apps)
-curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
-  -d '{"name": "chrome-demo", "audio_source": "Google Chrome"}'
-
-# No audio at all
-curl -X POST http://localhost:7823/start -H "Content-Type: application/json" \
-  -d '{"name": "silent-demo", "audio_source": "none"}'
-
-# ── Recording Management ──
-
-# List all recordings with size + date metadata
-curl http://localhost:7823/recordings
-
-# Delete a recording by filename
-curl -X DELETE http://localhost:7823/recording -H "Content-Type: application/json" \
-  -d '{"filename": "ScreenMuse_2026-03-24.mp4"}'
-
-# ── iCloud Upload ──
-
-# Upload last recording to iCloud Drive → ScreenMuse folder
-curl -X POST http://localhost:7823/upload/icloud
-
-# Upload with custom filename
-curl -X POST http://localhost:7823/upload/icloud -H "Content-Type: application/json" \
-  -d '{"filename": "product-demo-2026-03-24.mp4"}'
-
-# Upload a specific file
-curl -X POST http://localhost:7823/upload/icloud -H "Content-Type: application/json" \
-  -d '{"source": "/Users/you/Movies/ScreenMuse/recording.mp4"}'
-
-# ── Window Management (native macOS — Playwright can't do this) ──
-
-# Bring an app to the front before recording
-curl -X POST http://localhost:7823/window/focus -H "Content-Type: application/json" \
-  -d '{"app": "Notes"}'
-
-# Set window size and position
-curl -X POST http://localhost:7823/window/position -H "Content-Type: application/json" \
-  -d '{"app": "Google Chrome", "x": 0, "y": 0, "width": 1440, "height": 900}'
-
-# Hide all other apps — clean desktop for recording
-curl -X POST http://localhost:7823/window/hide-others -H "Content-Type: application/json" \
-  -d '{"app": "Notes"}'
-
-# ── System State ──
-
-# Read clipboard
-curl http://localhost:7823/system/clipboard
-
-# Which window has focus?
-curl http://localhost:7823/system/active-window
-
-# What apps are running?
-curl http://localhost:7823/system/running-apps
-
-# Check version + all endpoints
-curl http://localhost:7823/version
+  -d '{"format": "gif", "fps": 10, "scale": 800}'
 ```
 
-**Clients:** [Python](clients/python) | [Node.js/TypeScript](clients/node)
+## Playwright Integration
 
-Full API reference: [docs/AGENT_API.md](docs/AGENT_API.md)
+`screenmuse-playwright` is a zero-boilerplate npm package for recording browser automation sessions. It detects the browser window, sets it up for clean recording, and wraps your Playwright code:
+
+```bash
+# From the packages/screenmuse-playwright directory:
+npm install
+```
+
+```js
+const { ScreenMuse } = require('screenmuse-playwright');
+
+const sm = new ScreenMuse();
+
+// Record any async block — focus, position, hide-others, start, stop all handled
+const result = await sm.record(async (page) => {
+  await page.goto('https://example.com');
+  await page.click('button');
+});
+
+console.log(result.video_path);    // → /Users/you/Movies/ScreenMuse/recording.mp4
+console.log(result.gif_path);      // → /Users/you/Movies/ScreenMuse/recording.gif (if gif: true)
+```
+
+See [`packages/screenmuse-playwright/`](packages/screenmuse-playwright/) for full docs and examples, including a Playwright Test fixture for automatic video proof on test failure.
+
+## Pairing with Peekaboo
+
+ScreenMuse records. [Peekaboo](https://github.com/steipete/Peekaboo) screenshots and reads the screen via OCR. They're designed to pair: use Peekaboo to read UI state, use ScreenMuse to record what happens next.
+
+```bash
+# Peekaboo reads the screen → ScreenMuse records the response
+peekaboo image --mode screen --analyze "What's on screen?"
+curl -X POST http://localhost:7823/start -d '{"name": "response"}'
+# ... agent acts on Peekaboo's output ...
+curl -X POST http://localhost:7823/stop
+```
+
+Or use ScreenMuse's built-in OCR (`POST /ocr`) for lightweight text reads without a separate tool.
+
+## API Reference
+
+Full machine-readable spec (OpenAPI JSON) — load it into Postman, Claude, Cursor, or any OpenAPI tool:
+
+```bash
+curl http://localhost:7823/openapi
+```
+
+### Recording
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /start` | Start recording. Options: `name`, `region`, `audio_source`, `webhook` |
+| `POST /stop` | Stop and finalize video |
+| `POST /pause` | Pause recording |
+| `POST /resume` | Resume recording |
+| `POST /chapter` | Mark a named chapter |
+| `POST /highlight` | Flag next click for auto-zoom + enhanced effect |
+| `POST /screenshot` | Capture a screenshot (no recording required) |
+| `POST /note` | Drop a timestamped note into the usage log |
+
+### Export & Edit
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /export` | Export as GIF or WebP. Options: `format`, `fps`, `scale`, `quality`, `start`, `end`, `source` |
+| `POST /trim` | Trim to time range (stream copy by default, `reencode: true` for frame accuracy) |
+| `POST /speedramp` | Auto-speed idle pauses using cursor/keyboard event data |
+| `POST /crop` | Crop a rectangular region from the last recording |
+| `POST /thumbnail` | Extract a frame at a given timecode |
+| `POST /concat` | Combine recordings. Use `"last"` to reference the most recent file. |
+
+### Multi-Window
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /start/pip` | Record two windows simultaneously in PiP or side-by-side layout |
+
+### Window Management
+
+These endpoints do what Playwright can't — native macOS window control:
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /window/focus` | Bring an app to the front (no permission required) |
+| `POST /window/position` | Set window size and position (requires Accessibility permission) |
+| `POST /window/hide-others` | Hide all other apps for a clean desktop |
+
+### System State
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /system/clipboard` | Read clipboard contents |
+| `GET /system/active-window` | Which window has focus |
+| `GET /system/running-apps` | List running applications |
+
+### Vision / OCR
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /ocr` | On-device OCR via Apple Vision (no API key). Supports `fast` and `accurate` modes, screen or image file. |
+
+### Streaming
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /stream` | SSE real-time frame stream (JPEG/PNG, configurable fps and scale) |
+| `GET /stream/status` | Active SSE client count |
+
+### Files
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /recordings` | List all recordings with size and date |
+| `DELETE /recording` | Delete a recording by filename |
+| `POST /upload/icloud` | Upload to iCloud Drive → ScreenMuse folder |
+
+### Info & Debug
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /status` | Recording state, elapsed time, chapters |
+| `GET /version` | Version, build info, all endpoint names |
+| `GET /timeline` | Structured JSON of chapters, highlights, notes |
+| `GET /debug` | Save directory, recent files, server state |
+| `GET /logs` | Recent log entries (filter: `level=`, `category=`, `limit=`) |
+| `GET /report` | Clean session summary — paste this in bug reports |
+| `GET /openapi` | OpenAPI spec (JSON) |
+
+### Scripting
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /script` | Run a shell command mid-session |
+| `POST /script/batch` | Run a list of shell commands in order |
+
+### MCP Server
+
+ScreenMuse includes an MCP server (`mcp-server/`) for Claude Desktop and Cursor integration. See [`mcp-server/README.md`](mcp-server/README.md).
 
 ## Debugging & Logs
 
-ScreenMuse has structured logging built in. Two log files and three API endpoints.
+Two log files are created automatically on launch:
 
-### Files (auto-created on launch)
-
-| File | What's in it |
-|------|-------------|
+| File | Contents |
+|------|----------|
 | `~/Movies/ScreenMuse/Logs/screenmuse-YYYY-MM-DD.log` | Full debug log — every event, frame counts, errors |
-| `~/Movies/ScreenMuse/Logs/screenmuse-usage-YYYY-MM-DD.log` | Clean usage log — one line per action (launch, record start/stop, chapters, errors) |
+| `~/Movies/ScreenMuse/Logs/screenmuse-usage-YYYY-MM-DD.log` | Clean usage log — one line per action |
 
-### API Endpoints
+Quick debug commands:
 
 ```bash
-# ★ REPORT — clean session summary, perfect for bug reports
+# Session summary — paste this in bug reports
 curl http://localhost:7823/report | python3 -c "import sys,json; print(json.load(sys.stdin)['report'])"
-
-# Full debug log (last 200 entries)
-curl http://localhost:7823/logs | python3 -m json.tool
 
 # Errors and warnings only
 curl "http://localhost:7823/logs?level=warning"
 
-# Filter by subsystem: server / recording / effects / capture / permissions / lifecycle
+# Filter by subsystem
 curl "http://localhost:7823/logs?category=recording"
-
-# System state snapshot
-curl http://localhost:7823/debug
 ```
 
-**Console.app** — filter for real-time streaming:
-```
-subsystem == "ai.screenmuse"
-```
-
-### When reporting a bug
-
-Run these three commands and paste the output:
-
-```bash
-curl http://localhost:7823/report | python3 -c "import sys,json; print(json.load(sys.stdin)['report'])"
-curl "http://localhost:7823/logs?level=warning"
-curl http://localhost:7823/debug
-```
-
-Or attach `~/Movies/ScreenMuse/Logs/screenmuse-usage-YYYY-MM-DD.log` — it reads like a plain English timeline of everything you did.
-
-## Roadmap
-
-- Timeline editor with trim and speed controls
-- On-device transcription via Whisper (Core ML)
-- Edit by transcript: delete words to cut video
-- Filler word removal (um, uh, like)
-- MP4, GIF, WebP export
-- Shareable links via Cloudflare R2
-- Webcam overlay and background customization
+Real-time stream in Console.app: filter for `subsystem == "ai.screenmuse"`.
 
 ## Tech Stack
 
-- Swift 6.0 + SwiftUI
-- ScreenCaptureKit (Apple native screen capture, macOS 14+)
-- AVFoundation (H.264 video encoding, AAC audio)
-- Network.framework (agent API HTTP server)
+- Swift 6 + ScreenCaptureKit (macOS 14+)
+- AVFoundation (H.264/AAC encoding, trim, export, concat)
+- Network.framework (HTTP agent API)
 - Core Image + Metal (click effects compositing)
+- Apple Vision (on-device OCR)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).

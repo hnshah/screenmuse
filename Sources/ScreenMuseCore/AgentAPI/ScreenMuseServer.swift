@@ -39,7 +39,7 @@ import Vision
 //
 //   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
 //   GET  /windows     → {"windows": [...], "count": N}
-//   GET  /version     → {"version": "1.0.2", "build": "...", "api_endpoints": [...], "endpoint_count": 28}
+//   GET  /version     → {"version": "1.5.5", "build": "...", "api_endpoints": [...], "endpoint_count": 38}
 //   GET  /debug       → save dir, recent files, server state
 //   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
 //   GET  /report      → clean session report for bug reports
