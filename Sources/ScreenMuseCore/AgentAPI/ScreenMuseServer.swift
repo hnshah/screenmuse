@@ -37,9 +37,12 @@ import Vision
 //   GET  /system/active-window  → {"app": "...", "window_title": "...", "bundle_id": "..."}
 //   GET  /system/running-apps   → {"apps": [...], "count": N}
 //
+//   POST /validate     body: {"source":"last","checks":[...]}               → {"valid":true,"score":85,"checks":[...],"issues":[]}
+//   POST /frames       body: {"source":"last","timestamps":[1.0,2.5],"format":"png"} → {"frames":[...],"count":N}
+//
 //   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
 //   GET  /windows     → {"windows": [...], "count": N}
-//   GET  /version     → {"version": "1.5.5", "build": "...", "api_endpoints": [...], "endpoint_count": 38}
+//   GET  /version     → {"version": "1.6.0", "build": "...", "api_endpoints": [...], "endpoint_count": 40}
 //   GET  /debug       → save dir, recent files, server state
 //   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
 //   GET  /report      → clean session report for bug reports
@@ -403,8 +406,7 @@ public class ScreenMuseServer {
             ]
             let capturedSessionID = sessionID
             let capturedSessionName = sessionName
-            _ = sessionNotes
-            _ = sessionHighlights
+            let capturedNotes = sessionNotes
             let capturedChapters = chapters
             let capturedWebhook = pendingWebhookURL
             sessionID = nil
@@ -429,10 +431,13 @@ public class ScreenMuseServer {
                         "size": "\(sizeMB)MB",
                         "video": url.lastPathComponent
                     ])
-                    sendResponse(connection: connection, status: 200, body: [
-                        "video_path": url.path,
-                        "metadata": metadata
-                    ])
+                    let resp = enrichedStopResponse(
+                        videoURL: url, elapsed: elapsed,
+                        sessionID: capturedSessionID,
+                        chapters: capturedChapters,
+                        notes: capturedNotes
+                    )
+                    sendResponse(connection: connection, status: 200, body: resp)
                     fireWebhook(capturedWebhook, videoURL: url, sessionID: capturedSessionID, elapsed: elapsed)
                 } else {
                     smLog.error("[\(reqID)] coordinator.stopAndGetVideo() returned nil — video finalization failed", category: .server)
@@ -452,10 +457,13 @@ public class ScreenMuseServer {
                         "size": "\(sizeMB)MB",
                         "video": url.lastPathComponent
                     ])
-                    sendResponse(connection: connection, status: 200, body: [
-                        "video_path": url.path,
-                        "metadata": metadata
-                    ])
+                    let resp = enrichedStopResponse(
+                        videoURL: url, elapsed: elapsed,
+                        sessionID: capturedSessionID,
+                        chapters: capturedChapters,
+                        notes: capturedNotes
+                    )
+                    sendResponse(connection: connection, status: 200, body: resp)
                     fireWebhook(capturedWebhook, videoURL: url, sessionID: capturedSessionID, elapsed: elapsed)
                 } catch {
                     smLog.error("[\(reqID)] stopRecording() threw: \(error.localizedDescription)", category: .server)
@@ -463,7 +471,6 @@ public class ScreenMuseServer {
                     sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
                 }
             }
-            _ = capturedSessionID
             _ = capturedSessionName
 
         case ("POST", "/pause"):
@@ -1354,6 +1361,7 @@ public class ScreenMuseServer {
             let langHint = body["lang"] as? String
             let languages: [String] = langHint.map { [$0] } ?? []
             let fullTextOnly = body["full_text_only"] as? Bool ?? false
+            let debugMode = body["debug"] as? Bool ?? false
 
             do {
                 let ocr = ScreenOCR()
@@ -1364,7 +1372,7 @@ public class ScreenMuseServer {
                     result = try await ocr.recognizeFile(at: URL(fileURLWithPath: ocrSource), level: level, languages: languages)
                 }
 
-                var responseBody = result.asJSON
+                var responseBody = debugMode ? result.asJSONWithDebug : result.asJSON
                 if fullTextOnly {
                     responseBody.removeValue(forKey: "blocks")
                 }
@@ -1767,6 +1775,8 @@ public class ScreenMuseServer {
                     "GET /timeline", "POST /concat",
                     // Visual analysis
                     "POST /thumbnail", "POST /ocr", "POST /crop",
+                    // Validation & frames
+                    "POST /validate", "POST /frames",
                     // Video editing
                     "POST /annotate",
                     // Batch runner
@@ -1913,6 +1923,237 @@ public class ScreenMuseServer {
                 "total_frames_sent": streamManager.totalFramesSent
             ])
 
+        // MARK: - Validate
+
+        case ("POST", "/validate"):
+            // Run quality checks on a recording.
+            // {"source":"last","checks":[{"type":"duration","min":10,"max":30},{"type":"text_at","time":5.0,"expected":"GitHub"}]}
+            smLog.info("[\(reqID)] /validate request", category: .server)
+
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
+            guard let src = sourceURL, FileManager.default.fileExists(atPath: src.path) else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            guard let checks = body["checks"] as? [[String: Any]], !checks.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'checks' must be a non-empty array",
+                    "example": "{\"source\":\"last\",\"checks\":[{\"type\":\"duration\",\"min\":10,\"max\":30}]}"
+                ])
+                return
+            }
+
+            let asset = AVURLAsset(url: src)
+            var checkResults: [[String: Any]] = []
+            var issues: [String] = []
+
+            // Load video duration
+            var videoDuration: Double = 0
+            do {
+                let dur = try await asset.load(.duration)
+                videoDuration = CMTimeGetSeconds(dur)
+            } catch {
+                sendResponse(connection: connection, status: 500, body: [
+                    "error": "Could not load video: \(error.localizedDescription)"
+                ])
+                return
+            }
+
+            for check in checks {
+                guard let checkType = check["type"] as? String else { continue }
+
+                switch checkType {
+                case "duration":
+                    let minDur = (check["min"] as? Double) ?? (check["min"] as? Int).map(Double.init) ?? 0
+                    let maxDur = (check["max"] as? Double) ?? (check["max"] as? Int).map(Double.init) ?? Double.infinity
+                    let pass = videoDuration >= minDur && videoDuration <= maxDur
+                    checkResults.append([
+                        "name": "duration",
+                        "pass": pass,
+                        "value": (videoDuration * 10).rounded() / 10
+                    ])
+                    if !pass {
+                        issues.append("Duration \(String(format: "%.1f", videoDuration))s outside range [\(minDur), \(maxDur)]")
+                    }
+
+                case "frame_count":
+                    let minFrames = (check["min"] as? Int) ?? 0
+                    var frameCount = 0
+                    if let track = asset.tracks(withMediaType: .video).first {
+                        let fps = track.nominalFrameRate
+                        frameCount = Int(Double(fps) * videoDuration)
+                    }
+                    let pass = frameCount >= minFrames
+                    checkResults.append([
+                        "name": "frame_count",
+                        "pass": pass,
+                        "value": frameCount
+                    ])
+                    if !pass {
+                        issues.append("Frame count \(frameCount) < min \(minFrames)")
+                    }
+
+                case "no_black_frames":
+                    // Sample up to 10 frames and check none are fully black (< 5% avg brightness)
+                    let generator = AVAssetImageGenerator(asset: asset)
+                    generator.appliesPreferredTrackTransform = true
+                    generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
+                    generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
+
+                    let sampleCount = min(10, max(1, Int(videoDuration)))
+                    var hasBlack = false
+                    for i in 0..<sampleCount {
+                        let t = videoDuration * Double(i) / Double(sampleCount)
+                        let time = CMTime(seconds: t, preferredTimescale: 600)
+                        do {
+                            let (cgImage, _) = try await generator.image(at: time)
+                            // Check average brightness — a black frame has < 5% brightness
+                            let brightness = averageBrightness(of: cgImage)
+                            if brightness < 0.05 {
+                                hasBlack = true
+                                break
+                            }
+                        } catch {
+                            // Skip frames we can't extract
+                            continue
+                        }
+                    }
+                    let pass = !hasBlack
+                    checkResults.append(["name": "no_black_frames", "pass": pass])
+                    if !pass {
+                        issues.append("Black frame detected")
+                    }
+
+                case "text_at":
+                    let time = (check["time"] as? Double) ?? (check["time"] as? Int).map(Double.init) ?? 0
+                    let expected = check["expected"] as? String ?? ""
+                    let generator = AVAssetImageGenerator(asset: asset)
+                    generator.appliesPreferredTrackTransform = true
+                    generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
+                    generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
+
+                    let checkName = "text_at_\(String(format: "%.1f", time))s"
+                    do {
+                        let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+                        let (cgImage, _) = try await generator.image(at: cmTime)
+                        let ocr = ScreenOCR()
+                        let ocrResult = try await ocr.recognizeImage(cgImage: cgImage, source: "frame@\(time)s")
+                        let found = ocrResult.fullText.localizedCaseInsensitiveContains(expected)
+                        checkResults.append([
+                            "name": checkName,
+                            "pass": found,
+                            "found": String(ocrResult.fullText.prefix(200))
+                        ])
+                        if !found {
+                            issues.append("Expected text '\(expected)' not found at \(time)s")
+                        }
+                    } catch {
+                        checkResults.append([
+                            "name": checkName,
+                            "pass": false,
+                            "error": error.localizedDescription
+                        ])
+                        issues.append("text_at check failed: \(error.localizedDescription)")
+                    }
+
+                default:
+                    issues.append("Unknown check type: '\(checkType)' — skipped")
+                }
+            }
+
+            let passCount = checkResults.filter { $0["pass"] as? Bool == true }.count
+            let score = checkResults.isEmpty ? 0 : Int((Double(passCount) / Double(checkResults.count)) * 100)
+            let valid = score >= 70
+
+            sendResponse(connection: connection, status: 200, body: [
+                "valid": valid,
+                "score": score,
+                "checks": checkResults,
+                "issues": issues
+            ])
+
+        // MARK: - Frames
+
+        case ("POST", "/frames"):
+            // Extract multiple frames from a video at given timestamps.
+            // {"source":"last","timestamps":[1.0,2.5,5.0],"format":"png"}
+            smLog.info("[\(reqID)] /frames request", category: .server)
+
+            let sourceStr = body["source"] as? String ?? "last"
+            let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
+            guard let src = sourceURL, FileManager.default.fileExists(atPath: src.path) else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
+                    "code": "NO_VIDEO"
+                ])
+                return
+            }
+
+            // Parse timestamps — accept [Double] or [Int]
+            let rawTimestamps = body["timestamps"] as? [Any] ?? []
+            let timestamps: [Double] = rawTimestamps.compactMap { val in
+                if let d = val as? Double { return d }
+                if let i = val as? Int { return Double(i) }
+                return nil
+            }
+            guard !timestamps.isEmpty else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "'timestamps' must be a non-empty array of numbers",
+                    "example": "{\"source\":\"last\",\"timestamps\":[1.0,2.5,5.0],\"format\":\"png\"}"
+                ])
+                return
+            }
+
+            let formatStr = (body["format"] as? String ?? "png").lowercased()
+            let usePNG = formatStr != "jpg" && formatStr != "jpeg"
+
+            // Create temp output directory
+            let framesDir = URL(fileURLWithPath: "/tmp/screenmuse-frames")
+            try? FileManager.default.createDirectory(at: framesDir, withIntermediateDirectories: true)
+
+            let asset = AVURLAsset(url: src)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
+            generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
+
+            var frames: [[String: Any]] = []
+            for ts in timestamps {
+                let cmTime = CMTime(seconds: ts, preferredTimescale: 600)
+                let ext = usePNG ? "png" : "jpg"
+                let filename = "frame-\(String(format: "%.1f", ts))s.\(ext)"
+                let outputPath = framesDir.appendingPathComponent(filename)
+
+                do {
+                    let (cgImage, _) = try await generator.image(at: cmTime)
+                    let rep = NSBitmapImageRep(cgImage: cgImage)
+                    let imageData: Data?
+                    if usePNG {
+                        imageData = rep.representation(using: .png, properties: [:])
+                    } else {
+                        imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+                    }
+                    if let data = imageData {
+                        try data.write(to: outputPath)
+                        frames.append(["time": ts, "path": outputPath.path])
+                    } else {
+                        frames.append(["time": ts, "error": "Image conversion failed"])
+                    }
+                } catch {
+                    frames.append(["time": ts, "error": error.localizedDescription])
+                }
+            }
+
+            sendResponse(connection: connection, status: 200, body: [
+                "frames": frames,
+                "count": frames.filter { $0["path"] != nil }.count
+            ])
+
         default:
             smLog.warning("[\(reqID)] 404 — \(method) \(cleanPath) not found", category: .server)
             sendResponse(connection: connection, status: 404, body: ["error": "not found"])
@@ -1951,6 +2192,100 @@ public class ScreenMuseServer {
                 smLog.warning("Webhook: delivery failed → \(url.absoluteString): \(error.localizedDescription)", category: .server)
             }
         }
+    }
+
+    /// Compute average brightness of a CGImage (0.0 = black, 1.0 = white).
+    private func averageBrightness(of cgImage: CGImage) -> Double {
+        let width = cgImage.width
+        let height = cgImage.height
+        guard width > 0, height > 0 else { return 0 }
+
+        // Downsample to 64x64 for speed
+        let sampleSize = 64
+        guard let context = CGContext(
+            data: nil,
+            width: sampleSize,
+            height: sampleSize,
+            bitsPerComponent: 8,
+            bytesPerRow: sampleSize * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return 0 }
+
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: sampleSize, height: sampleSize))
+        guard let data = context.data else { return 0 }
+
+        let ptr = data.bindMemory(to: UInt8.self, capacity: sampleSize * sampleSize * 4)
+        var totalBrightness: Double = 0
+        let pixelCount = sampleSize * sampleSize
+        for i in 0..<pixelCount {
+            let offset = i * 4
+            let r = Double(ptr[offset])
+            let g = Double(ptr[offset + 1])
+            let b = Double(ptr[offset + 2])
+            // Luminance formula
+            totalBrightness += (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        }
+        return totalBrightness / Double(pixelCount)
+    }
+
+    /// Build an enriched stop response with video metadata.
+    /// Never returns undefined/null for required fields — uses sensible defaults.
+    private func enrichedStopResponse(
+        videoURL: URL,
+        elapsed: TimeInterval,
+        sessionID: String?,
+        chapters: [(name: String, time: TimeInterval)],
+        notes: [(text: String, time: TimeInterval)],
+        windowPid: Int? = nil,
+        windowApp: String? = nil,
+        windowTitle: String? = nil
+    ) -> [String: Any] {
+        let fm = FileManager.default
+        let fileSize = (try? fm.attributesOfItem(atPath: videoURL.path)[.size] as? Int) ?? 0
+        let sizeMB = Double(fileSize) / 1_048_576
+
+        // Probe video for resolution and fps
+        let asset = AVURLAsset(url: videoURL)
+        var width = 0
+        var height = 0
+        var fps: Double = 0
+        // Use synchronous approach for track properties
+        if let track = asset.tracks(withMediaType: .video).first {
+            let size = track.naturalSize
+            width = Int(size.width)
+            height = Int(size.height)
+            fps = Double(track.nominalFrameRate)
+        }
+
+        var resp: [String: Any] = [
+            "path": videoURL.path,
+            "video_path": videoURL.path, // backward compat
+            "duration": elapsed,
+            "size": fileSize,
+            "size_mb": (sizeMB * 100).rounded() / 100,
+            "session_id": sessionID ?? "",
+            "chapters": chapters.map { ["name": $0.name, "time": $0.time] as [String: Any] },
+            "notes": notes.map { ["text": $0.text, "time": $0.time] as [String: Any] }
+        ]
+
+        if width > 0 && height > 0 {
+            resp["resolution"] = ["width": width, "height": height]
+        }
+        if fps > 0 {
+            resp["fps"] = (fps * 10).rounded() / 10
+        }
+
+        // Window info (if available)
+        var windowInfo: [String: Any] = [:]
+        if let app = windowApp { windowInfo["app"] = app }
+        if let pid = windowPid { windowInfo["pid"] = pid }
+        if let title = windowTitle { windowInfo["title"] = title }
+        if !windowInfo.isEmpty {
+            resp["window"] = windowInfo
+        }
+
+        return resp
     }
 
     private func structuredError(_ error: Error) -> [String: Any] {

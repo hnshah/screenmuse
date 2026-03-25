@@ -2,6 +2,22 @@
 
 All notable changes to ScreenMuse are documented here.
 
+## [1.6.0] — 2026-03-25
+
+### Added
+- `POST /validate` — run quality checks on a recording (duration, frame count, no black frames, text-at-time OCR)
+- `POST /frames` — extract multiple frames from a video at given timestamps (PNG or JPG)
+- `screenmuse-playwright`: smart PID fallback via `/windows` when `browser.process().pid` returns null on macOS
+- `screenmuse-playwright`: public `findBrowserWindow()` helper for manual browser window discovery
+- OCR debug mode — pass `"debug": true` to `/ocr` for image size, upscale info, block count, and avg confidence
+
+### Fixed
+- `/stop` now returns enriched response: path, duration, size, size_mb, resolution, fps, chapters, notes, session_id, window info — never returns undefined
+- OCR auto-upscale: images < 1000px wide are upscaled to 1440px before Vision API for better accuracy on small frames/GIFs
+
+### Changed
+- `screenmuse-playwright` README rewritten with installation, troubleshooting (multiple Chrome windows, GitHub virtual scrolling, PID null, window not found), Playwright Test fixture integration, and full API reference
+
 ## [1.5.5] — 2026-03-24
 
 ### Fixed

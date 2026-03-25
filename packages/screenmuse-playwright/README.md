@@ -1,6 +1,27 @@
 # screenmuse-playwright
 
-Record Playwright browser automation sessions with ScreenMuse. Zero boilerplate.
+Record Playwright browser automation sessions with [ScreenMuse](https://github.com/hnshah/screenmuse). Zero boilerplate, automatic window targeting, chapter markers on navigation.
+
+## Installation
+
+```bash
+npm install playwright screenmuse-playwright
+npx playwright install chromium
+```
+
+## Prerequisites
+
+- **macOS 14+** (Sonoma or later)
+- **ScreenMuse.app** running on your Mac (launches the HTTP server on port 7823)
+- **Node.js 18+**
+
+Verify ScreenMuse is running:
+
+```bash
+curl http://localhost:7823/status
+```
+
+## Basic Usage
 
 ```js
 const { chromium } = require('playwright');
@@ -9,9 +30,9 @@ const { ScreenMusePlaywright } = require('screenmuse-playwright');
 const sm = new ScreenMusePlaywright();
 
 const result = await sm.recordBrowser({
+  browser: chromium,
   name: 'github-search-demo',
   quality: 'high',
-  browser: chromium,
   autoChapters: true,
 }, async (page) => {
   await page.goto('https://github.com');
@@ -21,213 +42,163 @@ const result = await sm.recordBrowser({
   await page.waitForLoadState('networkidle');
 });
 
-console.log(`Video: ${result.videoPath}`);  // ~/Movies/ScreenMuse/github-search-demo.mp4
+console.log(`Video: ${result.videoPath}`);
+
+// Export as GIF
+const gif = await result.exportGif({ fps: 10, scale: 600 });
+console.log(`GIF: ${gif.path}`);
 ```
 
-**Before (manual coordination):** ~150 lines, race conditions, 60% success rate  
+**Before (manual coordination):** ~150 lines, race conditions, 60% success rate
 **After (this package):** ~10 lines, zero race conditions, 100% reliable
 
----
+## Troubleshooting
 
-## Prerequisites
+### Multiple Chrome Windows
 
-1. **ScreenMuse.app** running on your Mac (launches the HTTP server on port 7823)
-2. Node.js 18+
-3. Playwright installed: `npm install playwright`
+When multiple Chrome windows are open, ScreenMuse may record the wrong one. Solutions:
 
-## Install
+1. **Use `hideOthers: true`** to hide other app windows before recording:
+   ```js
+   await sm.recordBrowser({ browser: chromium, hideOthers: true }, async (page) => { ... });
+   ```
 
-```bash
-npm install screenmuse-playwright playwright
-npx playwright install chromium
+2. **Use the `findBrowserWindow()` helper** to explicitly find and target the right window:
+   ```js
+   const sm = new ScreenMusePlaywright();
+   const browser = await chromium.launch({ headless: false });
+   const win = await sm.findBrowserWindow(browser);
+   // Use win.pid with a manual /start call if needed
+   ```
+
+3. **Pass `window_pid` explicitly** in your start options if you know the PID.
+
+### GitHub Virtual Scrolling
+
+GitHub uses virtual scrolling on some pages, which can cause Playwright's `.click()` to fail with "element not visible" errors. Use `.evaluate()` to bypass visibility checks:
+
+```js
+// Instead of:
+await page.locator('.some-element').click();
+
+// Use:
+await page.locator('.some-element').evaluate(el => el.click());
 ```
 
-## How it works
+### Window Not Found
+
+If ScreenMuse can't find the browser window:
+
+1. Make sure **ScreenMuse.app is running** — check with `curl http://localhost:7823/status`
+2. Verify the browser is **not headless** — `headless: false` is required
+3. Check available windows: `curl http://localhost:7823/windows`
+4. Give the window time to register — the package waits automatically, but complex launch configs may need more time
+
+### PID Returns null on macOS
+
+On macOS, `browser.process().pid` often returns `null` with Playwright. **This package handles it automatically** — when PID is null, it:
+
+1. Queries the ScreenMuse `/windows` endpoint
+2. Filters for Chrome/Chromium windows
+3. Prefers newly-opened windows (empty or about:blank title)
+4. Uses the last match (most recently opened)
+
+No action needed — the fallback is built in. You'll see a log message:
 
 ```
-recordBrowser()
- │
- ├─ Launch browser (Playwright)
- ├─ Get browser process PID
- ├─ Tell ScreenMuse: "record this window" (POST /start with window_pid)
- ├─ Wire page.on('load') → POST /chapter (if autoChapters: true)
- ├─ Run your script
- └─ POST /stop → close browser → return RecordingResult
+[screenmuse-playwright] browser.process().pid is null — using /windows fallback
+[screenmuse-playwright] Found browser window via /windows: pid=12345 app="Google Chrome" title=""
 ```
 
-No new ScreenMuse endpoints. Uses the existing REST API.
+## Playwright Test Integration
 
----
+Use the provided fixture to automatically record every test. On failure, the video is saved with a `_FAILED` suffix.
 
-## API
+See [`examples/playwright-test-fixture.js`](examples/playwright-test-fixture.js) for the full fixture.
+
+```js
+// test.setup.js — import test/expect from the fixture instead of @playwright/test
+const { test, expect } = require('./playwright-test-fixture');
+
+test('homepage title', async ({ recordedPage: page }) => {
+  await page.goto('https://example.com');
+  await expect(page.locator('h1')).toContainText('Example Domain');
+});
+
+// Failed tests → ~/Movies/ScreenMuse/<TestName>_FAILED.mp4
+// Passing tests → ~/Movies/ScreenMuse/<TestName>.mp4
+```
+
+## API Reference
 
 ### `new ScreenMusePlaywright(opts?)`
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `url` | `http://localhost:7823` | ScreenMuse server URL |
-| `timeout` | `30000` | Request timeout in ms |
+Creates a new ScreenMuse-Playwright integration instance.
 
-### `sm.recordBrowser(options, script) → RecordingResult`
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `url` | `string` | `http://localhost:7823` | ScreenMuse server URL |
+| `timeout` | `number` | `30000` | Request timeout in ms |
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `browser` | required | Playwright BrowserType (`chromium`, `firefox`, `webkit`) |
-| `name` | auto | Recording name |
-| `quality` | `'high'` | `'low'` \| `'medium'` \| `'high'` \| `'max'` |
-| `autoChapters` | `true` | Add chapter markers on page navigation |
-| `autoNotes` | `true` | Add notes on console errors / page errors |
-| `hideOthers` | `false` | Hide other windows before recording |
-| `launchOptions` | `{}` | Playwright `launch()` options |
-| `webhook` | — | URL to POST when recording completes |
+The URL can also be set via the `SCREENMUSE_URL` environment variable.
 
-`script` receives `(page, context, browser)` — standard Playwright objects.
+### `sm.recordBrowser(options, script) → Promise<RecordingResult>`
+
+Record a full browser automation session. Handles launch → PID detection → start recording → run script → stop → close.
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `browser` | `BrowserType` | *required* | Playwright browser type (`chromium`, `firefox`, `webkit`) |
+| `name` | `string` | auto-generated | Recording name |
+| `quality` | `string` | `'high'` | `'low'` \| `'medium'` \| `'high'` \| `'max'` |
+| `autoChapters` | `boolean` | `true` | Add chapter markers on page navigation |
+| `autoNotes` | `boolean` | `true` | Add notes on console errors / page errors |
+| `hideOthers` | `boolean` | `false` | Hide other app windows before recording |
+| `launchOptions` | `object` | `{}` | Playwright `launch()` options |
+| `webhook` | `string` | — | URL to POST when recording completes |
+
+**Script:** `async (page, context, browser) => { ... }` — receives standard Playwright objects.
+
+### `sm.findBrowserWindow(browser?) → Promise<{pid, app, title} | null>`
+
+Find a Chrome/Chromium browser window via the ScreenMuse `/windows` endpoint. Useful when `browser.process().pid` returns null (common on macOS).
+
+Returns the best matching window object with `pid`, `app`, and `title` fields, or `null` if no Chrome window is found.
 
 ### `RecordingResult`
 
-```js
-result.videoPath    // Absolute path to the MP4 file
-result.duration     // Duration in seconds
-result.chapters     // Auto-chapters: [{name, url, time, auto}]
-result.metadata     // Raw stop response metadata
+Returned by `recordBrowser()`. Wraps the video with chainable export methods.
 
-// All export methods are async and return new RecordingResult or the export info:
-await result.exportGif({ fps, scale, start, end })    // → {path, size_mb, frame_count}
-await result.exportWebP({ fps, scale, start, end })   // → {path, size_mb, frame_count}
-await result.trim({ start, end })                     // → RecordingResult (trimmed video)
-await result.speedramp({ speed_factor, min_idle_seconds }) // → RecordingResult (compressed)
-await result.annotate(overlays, opts)                 // → RecordingResult (with text overlays)
-await result.thumbnail({ time, scale, format })       // → {path, time, width, height}
-await result.crop(region, opts)                       // → RecordingResult (cropped video)
-await result.uploadToiCloud()                         // → {ok, icloud_path}
-await result.timeline()                               // → {chapters, notes, highlights}
-```
+**Properties:**
 
----
+| Property | Type | Description |
+|----------|------|-------------|
+| `videoPath` | `string` | Absolute path to the recorded MP4 |
+| `duration` | `number` | Recording duration in seconds |
+| `chapters` | `Array` | Auto-chapters: `[{name, url, time, auto}]` |
+| `metadata` | `object` | Raw stop response metadata |
 
-## Examples
+**Methods:**
 
-### Basic recording
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `exportGif(opts?)` | `Promise<{path, size_mb, frame_count}>` | Export as animated GIF |
+| `exportWebP(opts?)` | `Promise<{path, size_mb, frame_count}>` | Export as animated WebP |
+| `trim(opts?)` | `Promise<RecordingResult>` | Trim to time range (stream copy, instant) |
+| `speedramp(opts?)` | `Promise<RecordingResult>` | Auto-compress idle sections |
+| `annotate(overlays, opts?)` | `Promise<RecordingResult>` | Burn text overlays into video |
+| `thumbnail(opts?)` | `Promise<{path, time, width, height}>` | Extract a still frame |
+| `crop(region, opts?)` | `Promise<RecordingResult>` | Crop a region from the video |
+| `uploadToiCloud()` | `Promise<{ok, icloud_path}>` | Upload to iCloud Drive |
+| `timeline()` | `Promise<object>` | Get structured timeline (chapters, notes, highlights) |
 
-```js
-const result = await sm.recordBrowser({ browser: chromium, name: 'demo' }, async (page) => {
-  await page.goto('https://yourapp.com');
-  await page.click('[data-test=sign-in]');
-  await page.fill('[data-test=email]', 'demo@example.com');
-  await page.click('[data-test=submit]');
-});
+**Export options (for `exportGif` / `exportWebP`):**
 
-console.log(result.videoPath);
-```
-
-### Export as GIF for docs
-
-```js
-const result = await sm.recordBrowser({ browser: chromium }, async (page) => {
-  await page.goto('https://yourapp.com/feature');
-  await page.waitForLoadState('networkidle');
-});
-
-const gif = await result.trim({ start: 0.5 }).then(r => r.exportGif({ fps: 10, scale: 600 }));
-console.log(gif.path); // drop into your docs
-```
-
-### QA test with automatic video on failure
-
-```js
-test('checkout flow', async () => {
-  const { result } = await sm.recordBrowser(
-    { browser: chromium, name: 'checkout-test', quality: 'medium' },
-    async (page) => {
-      await page.goto('/cart');
-      await page.click('[data-test=checkout]');
-      await expect(page.locator('.success')).toBeVisible();
-    }
-  ).then(r => ({ ok: true, result: r })).catch(e => ({ ok: false, error: e, result: null }));
-
-  if (!result) throw new Error(`Test failed — video: ${result?.videoPath ?? 'not saved'}`);
-});
-```
-
-### Batch demo generation
-
-```js
-const demos = [
-  { name: 'signup',    script: signupScript },
-  { name: 'dashboard', script: dashboardScript },
-  { name: 'export',    script: exportScript },
-];
-
-for (const demo of demos) {
-  const result = await sm.recordBrowser({ browser: chromium, ...demo }, demo.script);
-  await result.exportGif({ fps: 10, scale: 600 });
-  console.log(`✅ ${demo.name}`);
-}
-// → 3 videos + 3 GIFs, unattended
-```
-
-### With text annotations (burn steps into video)
-
-```js
-const result = await sm.recordBrowser({ browser: chromium, name: 'annotated-demo' }, async (page) => {
-  await page.goto('https://github.com/settings');
-});
-
-const annotated = await result.annotate([
-  { text: 'Step 1: Open GitHub Settings', start: 0, end: 6, position: 'bottom' },
-  { text: 'Step 2: Scroll to Security',   start: 6, end: 12 },
-]);
-
-await annotated.exportGif({ fps: 8 });
-```
-
-### Pair with Peekaboo (observe + record)
-
-```
-Peekaboo: screenshot, UI element map, click/type/scroll
-ScreenMuse: record the full session, export as GIF/MP4
-
-Use both: Peekaboo drives the UI, ScreenMuse captures the proof.
-```
-
-With Claude Desktop (both MCPs configured):
-1. `screenmuse_start(name: "demo")` — start recording
-2. Peekaboo navigates the UI
-3. `screenmuse_chapter(name: "Step 2")` — mark progress
-4. `screenmuse_stop()` — finish
-5. `screenmuse_export(format: "gif")` — deliver artifact
-
----
-
-## Environment Variables
-
-```bash
-SCREENMUSE_URL=http://localhost:7823   # Custom port
-```
-
----
-
-## Error handling
-
-If ScreenMuse isn't running, you get a clear message:
-
-```
-Error: ScreenMuse is not running. Launch ScreenMuse.app first.
-(Expected at http://localhost:7823)
-```
-
-If the browser window can't be found for window-specific recording, it falls back to full-screen recording automatically.
-
-If your script throws, the recording still stops and the browser closes. The error propagates after cleanup.
-
----
-
-## Changelog
-
-### 1.0.0
-- `recordBrowser()` with automatic window PID detection
-- `autoChapters: true` — page navigation → chapter markers
-- `autoNotes: true` — console errors → recording notes
-- `RecordingResult` with `.exportGif()`, `.exportWebP()`, `.trim()`, `.speedramp()`, `.annotate()`, `.thumbnail()`, `.crop()`, `.uploadToiCloud()`, `.timeline()`
-- Fallback to full-screen recording if window-specific recording fails
-- Zero npm dependencies (native fetch, Node 18+)
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `fps` | `number` | `10` | Frames per second |
+| `scale` | `number` | `800` | Max width in pixels |
+| `start` | `number` | — | Start time in seconds |
+| `end` | `number` | — | End time in seconds |

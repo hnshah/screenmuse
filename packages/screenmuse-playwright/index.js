@@ -96,7 +96,20 @@ class ScreenMusePlaywright {
     });
 
     // 3. Get browser process PID (window-specific recording)
-    const browserPid = browser.process?.()?.pid ?? null;
+    let browserPid = browser.process?.()?.pid ?? null;
+
+    // On macOS, Playwright often returns null for PID. Use /windows fallback.
+    if (!browserPid) {
+      console.warn('[screenmuse-playwright] browser.process().pid is null — using /windows fallback');
+      await sleep(800); // give the window time to register with the OS
+      const found = await this.findBrowserWindow(browser);
+      if (found) {
+        browserPid = found.pid;
+        console.log(`[screenmuse-playwright] Found browser window via /windows: pid=${found.pid} app="${found.app}" title="${found.title}"`);
+      } else {
+        console.warn('[screenmuse-playwright] Could not find browser window via /windows — will record full screen');
+      }
+    }
 
     // Give the window a moment to register with the OS
     if (browserPid) await sleep(600);
@@ -185,9 +198,55 @@ class ScreenMusePlaywright {
       await browser.close().catch(() => {});
 
       if (scriptError) throw scriptError;
-      if (!stopResult?.video_path) throw new Error('Recording stopped but returned no video path — ScreenMuse may have crashed');
+      if (!stopResult?.video_path && !stopResult?.path) throw new Error('Recording stopped but returned no video path — ScreenMuse may have crashed');
+      if (!stopResult.video_path) stopResult.video_path = stopResult.path;
 
       return new RecordingResult(stopResult, capturedChapters, this);
+    }
+  }
+
+  // ── Browser Window Discovery ──────────────────────────────────────────────
+
+  /**
+   * Find a browser window via the ScreenMuse /windows endpoint.
+   *
+   * Useful when `browser.process().pid` returns null (common on macOS).
+   * Queries GET /windows, filters for Chrome/Chromium windows, and
+   * prefers newly-opened windows (empty or about:blank title).
+   *
+   * @param {object} [browser]  Optional Playwright Browser instance (unused currently, reserved for future)
+   * @returns {Promise<{pid: number, app: string, title: string} | null>}
+   */
+  async findBrowserWindow(browser) {
+    try {
+      const data = await this._api('/windows');
+      const windows = data.windows || [];
+
+      // Filter for Chrome-family browsers
+      const chromeWindows = windows.filter(w =>
+        (w.app || w.application || '').includes('Chrom')
+      );
+
+      if (chromeWindows.length === 0) return null;
+
+      // Prefer windows with empty or about:blank title (newly launched, no page loaded)
+      const blankWindows = chromeWindows.filter(w => {
+        const title = w.title || '';
+        return !title || title === 'about:blank' || title === '' || title === 'New Tab';
+      });
+
+      // If we found blank windows, take the last one (most recently opened)
+      // Otherwise take the last Chrome window overall
+      const candidates = blankWindows.length > 0 ? blankWindows : chromeWindows;
+      const win = candidates[candidates.length - 1];
+
+      return {
+        pid: win.pid || win.process_id || win.owner_pid,
+        app: win.app || win.application || '',
+        title: win.title || '',
+      };
+    } catch {
+      return null;
     }
   }
 
