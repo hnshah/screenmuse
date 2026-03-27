@@ -6,6 +6,10 @@ import Foundation
 @MainActor
 public protocol RecordingCoordinating: AnyObject {
     var isRecording: Bool { get }
+    /// Cursor events captured during the current session (for SpeedRamper activity analysis).
+    var cursorEvents: [CursorEvent] { get }
+    /// Keystroke timestamps captured during the current session (for SpeedRamper activity analysis).
+    var keystrokeTimestamps: [Date] { get }
     /// Start recording. windowTitle/windowPid specify a specific window; nil = full screen.
     /// quality is the RecordingConfig.Quality rawValue string ("low"/"medium"/"high"/"max").
     func startRecording(name: String, windowTitle: String?, windowPid: Int?, quality: String?) async throws
