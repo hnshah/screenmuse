@@ -31,6 +31,27 @@ extension ScreenMuseServer {
             let y = (d["y"] as? Double) ?? (d["y"] as? Int).map(Double.init) ?? 0
             return CGRect(x: x, y: y, width: w, height: h)
         }
+        // Validate region against display bounds before attempting capture
+        if let rect = regionRect {
+            let unionBounds = NSScreen.screens.reduce(CGRect.null) { $0.union($1.frame) }
+            guard rect.width > 0, rect.height > 0 else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "Invalid region: width and height must be greater than 0",
+                    "code": "INVALID_REGION"
+                ])
+                return
+            }
+            guard rect.origin.x >= unionBounds.minX, rect.origin.y >= unionBounds.minY,
+                  rect.maxX <= unionBounds.maxX, rect.maxY <= unionBounds.maxY else {
+                sendResponse(connection: connection, status: 400, body: [
+                    "error": "Region \(Int(rect.width))×\(Int(rect.height)) at (\(Int(rect.origin.x)),\(Int(rect.origin.y))) falls outside display bounds \(Int(unionBounds.width))×\(Int(unionBounds.height))",
+                    "code": "REGION_OUT_OF_BOUNDS",
+                    "display_bounds": ["x": unionBounds.origin.x, "y": unionBounds.origin.y, "width": unionBounds.width, "height": unionBounds.height]
+                ])
+                return
+            }
+        }
+
         let webhookURL: URL? = (body["webhook"] as? String).flatMap { URL(string: $0) }
         if let wh = webhookURL { self.pendingWebhookURL = wh }
         smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") region=\(regionRect.map { "\(Int($0.width))x\(Int($0.height))" } ?? "full")", category: .server)
@@ -339,5 +360,87 @@ extension ScreenMuseServer {
             smLog.error("[\(reqID)] /screenshot failed: \(error.localizedDescription)", category: .capture)
             sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
         }
+    }
+
+    // MARK: POST /record — convenience: start + wait + stop in one call
+
+    func handleRecord(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        guard let rawDuration = body["duration_seconds"] ?? body["duration"],
+              let duration = (rawDuration as? Double) ?? (rawDuration as? Int).map(Double.init),
+              duration > 0, duration <= 3600 else {
+            sendResponse(connection: connection, status: 400, body: [
+                "error": "duration_seconds is required and must be between 1 and 3600",
+                "code": "INVALID_DURATION"
+            ])
+            return
+        }
+
+        guard !isRecording else {
+            sendResponse(connection: connection, status: 409, body: [
+                "error": "Already recording",
+                "code": "ALREADY_RECORDING",
+                "suggestion": "Call POST /stop first to stop the current recording"
+            ])
+            return
+        }
+
+        // Start recording using the same logic as /start
+        let name = body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
+        let windowTitle = body["window_title"] as? String
+        let windowPid = body["window_pid"] as? Int
+        let quality = body["quality"] as? String
+        let webhookURL: URL? = (body["webhook"] as? String).flatMap { URL(string: $0) }
+        if let wh = webhookURL { self.pendingWebhookURL = wh }
+
+        smLog.info("[\(reqID)] /record start — name='\(name)' duration=\(duration)s", category: .server)
+        smLog.usage("RECORD ONE-SHOT START", details: ["name": name, "duration": "\(duration)s"])
+
+        do {
+            if let coord = coordinator {
+                try await coord.startRecording(name: name, windowTitle: windowTitle, windowPid: windowPid, quality: quality)
+            } else {
+                let source: CaptureSource
+                if let title = windowTitle {
+                    let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                    if let window = content.windows.first(where: { $0.title?.localizedCaseInsensitiveContains(title) ?? false }) {
+                        source = .window(window)
+                    } else {
+                        sendResponse(connection: connection, status: 404, body: [
+                            "error": "Window not found: '\(title)'",
+                            "code": "WINDOW_NOT_FOUND",
+                            "suggestion": "Call GET /windows to see available windows"
+                        ])
+                        return
+                    }
+                } else {
+                    source = .fullScreen
+                }
+                let resolvedQuality = RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
+                let config = RecordingConfig(captureSource: source, quality: resolvedQuality)
+                try await recordingManager.startRecording(config: config)
+            }
+        } catch {
+            smLog.error("[\(reqID)] /record start failed: \(error.localizedDescription)", category: .server)
+            sendResponse(connection: connection, status: 500, body: structuredError(error))
+            return
+        }
+
+        sessionID = UUID().uuidString
+        sessionName = name
+        startTime = Date()
+        isRecording = true
+        chapters = []
+        highlightNextClick = false
+        currentVideoURL = nil
+
+        smLog.info("[\(reqID)] /record recording for \(duration)s...", category: .server)
+
+        // Wait for duration
+        try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+
+        // Stop and return enriched response
+        smLog.info("[\(reqID)] /record stopping after \(duration)s", category: .server)
+        await handleStop(body: [:], connection: connection, reqID: reqID)
+        smLog.usage("RECORD ONE-SHOT STOP", details: ["name": name, "duration": "\(duration)s"])
     }
 }

@@ -7,7 +7,7 @@ import Vision
 
 // Local HTTP server for programmatic agent control.
 // Route handlers are organized into extensions:
-//   Server+Recording.swift  — /start, /stop, /pause, /resume, /chapter, /highlight, /note, /screenshot
+//   Server+Recording.swift  — /record, /start, /stop, /pause, /resume, /chapter, /highlight, /note, /screenshot
 //   Server+Export.swift     — /export, /trim, /speedramp, /concat, /frames, /frame, /thumbnail, /crop, /ocr
 //   Server+Stream.swift     — /stream, /stream/status
 //   Server+Window.swift     — /windows, /window/focus, /window/position, /window/hide-others
@@ -40,6 +40,12 @@ public class ScreenMuseServer {
     public internal(set) var highlightNextClick = false
     // Webhook fired when recording stops
     var pendingWebhookURL: URL?
+
+    /// Optional API key. When set, every request must include:
+    ///   X-ScreenMuse-Key: <key>
+    /// Configure via env var SCREENMUSE_API_KEY or set programmatically at launch.
+    /// When nil (default), no auth is required — safe for local-only use.
+    public var apiKey: String? = ProcessInfo.processInfo.environment["SCREENMUSE_API_KEY"]
 
     var requestCount = 0
 
@@ -78,7 +84,7 @@ public class ScreenMuseServer {
         }
     }
 
-    // MARK: - Dispatch Table
+    // MARK: - Request Dispatch
 
     private func processHTTPRequest(data: Data, connection: NWConnection) async {
         requestCount += 1
@@ -96,6 +102,31 @@ public class ScreenMuseServer {
         guard parts.count >= 2 else { return }
         let method = parts[0]
         let path = parts[1]
+
+        // Parse request headers (lines between request line and blank line)
+        var requestHeaders: [String: String] = [:]
+        for line in lines.dropFirst() {
+            guard !line.isEmpty else { break }
+            if let colon = line.firstIndex(of: ":") {
+                let key = String(line[..<colon]).trimmingCharacters(in: .whitespaces).lowercased()
+                let value = String(line[line.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
+                requestHeaders[key] = value
+            }
+        }
+
+        // API key auth — skip OPTIONS (preflight) and /health (liveness probes)
+        if let requiredKey = apiKey, method != "OPTIONS", path != "/health" {
+            let providedKey = requestHeaders["x-screenmuse-key"] ?? ""
+            guard providedKey == requiredKey else {
+                smLog.warning("[\(reqID)] 401 — invalid or missing X-ScreenMuse-Key", category: .server)
+                sendResponse(connection: connection, status: 401, body: [
+                    "error": "Unauthorized",
+                    "code": "INVALID_API_KEY",
+                    "suggestion": "Include your API key in the X-ScreenMuse-Key header"
+                ])
+                return
+            }
+        }
 
         // Parse JSON body
         var body: [String: Any] = [:]
@@ -130,7 +161,7 @@ public class ScreenMuseServer {
 
         // CORS preflight
         if method == "OPTIONS" {
-            let headers = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\n\r\n"
+            let headers = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type, X-ScreenMuse-Key\r\n\r\n"
             if let data = headers.data(using: .utf8) {
                 connection.send(content: data, completion: .contentProcessed { _ in connection.cancel() })
             }
@@ -139,6 +170,7 @@ public class ScreenMuseServer {
 
         switch (method, cleanPath) {
         // Recording
+        case ("POST", "/record"):         await handleRecord(body: body, connection: connection, reqID: reqID)
         case ("POST", "/start"):         await handleStart(body: body, connection: connection, reqID: reqID)
         case ("POST", "/stop"):
             if await handlePiPStop(body: body, connection: connection, reqID: reqID) { return }
