@@ -323,6 +323,7 @@ public class ScreenMuseServer {
         case ("POST", "/validate"):       await handleValidate(body: body, connection: connection, reqID: reqID)
         case ("POST", "/annotate"):       await handleAnnotate(body: body, connection: connection, reqID: reqID)
         case ("POST", "/script"):         await handleScript(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/script/batch"):   await handleScriptBatch(body: body, connection: connection, reqID: reqID)
         case ("POST", "/upload/icloud"):  handleUploadICloud(body: body, connection: connection, reqID: reqID)
 
         default:

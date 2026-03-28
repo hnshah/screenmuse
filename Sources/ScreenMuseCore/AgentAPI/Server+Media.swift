@@ -343,6 +343,157 @@ extension ScreenMuseServer {
         ])
     }
 
+    // MARK: POST /script/batch — run multiple named scripts in sequence
+
+    func handleScriptBatch(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        smLog.info("[\(reqID)] /script/batch request", category: .server)
+
+        guard let scripts = body["scripts"] as? [[String: Any]], !scripts.isEmpty else {
+            sendResponse(connection: connection, status: 400, body: [
+                "error": "'scripts' must be a non-empty array of objects, each with a 'commands' array",
+                "example": "{\"scripts\":[{\"name\":\"setup\",\"commands\":[{\"action\":\"start\"}]},{\"name\":\"teardown\",\"commands\":[{\"action\":\"stop\"}]}]}"
+            ])
+            return
+        }
+
+        let continueOnError = body["continue_on_error"] as? Bool ?? false
+        var scriptResults: [[String: Any]] = []
+        var batchOK = true
+
+        for (sIdx, scriptObj) in scripts.enumerated() {
+            let scriptName = scriptObj["name"] as? String ?? "script_\(sIdx + 1)"
+            guard let commands = scriptObj["commands"] as? [[String: Any]], !commands.isEmpty else {
+                let result: [String: Any] = [
+                    "name": scriptName,
+                    "ok": false,
+                    "steps_run": 0,
+                    "steps": [] as [[String: Any]],
+                    "error": "Script '\(scriptName)' missing or empty 'commands' array"
+                ]
+                scriptResults.append(result)
+                batchOK = false
+                if !continueOnError { break }
+                continue
+            }
+
+            // Execute each command in this script (same logic as handleScript)
+            var stepResults: [[String: Any]] = []
+            var scriptError: String? = nil
+
+            for (idx, cmd) in commands.enumerated() {
+                let action = cmd["action"] as? String ?? ""
+
+                if let sleepSeconds = cmd["sleep"] as? Double ?? (cmd["sleep"] as? Int).map(Double.init) {
+                    try? await Task.sleep(nanoseconds: UInt64(sleepSeconds * 1_000_000_000))
+                    stepResults.append(["step": idx + 1, "action": "sleep", "seconds": sleepSeconds, "ok": true])
+                    continue
+                }
+
+                var stepResult: [String: Any] = ["step": idx + 1, "action": action]
+                do {
+                    switch action {
+                    case "start":
+                        let name = cmd["name"] as? String ?? "script-recording"
+                        let quality = cmd["quality"] as? String
+                        if let coord = coordinator {
+                            try await coord.startRecording(name: name, windowTitle: cmd["window_title"] as? String, windowPid: nil, quality: quality)
+                        } else {
+                            try await recordingManager.startRecording(config: RecordingConfig(
+                                captureSource: .fullScreen,
+                                includeSystemAudio: true,
+                                quality: RecordingConfig.Quality(rawValue: quality ?? "medium") ?? .medium
+                            ))
+                        }
+                        sessionID = UUID().uuidString
+                        sessionName = name
+                        startTime = Date()
+                        isRecording = true
+                        stepResult["ok"] = true
+
+                    case "stop":
+                        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        if let coord = coordinator, let url = await coord.stopAndGetVideo() {
+                            currentVideoURL = url
+                            stepResult["video_path"] = url.path
+                        } else {
+                            let url = try await recordingManager.stopRecording()
+                            currentVideoURL = url
+                            stepResult["video_path"] = url.path
+                        }
+                        isRecording = false
+                        stepResult["elapsed"] = elapsed
+                        stepResult["ok"] = true
+
+                    case "pause":
+                        if let coord = coordinator {
+                            try await coord.pauseRecording()
+                        } else {
+                            try await recordingManager.pauseRecording()
+                        }
+                        stepResult["ok"] = true
+
+                    case "resume":
+                        if let coord = coordinator {
+                            try await coord.resumeRecording()
+                        } else {
+                            try await recordingManager.resumeRecording()
+                        }
+                        stepResult["ok"] = true
+
+                    case "chapter":
+                        let chapterName = cmd["name"] as? String ?? "Chapter \(chapters.count + 1)"
+                        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        chapters.append((name: chapterName, time: elapsed))
+                        stepResult["name"] = chapterName
+                        stepResult["timestamp"] = elapsed
+                        stepResult["ok"] = true
+
+                    case "note":
+                        let noteText = cmd["text"] as? String ?? ""
+                        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        sessionNotes.append((text: noteText, time: elapsed))
+                        stepResult["ok"] = true
+
+                    case "highlight":
+                        highlightNextClick = true
+                        stepResult["ok"] = true
+
+                    default:
+                        stepResult["ok"] = false
+                        stepResult["error"] = "Unknown action '\(action)'. Supported: start, stop, pause, resume, chapter, note, highlight, sleep"
+                    }
+                } catch {
+                    stepResult["ok"] = false
+                    stepResult["error"] = error.localizedDescription
+                    scriptError = "Step \(idx + 1) (\(action)) failed: \(error.localizedDescription)"
+                    stepResults.append(stepResult)
+                    break
+                }
+                stepResults.append(stepResult)
+            }
+
+            let scriptOK = scriptError == nil
+            scriptResults.append([
+                "name": scriptName,
+                "ok": scriptOK,
+                "steps_run": stepResults.count,
+                "steps": stepResults,
+                "error": scriptError as Any
+            ])
+
+            if !scriptOK {
+                batchOK = false
+                if !continueOnError { break }
+            }
+        }
+
+        sendResponse(connection: connection, status: batchOK ? 200 : 500, body: [
+            "ok": batchOK,
+            "scripts_run": scriptResults.count,
+            "scripts": scriptResults
+        ])
+    }
+
     func handleUploadICloud(body: [String: Any], connection: NWConnection, reqID: Int) {
         smLog.info("[\(reqID)] /upload/icloud request", category: .server)
 

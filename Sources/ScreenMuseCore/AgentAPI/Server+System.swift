@@ -159,7 +159,7 @@ extension ScreenMuseServer {
             // Video editing
             "POST /annotate",
             // Batch runner
-            "POST /script",
+            "POST /script", "POST /script/batch",
             // OpenAPI spec
             "GET /openapi"
         ]
