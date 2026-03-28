@@ -43,13 +43,17 @@ public class ScreenMuseServer {
 
     /// Optional API key. When set, every request must include:
     ///   X-ScreenMuse-Key: <key>
-    /// Configure via env var SCREENMUSE_API_KEY or set programmatically at launch.
-    /// When nil (default), no auth is required — safe for local-only use.
-    public var apiKey: String? = ProcessInfo.processInfo.environment["SCREENMUSE_API_KEY"]
+    /// Loaded from ~/.screenmuse/api_key on start(), falling back to env var
+    /// SCREENMUSE_API_KEY, or auto-generated on first launch.
+    /// Set SCREENMUSE_NO_AUTH=1 to explicitly disable authentication.
+    /// When nil, no auth is required — safe for local-only use.
+    public var apiKey: String?
 
     var requestCount = 0
 
     public func start() throws {
+        loadOrGenerateAPIKey()
+
         let params = NWParameters.tcp
         listener = try NWListener(using: params, on: 7823)
         listener?.newConnectionHandler = { [weak self] conn in
@@ -59,6 +63,53 @@ public class ScreenMuseServer {
         }
         listener?.start(queue: .main)
         smLog.info("NWListener started on port 7823", category: .server)
+    }
+
+    /// Load API key from ~/.screenmuse/api_key, env var, or auto-generate one.
+    private func loadOrGenerateAPIKey() {
+        let fm = FileManager.default
+        let home = fm.homeDirectoryForCurrentUser
+        let keyDir = home.appendingPathComponent(".screenmuse", isDirectory: true)
+        let keyFile = keyDir.appendingPathComponent("api_key")
+
+        // 1. If ~/.screenmuse/api_key exists, use it
+        if fm.fileExists(atPath: keyFile.path) {
+            if let contents = try? String(contentsOf: keyFile, encoding: .utf8) {
+                let key = contents.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !key.isEmpty {
+                    apiKey = key
+                    smLog.info("ScreenMuse API key: \(key) (from ~/.screenmuse/api_key)", category: .server)
+                    return
+                }
+            }
+        }
+
+        // 2. If SCREENMUSE_API_KEY env var is set, use it (legacy)
+        if let envKey = ProcessInfo.processInfo.environment["SCREENMUSE_API_KEY"], !envKey.isEmpty {
+            apiKey = envKey
+            smLog.info("ScreenMuse API key: \(envKey) (from SCREENMUSE_API_KEY env var)", category: .server)
+            return
+        }
+
+        // 3. If SCREENMUSE_NO_AUTH=1, disable auth explicitly
+        if ProcessInfo.processInfo.environment["SCREENMUSE_NO_AUTH"] == "1" {
+            apiKey = nil
+            smLog.info("ScreenMuse running without authentication (SCREENMUSE_NO_AUTH=1)", category: .server)
+            return
+        }
+
+        // 4. Auto-generate a key, write it to ~/.screenmuse/api_key
+        let generatedKey = UUID().uuidString
+        do {
+            try fm.createDirectory(at: keyDir, withIntermediateDirectories: true)
+            try generatedKey.write(to: keyFile, atomically: true, encoding: .utf8)
+            apiKey = generatedKey
+            smLog.info("ScreenMuse API key: \(generatedKey) (from ~/.screenmuse/api_key)", category: .server)
+        } catch {
+            // If we can't write the file, still use the generated key for this session
+            apiKey = generatedKey
+            smLog.warning("Could not write API key to ~/.screenmuse/api_key: \(error.localizedDescription). Using session-only key.", category: .server)
+        }
     }
 
     public func stop() {
