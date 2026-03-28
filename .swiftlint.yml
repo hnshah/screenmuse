@@ -4,21 +4,10 @@ disabled_rules:
   - trailing_whitespace
   - line_length  # Disabled: many log messages exceed limits
 
-opt_in_rules:
-  - empty_count
-  - empty_string
-  - explicit_init
-  - explicit_type_interface
-  - file_header
-  - multiline_arguments
-  - multiline_function_chains
-  - multiline_parameters
-  - operator_usage_whitespace
-  - overridden_super_call
-  - private_outlet
-  - redundant_nil_coalescing
-  - sorted_imports
-  - vertical_parameter_alignment_on_call
+# Temporarily disabled opt-in rules until code is cleaned up
+# opt_in_rules:
+#   - empty_count
+#   - sorted_imports
 
 included:
   - Sources
