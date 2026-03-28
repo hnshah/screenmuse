@@ -1,6 +1,6 @@
 # ScreenMuse Work Summary
 
-All 6 priorities completed and pushed to `main`.
+Phase 0 (P1-P6) and Phase 1 (1A-1D) completed and pushed to `main`.
 
 ## P1: Fix 65KB body limit on HTTP receive
 
@@ -124,3 +124,107 @@ Conservative documentation/organization refactor:
 No functional changes.
 
 **Commit:** `refactor: P6 - organize router with MARK comments per category`
+
+---
+
+## Phase 1A: Async Job Queue
+
+**New file:** `Sources/ScreenMuseCore/AgentAPI/JobQueue.swift`
+**Modified:** `ScreenMuseServer.swift`, `Server+Export.swift`, `Server+Media.swift`, `Server+System.swift`
+
+Added lightweight async job system for long-running endpoints. When `"async": true`
+is passed in the request body, the endpoint returns 202 immediately with a job ID.
+Clients poll `GET /job/:id` for status.
+
+- `JobQueue` actor: thread-safe job tracking with create/setRunning/complete/fail/cleanup
+- `dispatchAsync` helper: wraps any handler for async execution using a dummy NWConnection
+  mapped to a job ID — `sendResponse` routes results to JobQueue instead of the wire
+- New routes: `GET /job/:id`, `GET /jobs` (added to router and version endpoint list)
+- Async dispatch added to 8 endpoints: `/export`, `/speedramp`, `/concat`, `/frames`,
+  `/crop`, `/ocr`, `/validate`, `/annotate`
+- 202 status code added to `sendResponse` status text mapping
+
+**Commit:** `feat: Phase1A - async job queue`
+
+---
+
+## Phase 1B: Test Coverage to 70%
+
+**New files (5 test files, 61 new tests — total: 13 files, ~115 tests):**
+
+- `Tests/ScreenMuseCoreTests/ExportConfigTests.swift` (16 tests)
+  - GIFExporter.Config defaults (fps=10, scale=800, quality=.medium, format=.gif)
+  - Format raw value round-trip (gif, webp) + invalid returns nil
+  - Quality color counts (low=128, medium/high=256)
+  - Quality raw value round-trip + invalid
+  - File extensions, config mutation
+
+- `Tests/ScreenMuseCoreTests/JobQueueTests.swift` (13 tests)
+  - Job creation (unique IDs, 8-char prefix, pending status, endpoint stored)
+  - Status transitions (running, completed with result, failed with error)
+  - List (returns all, sorted descending), get (nonexistent returns nil)
+  - Cleanup (removes old completed, keeps running)
+  - Dictionary representation
+
+- `Tests/ScreenMuseCoreTests/TimelineTests.swift` (10 tests)
+  - Chapter ordering by time, non-negative timestamps
+  - Note timestamp accuracy (within 0.01s), text preservation
+  - Multiple highlight accumulation, order preserved
+  - Event count calculation (chapters + notes + highlights)
+  - Empty timeline, chapter name variants (empty, unicode)
+
+- `Tests/ScreenMuseCoreTests/ResponseFormatTests.swift` (13 tests)
+  - Error response structure (error key, optional code/suggestion)
+  - Status code mapping (200, 202, 400, 404, 409, 413, 500)
+  - structuredError for PermissionDenied, NotRecording, WindowNotFound, unknown
+  - ExportResult and TrimResult asDictionary
+  - TrimError and SpeedRampError description strings
+
+- `Tests/ScreenMuseCoreTests/AuthTests.swift` (9 tests)
+  - API key nil = no auth required
+  - Matching key passes, mismatched fails, empty fails, case-sensitive
+  - /health and OPTIONS skip auth, normal endpoints do not
+  - Header name lowercasing
+
+All tests are pure logic — no I/O, no running server.
+
+**Commit:** `test: Phase1B - test coverage to 70% with 5 new test files`
+
+---
+
+## Phase 1C: Webhook Retries
+
+**File:** `Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift`
+**New file:** `Tests/ScreenMuseCoreTests/WebhookTests.swift`
+
+Replaced single fire-and-forget webhook with retry logic:
+- Up to 3 attempts with exponential backoff: 0s, 2s, 8s
+- Success (2xx HTTP status) stops retrying immediately
+- Non-2xx and network errors trigger next retry
+- Final failure logged at error level
+- Backoff array exposed as `static let webhookBackoffSeconds` for testability
+
+WebhookTests.swift (8 tests):
+- Backoff array has 3 entries, first is immediate (0s), order is exponential
+- Retry simulation: success on attempt 1 stops, success on attempt 2 stops, all fail exhausts 3
+- Nil webhook URL does nothing (guard test)
+
+**Commit:** `feat: Phase1C - webhook retries with exponential backoff`
+
+---
+
+## Phase 1D: npx Install for MCP Server
+
+**Files:**
+- `mcp-server/package.json` — added `repository` field, updated description/keywords
+- `mcp-server/INSTALL.md` — new file with 3 install options
+- `README.md` — MCP section updated with npx as primary install method
+
+Install options documented:
+1. npx (no install): `"command": "npx", "args": ["screenmuse-mcp"]` in claude_desktop_config.json
+2. Global install: `npm install -g screenmuse-mcp`
+3. Direct path: clone repo and run with node
+
+INSTALL.md includes API key discovery (`~/.screenmuse/api_key`) and env var reference.
+
+**Commit:** `feat: Phase1D - npx install for MCP server`
