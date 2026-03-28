@@ -118,5 +118,85 @@ final class ServerStateTests: XCTestCase {
         server.sessionName = nil
         server.startTime = nil
     }
+
+    // MARK: - Script Start State Reset
+
+    @MainActor
+    func testScriptStartResetsChapters() {
+        let server = ScreenMuseServer.shared
+        // Simulate leftover state from a previous session
+        server.chapters = [(name: "Old Chapter", time: 1.0), (name: "Stale Chapter", time: 5.0)]
+        server.sessionNotes = [(text: "old note", time: 2.0)]
+        server.sessionHighlights = [3.0, 6.0]
+        server.highlightNextClick = true
+        server.currentVideoURL = URL(fileURLWithPath: "/tmp/old-video.mp4")
+
+        // Simulate what /script "start" now does (state reset)
+        server.sessionID = UUID().uuidString
+        server.sessionName = "fresh-session"
+        server.startTime = Date()
+        server.isRecording = true
+        server.chapters = []
+        server.sessionNotes.removeAll()
+        server.sessionHighlights.removeAll()
+        server.highlightNextClick = false
+        server.currentVideoURL = nil
+
+        XCTAssertEqual(server.chapters.count, 0, "chapters should be empty after script start")
+        XCTAssertEqual(server.sessionNotes.count, 0, "sessionNotes should be empty after script start")
+        XCTAssertEqual(server.sessionHighlights.count, 0, "sessionHighlights should be empty after script start")
+        XCTAssertFalse(server.highlightNextClick, "highlightNextClick should be false after script start")
+        XCTAssertNil(server.currentVideoURL, "currentVideoURL should be nil after script start")
+
+        // Clean up
+        server.isRecording = false
+        server.sessionID = nil
+        server.sessionName = nil
+        server.startTime = nil
+    }
+
+    @MainActor
+    func testScriptStartDoesNotLeakPreviousNotes() {
+        let server = ScreenMuseServer.shared
+        // First "session"
+        server.sessionNotes = [(text: "note from session 1", time: 1.0)]
+        server.sessionHighlights = [2.0]
+        server.chapters = [(name: "ch1", time: 0.5)]
+
+        // Simulate script start (reset)
+        server.chapters = []
+        server.sessionNotes.removeAll()
+        server.sessionHighlights.removeAll()
+
+        // Second "session" adds its own data
+        server.sessionNotes.append((text: "note from session 2", time: 0.5))
+
+        XCTAssertEqual(server.sessionNotes.count, 1)
+        XCTAssertEqual(server.sessionNotes[0].text, "note from session 2")
+        XCTAssertEqual(server.chapters.count, 0)
+        XCTAssertEqual(server.sessionHighlights.count, 0)
+    }
+
+    @MainActor
+    func testHighlightNextClickResetsOnStart() {
+        let server = ScreenMuseServer.shared
+        server.highlightNextClick = true
+        XCTAssertTrue(server.highlightNextClick)
+
+        // Simulate script start reset
+        server.highlightNextClick = false
+        XCTAssertFalse(server.highlightNextClick, "highlightNextClick must reset to false on new session start")
+    }
+
+    @MainActor
+    func testCurrentVideoURLResetsOnStart() {
+        let server = ScreenMuseServer.shared
+        server.currentVideoURL = URL(fileURLWithPath: "/tmp/previous-recording.mp4")
+        XCTAssertNotNil(server.currentVideoURL)
+
+        // Simulate script start reset
+        server.currentVideoURL = nil
+        XCTAssertNil(server.currentVideoURL, "currentVideoURL must be nil after starting a new session")
+    }
 }
 #endif

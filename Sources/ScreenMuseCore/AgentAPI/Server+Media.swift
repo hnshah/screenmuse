@@ -273,10 +273,17 @@ extension ScreenMuseServer {
                     sessionName = name
                     startTime = Date()
                     isRecording = true
+                    chapters = []
+                    sessionNotes.removeAll()
+                    sessionHighlights.removeAll()
+                    highlightNextClick = false
+                    currentVideoURL = nil
                     stepResult["ok"] = true
 
                 case "stop":
                     let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                    let capturedChapters = chapters
+                    let capturedNotes = sessionNotes
                     if let coord = coordinator, let url = await coord.stopAndGetVideo() {
                         currentVideoURL = url
                         stepResult["video_path"] = url.path
@@ -287,6 +294,8 @@ extension ScreenMuseServer {
                     }
                     isRecording = false
                     stepResult["elapsed"] = elapsed
+                    stepResult["chapters"] = capturedChapters.map { ["name": $0.name, "time": $0.time] }
+                    stepResult["notes"] = capturedNotes.map { ["text": $0.text, "time": $0.time] }
                     stepResult["ok"] = true
 
                 case "pause":
@@ -412,10 +421,17 @@ extension ScreenMuseServer {
                         sessionName = name
                         startTime = Date()
                         isRecording = true
+                        chapters = []
+                        sessionNotes.removeAll()
+                        sessionHighlights.removeAll()
+                        highlightNextClick = false
+                        currentVideoURL = nil
                         stepResult["ok"] = true
 
                     case "stop":
                         let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                        let capturedChapters = chapters
+                        let capturedNotes = sessionNotes
                         if let coord = coordinator, let url = await coord.stopAndGetVideo() {
                             currentVideoURL = url
                             stepResult["video_path"] = url.path
@@ -426,6 +442,8 @@ extension ScreenMuseServer {
                         }
                         isRecording = false
                         stepResult["elapsed"] = elapsed
+                        stepResult["chapters"] = capturedChapters.map { ["name": $0.name, "time": $0.time] }
+                        stepResult["notes"] = capturedNotes.map { ["text": $0.text, "time": $0.time] }
                         stepResult["ok"] = true
 
                     case "pause":
