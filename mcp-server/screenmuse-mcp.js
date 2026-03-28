@@ -31,6 +31,7 @@ import { readFileSync } from 'fs';
 import { createServer } from 'http';
 
 const BASE_URL = process.env.SCREENMUSE_URL || 'http://localhost:7823';
+const API_KEY = process.env.SCREENMUSE_API_KEY || null;
 
 // ── MCP Protocol Helpers ───────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ async function callScreenMuse(path, body = null, method = null) {
   const isGet = body === null && !method;
   const m = method || (body !== null ? 'POST' : 'GET');
   const opts = { method: m, headers: { 'Content-Type': 'application/json' } };
+  if (API_KEY) opts.headers['X-ScreenMuse-Key'] = API_KEY;
   if (body !== null) opts.body = JSON.stringify(body);
   const res = await (fetch || globalThis.fetch)(`${BASE_URL}${path}`, opts);
   return res.json();
@@ -196,6 +198,132 @@ const TOOLS = [
     name: 'screenmuse_running_apps',
     description: 'List all running applications with their names and bundle IDs.',
     inputSchema: { type: 'object', properties: {} }
+  },
+  // ── New tools (v1.6.0) ──────────────────────────────────────────────────
+  {
+    name: 'screenmuse_record',
+    description: 'Start a recording, wait for the specified duration, then stop and return the video. One-shot convenience endpoint.',
+    inputSchema: {
+      type: 'object',
+      required: ['duration_seconds'],
+      properties: {
+        name: { type: 'string', description: 'Recording name/label (default: auto-generated)' },
+        duration_seconds: { type: 'number', description: 'Recording duration in seconds (1-3600)', minimum: 1, maximum: 3600 },
+        quality: { type: 'string', enum: ['low', 'medium', 'high', 'max'], description: 'Video quality (default: medium)' },
+        window_title: { type: 'string', description: 'Record a specific window' },
+        webhook: { type: 'string', description: 'URL to POST to when recording stops' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_speedramp',
+    description: 'Speed-ramp a video: speed up idle sections, keep active sections at normal speed. Uses cursor/keystroke activity analysis.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', description: 'Video path or "last" (default: last recording)' },
+        idle_threshold_sec: { type: 'number', description: 'Seconds of inactivity before section is considered idle (default: 2.0)' },
+        idle_speed: { type: 'number', description: 'Playback speed for idle sections (default: 4.0x, min 1.0)' },
+        active_speed: { type: 'number', description: 'Playback speed for active sections (default: 1.0x, min 0.1)' },
+        output: { type: 'string', description: 'Custom output path (default: auto-generated in Exports)' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_concat',
+    description: 'Concatenate multiple video files into one.',
+    inputSchema: {
+      type: 'object',
+      required: ['sources'],
+      properties: {
+        sources: { type: 'array', items: { type: 'string' }, description: 'Array of video file paths (use "last" for most recent recording)' },
+        output: { type: 'string', description: 'Custom output path (default: auto-generated in Exports)' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_crop',
+    description: 'Crop a video to a specific region.',
+    inputSchema: {
+      type: 'object',
+      required: ['region'],
+      properties: {
+        source: { type: 'string', description: 'Video path or "last" (default: last recording)' },
+        region: {
+          type: 'object',
+          required: ['x', 'y', 'width', 'height'],
+          description: 'Crop region in pixels',
+          properties: {
+            x: { type: 'number', description: 'Left offset' },
+            y: { type: 'number', description: 'Top offset' },
+            width: { type: 'number', description: 'Crop width' },
+            height: { type: 'number', description: 'Crop height' }
+          }
+        },
+        quality: { type: 'string', enum: ['low', 'medium', 'high', 'max'], description: 'Output quality (default: medium)' },
+        output: { type: 'string', description: 'Custom output path' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_annotate',
+    description: 'Overlay text, shapes, or highlights on a video.',
+    inputSchema: {
+      type: 'object',
+      required: ['overlays'],
+      properties: {
+        source: { type: 'string', description: 'Video path or "last" (default: last recording)' },
+        overlays: {
+          type: 'array',
+          description: 'Array of overlay objects (text, shape, highlight)',
+          items: { type: 'object' }
+        },
+        quality: { type: 'string', enum: ['low', 'medium', 'high', 'max'], description: 'Output quality (default: medium)' },
+        output: { type: 'string', description: 'Custom output path' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_script',
+    description: 'Run a sequence of recording commands (start, stop, chapter, sleep, etc.) as a batch script.',
+    inputSchema: {
+      type: 'object',
+      required: ['commands'],
+      properties: {
+        commands: {
+          type: 'array',
+          description: 'Array of command objects: {action: "start"|"stop"|"chapter"|...} or {sleep: seconds}',
+          items: { type: 'object' }
+        }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_script_batch',
+    description: 'Run multiple named scripts in sequence. Each script contains a commands array. Stops on first failure unless continue_on_error is true.',
+    inputSchema: {
+      type: 'object',
+      required: ['scripts'],
+      properties: {
+        scripts: {
+          type: 'array',
+          description: 'Array of script objects: {name: "setup", commands: [...]}',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string', description: 'Script name' },
+              commands: { type: 'array', items: { type: 'object' }, description: 'Array of command objects' }
+            }
+          }
+        },
+        continue_on_error: { type: 'boolean', description: 'Continue running remaining scripts if one fails (default: false)' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_highlight',
+    description: 'Flag the next mouse click to be highlighted with an enhanced visual effect (auto-zoom + ring).',
+    inputSchema: { type: 'object', properties: {} }
   }
 ];
 
@@ -224,6 +352,15 @@ async function executeTool(name, args) {
       case 'screenmuse_active_window': result = await callScreenMuse('/system/active-window', null); break;
       case 'screenmuse_clipboard':     result = await callScreenMuse('/system/clipboard', null); break;
       case 'screenmuse_running_apps':  result = await callScreenMuse('/system/running-apps', null); break;
+      // New tools (v1.6.0)
+      case 'screenmuse_record':        result = await callScreenMuse('/record', args || {}); break;
+      case 'screenmuse_speedramp':     result = await callScreenMuse('/speedramp', args || {}); break;
+      case 'screenmuse_concat':        result = await callScreenMuse('/concat', args || {}); break;
+      case 'screenmuse_crop':          result = await callScreenMuse('/crop', args || {}); break;
+      case 'screenmuse_annotate':      result = await callScreenMuse('/annotate', args || {}); break;
+      case 'screenmuse_script':        result = await callScreenMuse('/script', args || {}); break;
+      case 'screenmuse_script_batch':  result = await callScreenMuse('/script/batch', args || {}); break;
+      case 'screenmuse_highlight':     result = await callScreenMuse('/highlight', {}); break;
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
     }
@@ -291,7 +428,7 @@ async function handleMessage(msg) {
       result: {
         protocolVersion: '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'screenmuse', version: '1.3.0' }
+        serverInfo: { name: 'screenmuse', version: '1.6.0' }
       }
     });
     return;
