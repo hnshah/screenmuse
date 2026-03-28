@@ -372,9 +372,28 @@ Anthropic provides AI that controls the computer. ScreenMuse records what it did
 Perfect for safety monitoring and debugging computer-use agents.
 
 ### ScreenMuse + MCP (Model Context Protocol)
-MCP Server exposes ScreenMuse to Claude Desktop. Claude controls recording via tool calls.
+MCP Server exposes ScreenMuse to Claude Desktop and Cursor. Claude controls recording via tool calls.
 
-See `docs/MCP.md` for setup instructions.
+**Quickest setup (npx, no install):**
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "screenmuse": {
+      "command": "npx",
+      "args": ["screenmuse-mcp"],
+      "env": {
+        "SCREENMUSE_API_KEY": "your-key-here"
+      }
+    }
+  }
+}
+```
+
+Find your API key: `cat ~/.screenmuse/api_key`
+
+See [`mcp-server/INSTALL.md`](mcp-server/INSTALL.md) for global install and other options.
 
 ---
 
