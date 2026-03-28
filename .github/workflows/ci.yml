@@ -9,7 +9,7 @@ on:
 jobs:
   lint:
     name: SwiftLint
-    runs-on: macos-14
+    runs-on: macos-15  # Swift 6.0 required
     steps:
       - uses: actions/checkout@v4
       
@@ -21,7 +21,7 @@ jobs:
   
   build:
     name: Build
-    runs-on: macos-14
+    runs-on: macos-15  # Swift 6.0 required
     steps:
       - uses: actions/checkout@v4
       
@@ -33,7 +33,7 @@ jobs:
   
   test:
     name: Test
-    runs-on: macos-14
+    runs-on: macos-15  # Swift 6.0 required
     needs: [lint, build]
     steps:
       - uses: actions/checkout@v4
