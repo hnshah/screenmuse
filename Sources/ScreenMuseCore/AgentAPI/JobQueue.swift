@@ -11,7 +11,9 @@ public actor JobQueue {
         case pending, running, completed, failed
     }
 
-    public struct Job: Sendable {
+    // @unchecked Sendable: result stores [String: Any] which is not Sendable-safe,
+    // but Job values only cross actor boundaries as immutable snapshots via get().
+    public struct Job: @unchecked Sendable {
         public let id: String
         public let endpoint: String
         public let createdAt: Date
