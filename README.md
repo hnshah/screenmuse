@@ -1,14 +1,14 @@
 # ScreenMuse
 
-**AI Agent Recorder : Capture What AI Sees & Does**
+**AI Agent Recorder - Capture What AI Sees & Does**
 
-ScreenMuse is the first screen recorder purpose-built for AI agents. When your AI agent runs a Playwright script, fixes a bug, or automates a workflow : ScreenMuse captures video proof of what happened.
+ScreenMuse is the first screen recorder purpose-built for AI agents. When your AI agent runs a Playwright script, fixes a bug, or automates a workflow - ScreenMuse captures video proof of what happened.
 
 **Built for:**
-- 🤖 **AI coding agents** : Record PRs, demonstrate fixes
-- 🎭 **Playwright & browser automation** : Video on test failure
-- 🔄 **Agentic workflows** : Prove task completion
-- 👀 **Computer-use models** : Observe agent behavior
+- 🤖 **AI coding agents** - Record PRs, demonstrate fixes
+- 🎭 **Playwright & browser automation** - Video on test failure
+- 🔄 **Agentic workflows** - Prove task completion
+- 👀 **Computer-use models** - Observe agent behavior
 
 **Not built for:**
 - ❌ Manual screen recording (use Loom)
@@ -62,15 +62,15 @@ Grant Screen Recording permission when prompted, then relaunch.
 ### 🎯 API-First Design
 - **40+ HTTP endpoints** on `localhost:7823`
 - **OpenAPI spec** at `/openapi`
-- **Zero UI** : control everything via HTTP
+- **Zero UI** - control everything via HTTP
 - **Designed for code**, not humans
 
 ### 🤖 Agent-Aware
-- **Activity detection** : knows when agent is idle
-- **Click tracking** : cursor events with timestamps
-- **Keystroke overlay** : shows what agent typed
-- **Chapter markers** : structure long recordings
-- **Highlight mode** : auto-zoom on important moments
+- **Activity detection** - knows when agent is idle
+- **Click tracking** - cursor events with timestamps
+- **Keystroke overlay** - shows what agent typed
+- **Chapter markers** - structure long recordings
+- **Highlight mode** - auto-zoom on important moments
 
 ### 📤 Export Pipeline
 - **GIF** (custom encoder, 10fps default)
@@ -110,7 +110,7 @@ const { ScreenMuse } = require('screenmuse-playwright');
 
 const sm = new ScreenMuse();
 
-// Wrap any async function : automatic recording
+// Wrap any async function - automatic recording
 const result = await sm.record(async (page) => {
   await page.goto('https://example.com');
   await page.click('button');
@@ -216,13 +216,13 @@ print(f"Session recorded: {result['video_path']}")
 
 **Native macOS, zero dependencies:**
 
-- **ScreenCaptureKit** : screen capture (requires macOS 14+)
-- **AVFoundation** : video encoding
-- **Metal** : GPU-accelerated effects (click ripples, zoom)
-- **Vision** : on-device OCR
-- **Swift 6** : modern concurrency (actors, async/await)
+- **ScreenCaptureKit** - screen capture (requires macOS 14+)
+- **AVFoundation** - video encoding
+- **Metal** - GPU-accelerated effects (click ripples, zoom)
+- **Vision** - on-device OCR
+- **Swift 6** - modern concurrency (actors, async/await)
 
-**11,980 lines of Swift** : all in-tree, no external frameworks.
+**11,980 lines of Swift** - all in-tree, no external frameworks.
 
 ```
 Sources/
@@ -254,53 +254,53 @@ Load into Postman, Cursor, Claude Desktop, or any OpenAPI-compatible tool.
 ### Quick Reference
 
 **Recording:**
-- `POST /start` : Start recording (name, region, audio, webhook)
-- `POST /stop` : Stop and finalize video
-- `POST /pause` / `POST /resume` : Pause/resume
-- `POST /chapter` : Mark a named chapter
-- `POST /highlight` : Flag next click for zoom
-- `POST /note` : Drop timestamped note
-- `POST /screenshot` : Capture a frame (no recording)
+- `POST /start` - Start recording (name, region, audio, webhook)
+- `POST /stop` - Stop and finalize video
+- `POST /pause` / `POST /resume` - Pause/resume
+- `POST /chapter` - Mark a named chapter
+- `POST /highlight` - Flag next click for zoom
+- `POST /note` - Drop timestamped note
+- `POST /screenshot` - Capture a frame (no recording)
 
 **Export:**
-- `POST /export` : GIF or WebP (fps, scale, quality, range)
-- `POST /trim` : Trim to time range
-- `POST /speedramp` : Auto-speed idle sections
-- `POST /crop` : Crop rectangular region
-- `POST /thumbnail` : Extract frame at timecode
-- `POST /concat` : Combine recordings
+- `POST /export` - GIF or WebP (fps, scale, quality, range)
+- `POST /trim` - Trim to time range
+- `POST /speedramp` - Auto-speed idle sections
+- `POST /crop` - Crop rectangular region
+- `POST /thumbnail` - Extract frame at timecode
+- `POST /concat` - Combine recordings
 
 **Multi-Window:**
-- `POST /start/pip` : Record 2 windows (PiP or side-by-side)
+- `POST /start/pip` - Record 2 windows (PiP or side-by-side)
 
 **Window Management:**
-- `POST /window/focus` : Bring app to front
-- `POST /window/position` : Set size and position (requires Accessibility)
-- `POST /window/hide-others` : Hide all other apps
+- `POST /window/focus` - Bring app to front
+- `POST /window/position` - Set size and position (requires Accessibility)
+- `POST /window/hide-others` - Hide all other apps
 
 **System:**
-- `GET /system/clipboard` : Read clipboard
-- `GET /system/active-window` : Which window has focus
-- `GET /system/running-apps` : List running apps
+- `GET /system/clipboard` - Read clipboard
+- `GET /system/active-window` - Which window has focus
+- `GET /system/running-apps` - List running apps
 
 **Vision/OCR:**
-- `POST /ocr` : On-device OCR (fast or accurate mode)
+- `POST /ocr` - On-device OCR (fast or accurate mode)
 
 **Streaming:**
-- `GET /stream` : SSE frame stream (JPEG/PNG)
-- `GET /stream/status` : Active client count
+- `GET /stream` - SSE frame stream (JPEG/PNG)
+- `GET /stream/status` - Active client count
 
 **Metadata:**
-- `GET /status` : Recording status
-- `GET /version` : Version info
-- `GET /openapi` : Full API spec
+- `GET /status` - Recording status
+- `GET /version` - Version info
+- `GET /openapi` - Full API spec
 
 ---
 
 ## Use Cases
 
 ### 1. **AI Coding Agents**
-Record the agent's IDE session : file edits, terminal commands, browser tests.
+Record the agent's IDE session - file edits, terminal commands, browser tests.
 
 **Attach video to PR:** "Here's what the agent did to fix the bug."
 
@@ -486,7 +486,7 @@ A: Yes! See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License : see [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
@@ -512,4 +512,4 @@ Built by [@hnshah](https://github.com/hnshah) with contributions from the open-s
 
 ---
 
-**ScreenMuse** : Because AI agents need screen recorders too. 🎬🤖
+**ScreenMuse** - Because AI agents need screen recorders too. 🎬🤖
