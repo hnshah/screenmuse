@@ -1,14 +1,16 @@
 # ScreenMuse
 
-**AI Agent Recorder - Capture What AI Sees & Does**
+**AI Agent Recorder**
 
-ScreenMuse is the first screen recorder purpose-built for AI agents. When your AI agent runs a Playwright script, fixes a bug, or automates a workflow - ScreenMuse captures video proof of what happened.
+**Capture what AI sees and does.**
+
+ScreenMuse is the first screen recorder purpose-built for AI agents. When your AI agent runs a Playwright script, fixes a bug, or automates a workflow, ScreenMuse captures video proof of what happened.
 
 **Built for:**
-- 🤖 **AI coding agents** - Record PRs, demonstrate fixes
-- 🎭 **Playwright & browser automation** - Video on test failure
-- 🔄 **Agentic workflows** - Prove task completion
-- 👀 **Computer-use models** - Observe agent behavior
+- 🤖 **AI coding agents** that record PRs and demonstrate fixes
+- 🎭 **Playwright & browser automation** with video on test failure
+- 🔄 **Agentic workflows** that prove task completion
+- 👀 **Computer-use models** for observing agent behavior
 
 **Not built for:**
 - ❌ Manual screen recording (use Loom)
@@ -23,7 +25,7 @@ ScreenMuse is the first screen recorder purpose-built for AI agents. When your A
 
 Your AI agent just spent 10 minutes automating a task. It says "Done!" 
 
-But... did it work? What did it actually do? Can you share proof?
+But did it work? What did it actually do? Can you share proof?
 
 **The Solution:**
 
@@ -36,10 +38,10 @@ curl -X POST http://localhost:7823/start -d '{"name": "agent-task"}'
 
 # After agent finishes
 curl -X POST http://localhost:7823/stop
-# → Returns video path: /Users/you/Movies/ScreenMuse/agent-task.mp4
+# Returns video path: /Users/you/Movies/ScreenMuse/agent-task.mp4
 ```
 
-Now you have a **timestamped video** of exactly what the agent did.
+Now you have a timestamped video of exactly what the agent did.
 
 ---
 
@@ -53,7 +55,7 @@ cd screenmuse
 
 Grant Screen Recording permission when prompted, then relaunch.
 
-> **Use `dev-run.sh` or Xcode, not `swift build`.** Ad-hoc signed binaries get a new code signature hash on every rebuild. macOS TCC identifies apps by hash, so screen recording permission needs re-granting after each `swift build`. The script uses xcodebuild for a consistent signature. If permissions get stuck: `./scripts/reset-permissions.sh`
+> **Use `dev-run.sh` or Xcode, not `swift build`.** Ad-hoc signed binaries get a new code signature hash on every rebuild. macOS TCC identifies apps by hash, so screen recording permission needs re-granting after each `swift build`. The script uses xcodebuild for a consistent signature. If permissions get stuck, run `./scripts/reset-permissions.sh`
 
 ---
 
@@ -62,43 +64,44 @@ Grant Screen Recording permission when prompted, then relaunch.
 ### 🎯 API-First Design
 - **40+ HTTP endpoints** on `localhost:7823`
 - **OpenAPI spec** at `/openapi`
-- **Zero UI** - control everything via HTTP
+- **Zero UI** for controlling everything via HTTP
 - **Designed for code**, not humans
 
 ### 🤖 Agent-Aware
-- **Activity detection** - knows when agent is idle
-- **Click tracking** - cursor events with timestamps
-- **Keystroke overlay** - shows what agent typed
-- **Chapter markers** - structure long recordings
-- **Highlight mode** - auto-zoom on important moments
+- **Activity detection** knows when agent is idle
+- **Click tracking** captures cursor events with timestamps
+- **Keystroke overlay** shows what agent typed
+- **Chapter markers** structure long recordings
+- **Highlight mode** auto-zooms on important moments
 
 ### 📤 Export Pipeline
-- **GIF** (custom encoder, 10fps default)
-- **WebP** (smaller than GIF, better quality)
-- **Trim** (frame-accurate or fast stream copy)
-- **Speed ramp** (auto-speed idle sections)
-- **Crop, thumbnail, concatenate**
+- **GIF** with custom encoder (10fps default)
+- **WebP** that's smaller than GIF with better quality
+- **Trim** with frame-accurate or fast stream copy
+- **Speed ramp** auto-speeds idle sections
+- **Crop, thumbnail, concatenate** for post-processing
 
 ### 👁️ Vision/OCR
-- **On-device OCR** (Apple Vision)
-- **Fast mode** (real-time) + **Accurate mode** (quality)
+- **On-device OCR** using Apple Vision
+- **Fast mode** for real-time processing
+- **Accurate mode** for quality processing
 - **No API key** required
 
 ### 🪟 Window Management
-- **Focus, position, hide-others** (native macOS)
-- **Multi-window PiP** (record 2 windows simultaneously)
-- **Works where Playwright can't** (Accessibility API)
+- **Focus, position, hide-others** using native macOS
+- **Multi-window PiP** records 2 windows simultaneously
+- **Works where Playwright can't** via Accessibility API
 
 ### 📡 Real-Time Streaming
-- **SSE frame stream** (JPEG/PNG)
-- **Configurable FPS/scale**
-- **Multiple clients**
+- **SSE frame stream** in JPEG or PNG
+- **Configurable FPS and scale**
+- **Multiple clients** supported
 
 ---
 
 ## Example: Playwright Integration
 
-The `screenmuse-playwright` package makes recording Playwright runs **zero-config**:
+The `screenmuse-playwright` package makes recording Playwright runs zero-config:
 
 ```bash
 cd packages/screenmuse-playwright
@@ -110,15 +113,15 @@ const { ScreenMuse } = require('screenmuse-playwright');
 
 const sm = new ScreenMuse();
 
-// Wrap any async function - automatic recording
+// Wrap any async function for automatic recording
 const result = await sm.record(async (page) => {
   await page.goto('https://example.com');
   await page.click('button');
   // ScreenMuse is capturing everything
 });
 
-console.log(result.video_path);  // → .../recording.mp4
-console.log(result.gif_path);    // → .../recording.gif (if enabled)
+console.log(result.video_path);  // .../recording.mp4
+console.log(result.gif_path);    // .../recording.gif (if enabled)
 ```
 
 **Playwright Test fixture** for automatic video on failure:
@@ -127,7 +130,7 @@ console.log(result.gif_path);    // → .../recording.gif (if enabled)
 test('my test', async ({ page, screenMuse }) => {
   await page.goto('https://example.com');
   await expect(page.locator('h1')).toBeVisible();
-  // If test fails → video automatically saved
+  // If test fails, video automatically saved
 });
 ```
 
@@ -166,7 +169,7 @@ requests.post("http://localhost:7823/export", json={
 })
 ```
 
-Now you can **attach the video to your PR** showing exactly what the agent did.
+Now you can attach the video to your PR showing exactly what the agent did.
 
 ---
 
@@ -208,21 +211,21 @@ result = requests.post("http://localhost:7823/stop").json()
 print(f"Session recorded: {result['video_path']}")
 ```
 
-**Result:** Complete video documentation of the agent's session.
+Result is a complete video documentation of the agent's session.
 
 ---
 
 ## Architecture
 
-**Native macOS, zero dependencies:**
+Native macOS with zero dependencies:
 
-- **ScreenCaptureKit** - screen capture (requires macOS 14+)
-- **AVFoundation** - video encoding
-- **Metal** - GPU-accelerated effects (click ripples, zoom)
-- **Vision** - on-device OCR
-- **Swift 6** - modern concurrency (actors, async/await)
+- **ScreenCaptureKit** for screen capture (requires macOS 14+)
+- **AVFoundation** for video encoding
+- **Metal** for GPU-accelerated effects (click ripples, zoom)
+- **Vision** for on-device OCR
+- **Swift 6** with modern concurrency (actors, async/await)
 
-**11,980 lines of Swift** - all in-tree, no external frameworks.
+11,980 lines of Swift, all in-tree, no external frameworks.
 
 ```
 Sources/
@@ -254,80 +257,80 @@ Load into Postman, Cursor, Claude Desktop, or any OpenAPI-compatible tool.
 ### Quick Reference
 
 **Recording:**
-- `POST /start` - Start recording (name, region, audio, webhook)
-- `POST /stop` - Stop and finalize video
-- `POST /pause` / `POST /resume` - Pause/resume
-- `POST /chapter` - Mark a named chapter
-- `POST /highlight` - Flag next click for zoom
-- `POST /note` - Drop timestamped note
-- `POST /screenshot` - Capture a frame (no recording)
+- `POST /start` starts recording (name, region, audio, webhook)
+- `POST /stop` stops and finalizes video
+- `POST /pause` / `POST /resume` pauses and resumes
+- `POST /chapter` marks a named chapter
+- `POST /highlight` flags next click for zoom
+- `POST /note` drops timestamped note
+- `POST /screenshot` captures a frame (no recording)
 
 **Export:**
-- `POST /export` - GIF or WebP (fps, scale, quality, range)
-- `POST /trim` - Trim to time range
-- `POST /speedramp` - Auto-speed idle sections
-- `POST /crop` - Crop rectangular region
-- `POST /thumbnail` - Extract frame at timecode
-- `POST /concat` - Combine recordings
+- `POST /export` creates GIF or WebP (fps, scale, quality, range)
+- `POST /trim` trims to time range
+- `POST /speedramp` auto-speeds idle sections
+- `POST /crop` crops rectangular region
+- `POST /thumbnail` extracts frame at timecode
+- `POST /concat` combines recordings
 
 **Multi-Window:**
-- `POST /start/pip` - Record 2 windows (PiP or side-by-side)
+- `POST /start/pip` records 2 windows (PiP or side-by-side)
 
 **Window Management:**
-- `POST /window/focus` - Bring app to front
-- `POST /window/position` - Set size and position (requires Accessibility)
-- `POST /window/hide-others` - Hide all other apps
+- `POST /window/focus` brings app to front
+- `POST /window/position` sets size and position (requires Accessibility)
+- `POST /window/hide-others` hides all other apps
 
 **System:**
-- `GET /system/clipboard` - Read clipboard
-- `GET /system/active-window` - Which window has focus
-- `GET /system/running-apps` - List running apps
+- `GET /system/clipboard` reads clipboard
+- `GET /system/active-window` shows which window has focus
+- `GET /system/running-apps` lists running apps
 
 **Vision/OCR:**
-- `POST /ocr` - On-device OCR (fast or accurate mode)
+- `POST /ocr` performs on-device OCR (fast or accurate mode)
 
 **Streaming:**
-- `GET /stream` - SSE frame stream (JPEG/PNG)
-- `GET /stream/status` - Active client count
+- `GET /stream` provides SSE frame stream (JPEG/PNG)
+- `GET /stream/status` shows active client count
 
 **Metadata:**
-- `GET /status` - Recording status
-- `GET /version` - Version info
-- `GET /openapi` - Full API spec
+- `GET /status` shows recording status
+- `GET /version` shows version info
+- `GET /openapi` provides full API spec
 
 ---
 
 ## Use Cases
 
-### 1. **AI Coding Agents**
-Record the agent's IDE session - file edits, terminal commands, browser tests.
+### 1. AI Coding Agents
+Record the agent's IDE session including file edits, terminal commands, and browser tests.
 
-**Attach video to PR:** "Here's what the agent did to fix the bug."
+Attach video to PR with caption "Here's what the agent did to fix the bug."
 
-### 2. **Playwright/Selenium Tests**
-Automatic video recording on test failure.
+### 2. Playwright/Selenium Tests
+Get automatic video recording on test failure.
 
-**Debug test flakes:** See exactly what happened before the failure.
+Debug test flakes by seeing exactly what happened before the failure.
 
-### 3. **Agentic Workflows**
+### 3. Agentic Workflows
 Record multi-step autonomous tasks.
 
-**Audit trail:** Video proof of what the agent accomplished.
+Create audit trail with video proof of what the agent accomplished.
 
-### 4. **Computer-Use Models**
+### 4. Computer-Use Models
 Document AI's interaction with desktop apps.
 
-**Safety monitoring:** Visual log of agent actions.
+Safety monitoring provides visual log of agent actions.
 
-### 5. **RPA (Robotic Process Automation)**
+### 5. RPA (Robotic Process Automation)
 Capture automated business workflows.
 
-**Compliance:** Video evidence of process execution.
+Compliance requires video evidence of process execution.
 
-### 6. **API Demos**
+### 6. API Demos
 Programmatically generate demo videos.
 
-**Marketing automation:** Consistent, repeatable demos.
+Marketing automation creates consistent, repeatable demos.
 
 ---
 
@@ -346,18 +349,17 @@ Programmatically generate demo videos.
 | **Dependencies** | ✅ Zero | ? | ? | ✅ Zero |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ |
 
-**ScreenMuse = Loom's recording + Playwright's automation + Apple's Vision**
+ScreenMuse combines Loom's recording quality with Playwright's automation and Apple's Vision framework.
 
 ---
 
 ## Pairing with Other Tools
 
 ### ScreenMuse + Peekaboo
-- **Peekaboo:** Screenshot + OCR (what's on screen?)
-- **ScreenMuse:** Record what happens next
+Peekaboo provides screenshots and OCR for reading what's on screen. ScreenMuse records what happens next.
 
 ```bash
-# Peekaboo reads → ScreenMuse records response
+# Peekaboo reads, then ScreenMuse records response
 peekaboo image --mode screen --analyze "Is login form visible?"
 curl -X POST http://localhost:7823/start -d '{"name": "login-attempt"}'
 # ... agent fills form ...
@@ -365,16 +367,14 @@ curl -X POST http://localhost:7823/stop
 ```
 
 ### ScreenMuse + Anthropic Computer Use
-- **Anthropic:** AI that controls the computer
-- **ScreenMuse:** Records what it did
+Anthropic provides AI that controls the computer. ScreenMuse records what it did.
 
-Perfect for **safety monitoring** and **debugging** computer-use agents.
+Perfect for safety monitoring and debugging computer-use agents.
 
 ### ScreenMuse + MCP (Model Context Protocol)
-- **MCP Server:** Expose ScreenMuse to Claude Desktop
-- **Claude:** Control recording via tool calls
+MCP Server exposes ScreenMuse to Claude Desktop. Claude controls recording via tool calls.
 
-See `docs/MCP.md` for setup.
+See `docs/MCP.md` for setup instructions.
 
 ---
 
@@ -385,7 +385,7 @@ See `docs/MCP.md` for setup.
 - **Accessibility permission** (optional, for window positioning)
 - **Swift 6** (included with Xcode 16+)
 
-**No external dependencies.**
+No external dependencies required.
 
 ---
 
@@ -415,10 +415,10 @@ open Package.swift
 ## Configuration
 
 **Default settings:**
-- **Port:** 7823
-- **Output:** `~/Movies/ScreenMuse/`
-- **Quality:** Medium (10 Mbps)
-- **Format:** H.264 MP4
+- **Port** is 7823
+- **Output** goes to `~/Movies/ScreenMuse/`
+- **Quality** is Medium (10 Mbps)
+- **Format** is H.264 MP4
 
 **Environment variables:**
 ```bash
@@ -455,38 +455,38 @@ swiftlint
 ./scripts/reset-permissions.sh
 ```
 
-**CI/CD:** GitHub Actions on every push (Build + Test)
+CI/CD runs via GitHub Actions on every push (Build + Test).
 
 ---
 
 ## FAQ
 
 **Q: Why not just use OBS or Loom?**  
-A: Those are built for humans. ScreenMuse is built for **code**. 40+ API endpoints, zero UI, agent-aware features.
+A: Those are built for humans. ScreenMuse is built for code with 40+ API endpoints, zero UI, and agent-aware features.
 
 **Q: Can I use this for YouTube videos?**  
-A: You *could*, but there are better tools (ScreenFlow, Camtasia). ScreenMuse is optimized for **programmatic recording**, not manual editing.
+A: You could, but there are better tools like ScreenFlow or Camtasia. ScreenMuse is optimized for programmatic recording, not manual editing.
 
 **Q: Does it work on Windows/Linux?**  
-A: Not yet. Currently macOS-only (requires ScreenCaptureKit). Cross-platform support in the roadmap.
+A: Not yet. Currently macOS-only because it requires ScreenCaptureKit. Cross-platform support is in the roadmap.
 
 **Q: How big are the video files?**  
-A: **~5-10 MB/minute** at medium quality (10 Mbps). Configurable via quality setting.
+A: Approximately 5-10 MB per minute at medium quality (10 Mbps). This is configurable via the quality setting.
 
 **Q: Can I record without the menu bar app?**  
 A: Yes! Use the CLI (`screenmuse`) or control via HTTP API directly.
 
 **Q: Is there a cloud/SaaS version?**  
-A: No. ScreenMuse is **local-first** by design. Your recordings never leave your machine unless you explicitly upload them.
+A: No. ScreenMuse is local-first by design. Your recordings never leave your machine unless you explicitly upload them.
 
 **Q: Can I contribute?**  
-A: Yes! See [CONTRIBUTING.md](CONTRIBUTING.md).
+A: Yes! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
@@ -512,4 +512,4 @@ Built by [@hnshah](https://github.com/hnshah) with contributions from the open-s
 
 ---
 
-**ScreenMuse** - Because AI agents need screen recorders too. 🎬🤖
+**ScreenMuse.** Because AI agents need screen recorders too. 🎬🤖
