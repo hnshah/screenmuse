@@ -71,6 +71,9 @@ public class ScreenMuseServer {
         receiveRequest(connection)
     }
 
+    /// Maximum HTTP body size: 4 MB.  Requests larger than this are rejected.
+    private static let maxBodySize = 4_194_304
+
     private func receiveRequest(_ connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
             guard let self, let data, !data.isEmpty else {
@@ -79,7 +82,100 @@ public class ScreenMuseServer {
                 return
             }
             Task { @MainActor in
-                await self.processHTTPRequest(data: data, connection: connection)
+                // We have the first chunk — check if the full body has arrived.
+                // HTTP headers end at \r\n\r\n; everything after is the body.
+                self.accumulateBody(connection: connection, buffer: data)
+            }
+        }
+    }
+
+    /// Accumulate HTTP body chunks until Content-Length is satisfied, connection
+    /// closes, or the 4 MB hard cap is hit.
+    private func accumulateBody(connection: NWConnection, buffer: Data) {
+        // Look for end-of-headers in the accumulated data
+        let headerTerminator = Data([0x0D, 0x0A, 0x0D, 0x0A]) // \r\n\r\n
+        guard let headerEndRange = buffer.range(of: headerTerminator) else {
+            // Haven't received full headers yet — keep reading
+            if buffer.count > Self.maxBodySize {
+                smLog.warning("Request too large (\(buffer.count) bytes) — rejecting", category: .server)
+                sendResponse(connection: connection, status: 413, body: ["error": "Request entity too large", "max_bytes": Self.maxBodySize])
+                return
+            }
+            receiveNextChunk(connection: connection, buffer: buffer)
+            return
+        }
+
+        let headerEnd = headerEndRange.upperBound
+        let headerData = buffer[buffer.startIndex..<headerEndRange.lowerBound]
+        let headerStr = String(data: headerData, encoding: .utf8) ?? ""
+
+        // Parse Content-Length from headers
+        var contentLength: Int? = nil
+        for line in headerStr.components(separatedBy: "\r\n") {
+            if line.lowercased().hasPrefix("content-length:") {
+                let val = line.dropFirst("content-length:".count).trimmingCharacters(in: .whitespaces)
+                contentLength = Int(val)
+                break
+            }
+        }
+
+        let bodyReceived = buffer.count - headerEnd
+
+        if let cl = contentLength {
+            if cl > Self.maxBodySize {
+                smLog.warning("Content-Length \(cl) exceeds max \(Self.maxBodySize) — rejecting", category: .server)
+                sendResponse(connection: connection, status: 413, body: ["error": "Request entity too large", "max_bytes": Self.maxBodySize])
+                return
+            }
+            if bodyReceived >= cl {
+                // Full body received
+                Task { @MainActor in
+                    await self.processHTTPRequest(data: buffer, connection: connection)
+                }
+                return
+            }
+            // Need more data
+            receiveNextChunk(connection: connection, buffer: buffer, contentLength: cl, headerEnd: headerEnd)
+        } else {
+            // No Content-Length header — for GET/DELETE or empty body, process immediately
+            Task { @MainActor in
+                await self.processHTTPRequest(data: buffer, connection: connection)
+            }
+        }
+    }
+
+    /// Read the next chunk from the connection and accumulate into the buffer.
+    private func receiveNextChunk(connection: NWConnection, buffer: Data, contentLength: Int? = nil, headerEnd: Int? = nil) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
+            guard let self else { return }
+            Task { @MainActor in
+                var accumulated = buffer
+                if let data, !data.isEmpty {
+                    accumulated.append(data)
+                }
+
+                // Hard cap check
+                if accumulated.count > Self.maxBodySize {
+                    smLog.warning("Accumulated \(accumulated.count) bytes exceeds max — rejecting", category: .server)
+                    self.sendResponse(connection: connection, status: 413, body: ["error": "Request entity too large", "max_bytes": Self.maxBodySize])
+                    return
+                }
+
+                if let cl = contentLength, let he = headerEnd {
+                    let bodyReceived = accumulated.count - he
+                    if bodyReceived >= cl || isComplete || (data == nil && error != nil) {
+                        await self.processHTTPRequest(data: accumulated, connection: connection)
+                        return
+                    }
+                    // Still need more
+                    self.receiveNextChunk(connection: connection, buffer: accumulated, contentLength: cl, headerEnd: he)
+                } else if isComplete || (data == nil && error != nil) {
+                    // Connection closed — process what we have
+                    await self.processHTTPRequest(data: accumulated, connection: connection)
+                } else {
+                    // No content-length, still accumulating headers
+                    self.accumulateBody(connection: connection, buffer: accumulated)
+                }
             }
         }
     }
@@ -397,7 +493,7 @@ public class ScreenMuseServer {
         guard let jsonData = try? JSONSerialization.data(withJSONObject: body),
               let jsonStr = String(data: jsonData, encoding: .utf8) else { return }
 
-        let statusTexts = [200: "OK", 204: "No Content", 400: "Bad Request", 404: "Not Found", 409: "Conflict", 500: "Internal Server Error", 503: "Service Unavailable"]
+        let statusTexts = [200: "OK", 204: "No Content", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 409: "Conflict", 413: "Payload Too Large", 500: "Internal Server Error", 503: "Service Unavailable"]
         let statusText = statusTexts[status] ?? "Unknown"
         let response = "HTTP/1.1 \(status) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(jsonStr)"
 
