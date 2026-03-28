@@ -103,7 +103,7 @@ public final class EffectsCompositor {
         
         smLog.info("Starting AVAssetExportSession (ClickEffects) → \(outputURL.lastPathComponent)", category: .effects)
         // Monitor progress
-        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak export] _ in
+        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { @Sendable [weak export] _ in
             guard let export = export else { return }
             Task { @MainActor in
                 progress?(Double(export.progress))
@@ -123,7 +123,7 @@ public final class EffectsCompositor {
 }
 
 /// Custom AVVideoCompositing implementation for rendering effects
-final class EffectsVideoCompositor: NSObject, AVVideoCompositing {
+final class EffectsVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendable {
     var sourcePixelBufferAttributes: [String : Any]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
@@ -196,7 +196,7 @@ final class EffectsVideoCompositor: NSObject, AVVideoCompositing {
 }
 
 /// Custom instruction for effects composition
-final class EffectsCompositionInstruction: NSObject, AVVideoCompositionInstructionProtocol {
+final class EffectsCompositionInstruction: NSObject, AVVideoCompositionInstructionProtocol, @unchecked Sendable {
     let trackID: CMPersistentTrackID
     let timeRange: CMTimeRange
     let clickEffects: ClickEffectsManager

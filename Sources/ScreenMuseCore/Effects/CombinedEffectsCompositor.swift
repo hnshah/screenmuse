@@ -103,7 +103,8 @@ public final class CombinedEffectsCompositor {
         
         smLog.info("Starting AVAssetExportSession (CombinedEffects) → \(outputURL.lastPathComponent)", category: .effects)
         // Monitor progress
-        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { @Sendable [weak export] _ in
+            guard let export else { return }
             let pct = Int(export.progress * 100)
             if pct % 10 == 0 { smLog.debug("Effects export progress: \(pct)%", category: .effects) }
             progress?(Double(export.progress))
@@ -122,7 +123,7 @@ public final class CombinedEffectsCompositor {
 }
 
 /// Custom AVVideoCompositing for combined effects
-final class CombinedEffectsVideoCompositor: NSObject, AVVideoCompositing {
+final class CombinedEffectsVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendable {
     var sourcePixelBufferAttributes: [String : Any]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
@@ -208,7 +209,7 @@ final class CombinedEffectsVideoCompositor: NSObject, AVVideoCompositing {
 }
 
 /// Combined instruction
-final class CombinedEffectsInstruction: NSObject, AVVideoCompositionInstructionProtocol {
+final class CombinedEffectsInstruction: NSObject, AVVideoCompositionInstructionProtocol, @unchecked Sendable {
     let trackID: CMPersistentTrackID
     let timeRange: CMTimeRange
     let clickEffects: ClickEffectsManager

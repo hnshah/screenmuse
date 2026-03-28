@@ -110,7 +110,8 @@ public final class FullEffectsCompositor {
         export.videoComposition = videoComposition
         
         // Monitor progress
-        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+        let progressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { @Sendable [weak export] _ in
+            guard let export else { return }
             progress?(Double(export.progress))
         }
         
@@ -124,7 +125,7 @@ public final class FullEffectsCompositor {
 }
 
 /// Custom compositor for all effects
-final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing {
+final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendable {
     var sourcePixelBufferAttributes: [String : Any]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
@@ -235,7 +236,7 @@ final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing {
 }
 
 /// Full effects instruction
-final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProtocol {
+final class FullEffectsInstruction: NSObject, AVVideoCompositionInstructionProtocol, @unchecked Sendable {
     let trackID: CMPersistentTrackID
     let timeRange: CMTimeRange
     let clickEffects: ClickEffectsManager?

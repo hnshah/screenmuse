@@ -14,8 +14,9 @@ import Foundation
 @MainActor
 public final class SessionRegistry {
 
-    /// Snapshot of a single recording session's metadata.
-    public struct Session: Sendable {
+    // @unchecked Sendable: chapters/notes store tuples which are not Sendable in Swift 6,
+    // but Session values only cross actor boundaries as immutable snapshots via get().
+    public struct Session: @unchecked Sendable {
         public let id: String
         public var name: String
         public var startTime: Date?

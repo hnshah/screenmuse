@@ -3,7 +3,7 @@ import CoreImage
 import QuartzCore
 
 /// Configuration for click ripple effects
-public struct ClickEffectConfig: Sendable {
+public struct ClickEffectConfig: @unchecked Sendable {
     /// Maximum radius of the ripple circle (in points)
     public let maxRadius: CGFloat
     

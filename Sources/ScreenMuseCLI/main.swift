@@ -406,7 +406,9 @@ func cmdSpeedRamp(args: Args, client: ScreenMuseClient) async throws {
         return
     }
     let path = resp["path"] as? String ?? "unknown"
-    let savedSec = resp["time_saved_sec"] as? Double ?? 0
+    let originalDur = resp["original_duration"] as? Double ?? 0
+    let outputDur = resp["output_duration"] as? Double ?? 0
+    let savedSec = originalDur - outputDur
     print("✓ Speed ramped (saved \(formatDuration(savedSec)))")
     print(path)
 }
