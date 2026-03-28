@@ -403,7 +403,10 @@ public class ScreenMuseServer {
     // MARK: - Shared Helpers
 
     /// POST the recording-complete payload to a webhook URL.
-    /// Fires-and-forgets — does not block the response to the caller.
+    /// Retries up to 3 times with exponential backoff (0s, 2s, 8s).
+    /// Does not block the response to the caller.
+    static let webhookBackoffSeconds: [Double] = [0, 2, 8]
+
     func fireWebhook(_ webhookURL: URL?, videoURL: URL, sessionID: String?, elapsed: TimeInterval) {
         guard let url = webhookURL else { return }
         smLog.info("Webhook: firing → \(url.absoluteString)", category: .server)
@@ -419,20 +422,31 @@ public class ScreenMuseServer {
         guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
 
         Task {
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.httpBody = body
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.setValue("ScreenMuse/1.1", forHTTPHeaderField: "User-Agent")
-            request.timeoutInterval = 10
-            do {
-                let (_, response) = try await URLSession.shared.data(for: request)
-                let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-                smLog.info("Webhook: delivered → \(url.host ?? url.absoluteString) HTTP \(code)", category: .server)
-                smLog.usage("WEBHOOK FIRED", details: ["url": url.host ?? "?", "status": "\(code)"])
-            } catch {
-                smLog.warning("Webhook: delivery failed → \(url.absoluteString): \(error.localizedDescription)", category: .server)
+            let maxRetries = Self.webhookBackoffSeconds.count
+            for attempt in 0..<maxRetries {
+                if attempt > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(Self.webhookBackoffSeconds[attempt] * 1_000_000_000))
+                }
+                do {
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "POST"
+                    request.httpBody = body
+                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    request.setValue("ScreenMuse/1.1", forHTTPHeaderField: "User-Agent")
+                    request.timeoutInterval = 10
+                    let (_, response) = try await URLSession.shared.data(for: request)
+                    let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    if code >= 200 && code < 300 {
+                        smLog.info("Webhook: delivered → \(url.host ?? url.absoluteString) HTTP \(code)\(attempt > 0 ? " (attempt \(attempt+1))" : "")", category: .server)
+                        smLog.usage("WEBHOOK FIRED", details: ["url": url.host ?? "?", "status": "\(code)"])
+                        return  // success, done
+                    }
+                    smLog.warning("Webhook: attempt \(attempt+1) got HTTP \(code) → \(url.host ?? "?")", category: .server)
+                } catch {
+                    smLog.warning("Webhook: attempt \(attempt+1) failed → \(error.localizedDescription)", category: .server)
+                }
             }
+            smLog.error("Webhook: all \(maxRetries) attempts failed → \(url.absoluteString)", category: .server)
         }
     }
 
