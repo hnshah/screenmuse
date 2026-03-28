@@ -10,8 +10,21 @@
 //   screenmuse chapter --name <name>
 //   screenmuse highlight
 //   screenmuse windows [--json]
+//   screenmuse export --format <fmt> [--output <path>]
+//   screenmuse trim --start <s> --end <s> [--output <path>]
 //   screenmuse health
 //   screenmuse version
+//   screenmuse pause
+//   screenmuse resume
+//   screenmuse note --text "..."
+//   screenmuse ocr [--source screen|/path] [--level accurate|fast]
+//   screenmuse speedramp [--idle-speed 6] [--active-speed 1] [--threshold 3]
+//   screenmuse concat <file1> <file2> ... [--output /path]
+//   screenmuse crop --region X,Y,WxH [--source last|/path]
+//   screenmuse thumbnail [--time 5.0] [--scale 800] [--format jpeg]
+//   screenmuse recordings [--json]
+//   screenmuse jobs [--json]
+//   screenmuse job <id>
 
 import Foundation
 
@@ -337,6 +350,214 @@ func cmdTrim(args: Args, client: ScreenMuseClient) async throws {
     print("✓ Trimmed: \(path)")
 }
 
+func cmdPause(args: Args, client: ScreenMuseClient) async throws {
+    let resp = try await client.post("/pause")
+    let elapsed = resp["elapsed"] as? Double ?? 0
+    print("Recording paused at \(formatDuration(elapsed))")
+}
+
+func cmdResume(args: Args, client: ScreenMuseClient) async throws {
+    let resp = try await client.post("/resume")
+    let elapsed = resp["elapsed"] as? Double ?? 0
+    print("Recording resumed at \(formatDuration(elapsed))")
+}
+
+func cmdNote(args: Args, client: ScreenMuseClient) async throws {
+    guard let text = args["text"] else {
+        throw CLIError.usage("--text <note text> is required")
+    }
+    let resp = try await client.post("/note", body: ["text": text])
+    let ok = resp["ok"] as? Bool ?? false
+    if ok {
+        print("✓ Note: \(text)")
+    }
+}
+
+func cmdOCR(args: Args, client: ScreenMuseClient) async throws {
+    var body: [String: Any] = [:]
+    if let source = args["source"] { body["source"] = source }
+    if let level = args["level"] { body["level"] = level }
+
+    let resp = try await client.post("/ocr", body: body)
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    let fullText = resp["full_text"] as? String ?? ""
+    if fullText.isEmpty {
+        print("(no text detected)")
+    } else {
+        print(fullText)
+    }
+}
+
+func cmdSpeedRamp(args: Args, client: ScreenMuseClient) async throws {
+    var body: [String: Any] = [:]
+    if let v = args["idle-speed"], let d = Double(v) { body["idle_speed"] = d }
+    if let v = args["active-speed"], let d = Double(v) { body["active_speed"] = d }
+    if let v = args["threshold"], let d = Double(v) { body["idle_threshold_sec"] = d }
+    if let source = args["source"] { body["source"] = source }
+    if let output = args["output"] { body["output"] = output }
+
+    print("Speed ramping...")
+    let resp = try await client.post("/speedramp", body: body)
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    let path = resp["path"] as? String ?? "unknown"
+    let savedSec = resp["time_saved_sec"] as? Double ?? 0
+    print("✓ Speed ramped (saved \(formatDuration(savedSec)))")
+    print(path)
+}
+
+func cmdConcat(args: Args, client: ScreenMuseClient) async throws {
+    let sources = args.positional
+    guard !sources.isEmpty else {
+        throw CLIError.usage("At least one source file is required")
+    }
+    var body: [String: Any] = ["sources": sources]
+    if let output = args["output"] { body["output"] = output }
+
+    print("Concatenating \(sources.count) files...")
+    let resp = try await client.post("/concat", body: body)
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    let path = resp["path"] as? String ?? "unknown"
+    let duration = resp["duration"] as? Double ?? 0
+    print("✓ Concatenated (\(formatDuration(duration)))")
+    print(path)
+}
+
+func cmdCrop(args: Args, client: ScreenMuseClient) async throws {
+    guard let regionStr = args["region"] else {
+        throw CLIError.usage("--region X,Y,WxH is required (e.g. 100,50,1280x720)")
+    }
+    // Parse "X,Y,WxH" format
+    let parts = regionStr.replacingOccurrences(of: "x", with: ",").split(separator: ",")
+    guard parts.count == 4,
+          let x = Double(parts[0]), let y = Double(parts[1]),
+          let w = Double(parts[2]), let h = Double(parts[3]) else {
+        throw CLIError.usage("Invalid region format. Use X,Y,WxH (e.g. 100,50,1280x720)")
+    }
+    var body: [String: Any] = [
+        "region": ["x": x, "y": y, "width": w, "height": h]
+    ]
+    if let source = args["source"] { body["source"] = source }
+    if let output = args["output"] { body["output"] = output }
+
+    print("Cropping...")
+    let resp = try await client.post("/crop", body: body)
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    let path = resp["path"] as? String ?? "unknown"
+    print("✓ Cropped to \(Int(w))x\(Int(h))")
+    print(path)
+}
+
+func cmdThumbnail(args: Args, client: ScreenMuseClient) async throws {
+    var body: [String: Any] = [:]
+    if let t = args["time"], let d = Double(t) { body["time"] = d }
+    if let s = args["scale"], let i = Int(s) { body["scale"] = i }
+    if let f = args["format"] { body["format"] = f }
+    if let source = args["source"] { body["source"] = source }
+
+    let resp = try await client.post("/thumbnail", body: body)
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    let path = resp["path"] as? String ?? "unknown"
+    let width = resp["width"] as? Int ?? 0
+    let height = resp["height"] as? Int ?? 0
+    print("✓ Thumbnail \(width)x\(height)")
+    print(path)
+}
+
+func cmdRecordings(args: Args, client: ScreenMuseClient) async throws {
+    let resp = try await client.get("/recordings")
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    guard let recordings = resp["recordings"] as? [[String: Any]] else {
+        print("No recordings found")
+        return
+    }
+    if recordings.isEmpty {
+        print("No recordings found")
+        return
+    }
+    let count = resp["count"] as? Int ?? recordings.count
+    print("Recordings (\(count)):")
+    for rec in recordings {
+        let filename = rec["filename"] as? String ?? "?"
+        let sizeMB = rec["size_mb"] as? Double ?? 0
+        let folder = rec["folder"] as? String ?? ""
+        let isLast = rec["is_last"] as? Bool ?? false
+        let created = rec["created_at"] as? String ?? ""
+        let dateStr = String(created.prefix(10))
+        var line = "  \(filename)  \(formatSize(sizeMB))  \(dateStr)"
+        if !folder.isEmpty && folder != "recordings" { line += "  [\(folder)]" }
+        if isLast { line += "  (current)" }
+        print(line)
+    }
+}
+
+func cmdJobs(args: Args, client: ScreenMuseClient) async throws {
+    let resp = try await client.get("/jobs")
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    guard let jobs = resp["jobs"] as? [[String: Any]] else {
+        print("No jobs")
+        return
+    }
+    if jobs.isEmpty {
+        print("No jobs")
+        return
+    }
+    let count = resp["count"] as? Int ?? jobs.count
+    print("Jobs (\(count)):")
+    for job in jobs {
+        let id = job["id"] as? String ?? "?"
+        let endpoint = job["endpoint"] as? String ?? "?"
+        let status = job["status"] as? String ?? "?"
+        let elapsedMs = job["elapsed_ms"] as? Int ?? 0
+        let elapsedStr = elapsedMs > 1000 ? "\(elapsedMs / 1000)s" : "\(elapsedMs)ms"
+        print("  \(id)  \(endpoint)  \(status)  \(elapsedStr)")
+    }
+}
+
+func cmdJob(args: Args, client: ScreenMuseClient) async throws {
+    guard let jobID = args.positional.first else {
+        throw CLIError.usage("Job ID is required")
+    }
+    let resp = try await client.get("/job/\(jobID)")
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+    let status = resp["status"] as? String ?? "unknown"
+    let endpoint = resp["endpoint"] as? String ?? "?"
+    print("Job \(jobID): \(status) (\(endpoint))")
+    if let result = resp["result"] as? [String: Any] {
+        if let path = result["path"] as? String {
+            print("  Result: \(path)")
+        } else {
+            printJSON(result)
+        }
+    }
+    if let error = resp["error"] as? String {
+        print("  Error: \(error)")
+    }
+}
+
 func printHelp() {
     print("""
     screenmuse — control ScreenMuse from the command line
@@ -345,18 +566,29 @@ func printHelp() {
       screenmuse <command> [options]
 
     COMMANDS
-      start      Start a new recording
-      stop       Stop recording and print the video path
-      record     Record for a fixed duration (start + wait + stop)
-      status     Show current recording state
-      screenshot Take a screenshot
-      chapter    Add a chapter marker
-      highlight  Flag the next click for auto-zoom effect
-      windows    List windows available for capture
-      export     Export the last recording (GIF, MP4, etc.)
-      trim       Trim a video to a time range
-      health     Check if ScreenMuse is running
-      version    Print ScreenMuse version
+      start       Start a new recording
+      stop        Stop recording and print the video path
+      record      Record for a fixed duration (start + wait + stop)
+      pause       Pause the current recording
+      resume      Resume a paused recording
+      status      Show current recording state
+      screenshot  Take a screenshot
+      chapter     Add a chapter marker
+      highlight   Flag the next click for auto-zoom effect
+      note        Add a timestamped note to the session
+      windows     List windows available for capture
+      export      Export the last recording (GIF, MP4, etc.)
+      trim        Trim a video to a time range
+      speedramp   Speed up idle sections of a recording
+      concat      Concatenate multiple video files
+      crop        Crop a video to a region
+      thumbnail   Extract a thumbnail from a video
+      ocr         Run OCR on the screen or an image file
+      recordings  List all recordings
+      jobs        List async jobs
+      job         Get status of an async job
+      health      Check if ScreenMuse is running
+      version     Print ScreenMuse version
 
     OPTIONS
       --port <n>       API port (default: 7823, or $SCREENMUSE_PORT)
@@ -367,11 +599,22 @@ func printHelp() {
       screenmuse record --name "demo" --duration 30
       screenmuse start --name "walkthrough" --quality high
       screenmuse chapter --name "Installation"
+      screenmuse pause
+      screenmuse resume
+      screenmuse note --text "User clicked save"
       screenmuse stop
       screenmuse screenshot --output ~/Desktop/shot.png
       screenmuse windows
       screenmuse export --format gif --output ~/Desktop/demo.gif
       screenmuse trim --start 5 --end 45 --output ~/Desktop/trimmed.mp4
+      screenmuse speedramp --idle-speed 6 --threshold 3
+      screenmuse concat clip1.mp4 clip2.mp4 --output merged.mp4
+      screenmuse crop --region 100,50,1280x720
+      screenmuse thumbnail --time 5.0 --scale 800
+      screenmuse ocr --source screen --level accurate
+      screenmuse recordings
+      screenmuse jobs
+      screenmuse job abc12345
     """)
 }
 
@@ -411,6 +654,17 @@ struct ScreenMuseCLI {
             case "trim":        try await cmdTrim(args: subArgs, client: client)
             case "health":      try await cmdHealth(args: subArgs, client: client)
             case "version":     try await cmdVersion(args: subArgs, client: client)
+            case "pause":       try await cmdPause(args: subArgs, client: client)
+            case "resume":      try await cmdResume(args: subArgs, client: client)
+            case "note":        try await cmdNote(args: subArgs, client: client)
+            case "ocr":         try await cmdOCR(args: subArgs, client: client)
+            case "speedramp":   try await cmdSpeedRamp(args: subArgs, client: client)
+            case "concat":      try await cmdConcat(args: subArgs, client: client)
+            case "crop":        try await cmdCrop(args: subArgs, client: client)
+            case "thumbnail":   try await cmdThumbnail(args: subArgs, client: client)
+            case "recordings":  try await cmdRecordings(args: subArgs, client: client)
+            case "jobs":        try await cmdJobs(args: subArgs, client: client)
+            case "job":         try await cmdJob(args: subArgs, client: client)
             case "help", "--help", "-h":
                 printHelp()
             default:
