@@ -10,7 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // UNUserNotificationCenter requires a proper signed .app bundle — it crashes on bare
         // executables produced by `swift build`. Guard on bundleIdentifier to fail gracefully.
         if Bundle.main.bundleIdentifier != nil {
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { @Sendable granted, error in
                 if granted {
                     smLog.info("Notification permission granted", category: .permissions)
                 } else {

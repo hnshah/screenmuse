@@ -34,7 +34,7 @@ public final class FullEffectsCompositor {
     public func applyEffects(
         sourceURL: URL,
         outputURL: URL,
-        progress: ((Double) -> Void)? = nil
+        progress: (@Sendable (Double) -> Void)? = nil
     ) async throws {
         let asset = AVAsset(url: sourceURL)
         

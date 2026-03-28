@@ -172,7 +172,7 @@ final class RecordViewModel: ObservableObject {
             keystrokeOverlayManager.updateConfig(keystrokePreset.config)
         }
 
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { @Sendable [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.duration += 1
             }
@@ -229,7 +229,7 @@ final class RecordViewModel: ObservableObject {
             }
             
             // Start timer
-            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { @Sendable [weak self] _ in
                 Task { @MainActor in
                     self?.duration += 1
                 }
@@ -351,7 +351,7 @@ final class RecordViewModel: ObservableObject {
             try await compositor.applyEffects(
                 sourceURL: rawVideoURL,
                 outputURL: outputURL,
-                progress: { [weak self] progress in
+                progress: { @Sendable [weak self] progress in
                     Task { @MainActor in
                         self?.processingProgress = progress
                     }
@@ -383,7 +383,7 @@ final class RecordViewModel: ObservableObject {
             smLog.debug("Skipping notification (no bundle — swift build mode)", category: .permissions)
             return
         }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { @Sendable granted, _ in
             guard granted else {
                 smLog.warning("Notification permission not granted — skipping video-ready notification", category: .permissions)
                 return
@@ -397,7 +397,7 @@ final class RecordViewModel: ObservableObject {
                 content: content,
                 trigger: nil  // deliver immediately
             )
-            UNUserNotificationCenter.current().add(request) { error in
+            UNUserNotificationCenter.current().add(request) { @Sendable error in
                 if let error {
                     smLog.warning("Failed to deliver notification: \(error.localizedDescription)", category: .lifecycle)
                 }
@@ -415,11 +415,13 @@ final class RecordViewModel: ObservableObject {
     /// No-ops gracefully without a proper app bundle.
     private func notifyError(_ title: String, detail: String) {
         guard Bundle.main.bundleIdentifier != nil else { return }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+        let errorTitle = title
+        let errorDetail = detail
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { @Sendable granted, _ in
             guard granted else { return }
             let content = UNMutableNotificationContent()
-            content.title = "ScreenMuse — \(title)"
-            content.body = detail
+            content.title = "ScreenMuse — \(errorTitle)"
+            content.body = errorDetail
             content.sound = .defaultCritical
             let request = UNNotificationRequest(
                 identifier: "screenmuse.error.\(Date().timeIntervalSince1970)",

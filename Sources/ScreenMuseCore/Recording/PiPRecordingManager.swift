@@ -22,7 +22,7 @@ import ScreenCaptureKit
 ///   let url = try await manager.stopRecording()
 
 @MainActor
-public final class PiPRecordingManager: NSObject {
+public final class PiPRecordingManager: NSObject, @unchecked Sendable {
 
     // MARK: - Types
 

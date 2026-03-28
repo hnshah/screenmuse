@@ -13,7 +13,7 @@ public enum CaptureSource: @unchecked Sendable {
 public struct RecordingConfig: @unchecked Sendable {
 
     /// Output video quality / bitrate preset
-    public enum Quality: String, CaseIterable {
+    public enum Quality: String, Sendable, CaseIterable {
         case low    = "low"     //  1 Mbps  — ~8 MB/min  — great for agent logging
         case medium = "medium"  //  3 Mbps  — ~23 MB/min — default, shareable
         case high   = "high"    //  8 Mbps  — ~60 MB/min — presentations

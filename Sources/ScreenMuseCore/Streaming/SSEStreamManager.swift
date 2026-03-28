@@ -84,7 +84,7 @@ public final class SSEStreamManager {
         client.lastSentAt = .distantPast
 
         // Detect disconnect
-        connection.stateUpdateHandler = { [weak self] state in
+        connection.stateUpdateHandler = { @Sendable [weak self] state in
             switch state {
             case .failed, .cancelled:
                 Task { @MainActor [weak self] in self?.removeClient(id: id) }
@@ -133,7 +133,7 @@ public final class SSEStreamManager {
         let timer = DispatchSource.makeTimerSource(flags: [], queue: .global(qos: .userInteractive))
         // 30 Hz base rate
         timer.schedule(deadline: .now(), repeating: 1.0 / 30.0, leeway: .milliseconds(5))
-        timer.setEventHandler { [weak self] in
+        timer.setEventHandler { @Sendable [weak self] in
             Task { @MainActor [weak self] in
                 await self?.tick()
             }
@@ -289,7 +289,7 @@ public final class SSEStreamManager {
         guard let data = headers.data(using: .utf8) else { return }
         // isComplete: false — keeps the connection open
         connection.send(content: data, contentContext: .defaultMessage,
-                        isComplete: false, completion: .contentProcessed { _ in })
+                        isComplete: false, completion: .contentProcessed { @Sendable _ in })
     }
 
     private func sendSSEEvent(to connection: NWConnection, event: String, payload: [String: Any]) {
@@ -299,7 +299,7 @@ public final class SSEStreamManager {
         let sseStr = "event: \(event)\ndata: \(jsonStr)\n\n"
         guard let sseData = sseStr.data(using: .utf8) else { return }
         connection.send(content: sseData, contentContext: .defaultMessage,
-                        isComplete: false, completion: .contentProcessed { error in
+                        isComplete: false, completion: .contentProcessed { @Sendable error in
             if let error {
                 smLog.debug("SSEStreamManager: send failed — \(error.localizedDescription)", category: .capture)
             }
@@ -309,6 +309,6 @@ public final class SSEStreamManager {
     private func sendSSEHeartbeat(to connection: NWConnection) {
         guard let data = ":keep-alive\n\n".data(using: .utf8) else { return }
         connection.send(content: data, contentContext: .defaultMessage,
-                        isComplete: false, completion: .contentProcessed { _ in })
+                        isComplete: false, completion: .contentProcessed { @Sendable _ in })
     }
 }

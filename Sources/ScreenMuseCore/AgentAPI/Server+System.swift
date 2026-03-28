@@ -325,7 +325,7 @@ extension ScreenMuseServer {
         }
         let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(OpenAPISpec.json)"
         if let responseData = response.data(using: .utf8) {
-            connection.send(content: responseData, completion: .contentProcessed { _ in connection.cancel() })
+            connection.send(content: responseData, completion: .contentProcessed { @Sendable _ in connection.cancel() })
         }
     }
 

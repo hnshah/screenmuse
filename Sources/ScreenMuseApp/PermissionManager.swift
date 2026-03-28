@@ -22,7 +22,7 @@ public final class PermissionManager: ObservableObject {
     public func requestScreenRecording() {
         CGRequestScreenCaptureAccess()
         // Re-check after a short delay — the permission dialog is async
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             checkAll()
         }
@@ -31,7 +31,7 @@ public final class PermissionManager: ObservableObject {
     public func requestAccessibility() {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             checkAll()
         }

@@ -17,27 +17,27 @@ let package = Package(
             name: "ScreenMuseApp",
             dependencies: ["ScreenMuseCore"],
             swiftSettings: [
-                .swiftLanguageMode(.v5)
+                .swiftLanguageMode(.v6)
             ]
         ),
         .target(
             name: "ScreenMuseCore",
             swiftSettings: [
-                .swiftLanguageMode(.v5)
+                .swiftLanguageMode(.v6)
             ]
         ),
         .executableTarget(
             name: "ScreenMuseCLI",
             dependencies: [],
             swiftSettings: [
-                .swiftLanguageMode(.v5)
+                .swiftLanguageMode(.v6)
             ]
         ),
         .testTarget(
             name: "ScreenMuseCoreTests",
             dependencies: ["ScreenMuseCore"],
             swiftSettings: [
-                .swiftLanguageMode(.v5)
+                .swiftLanguageMode(.v6)
             ]
         )
     ]

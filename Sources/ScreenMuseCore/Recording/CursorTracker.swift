@@ -33,7 +33,7 @@ public final class CursorTracker: ObservableObject {
         isTracking = true
         events.removeAll()
 
-        let moveMonitor = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+        let moveMonitor = NSEvent.addGlobalMonitorForEvents(matching: .mouseMoved) { @Sendable [weak self] event in
             let cursorEvent = CursorEvent(
                 position: NSEvent.mouseLocation,
                 timestamp: Date(),
@@ -45,7 +45,7 @@ public final class CursorTracker: ObservableObject {
         }
         if let moveMonitor { monitors.append(moveMonitor) }
 
-        let leftClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+        let leftClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { @Sendable [weak self] event in
             let cursorEvent = CursorEvent(
                 position: NSEvent.mouseLocation,
                 timestamp: Date(),
@@ -57,7 +57,7 @@ public final class CursorTracker: ObservableObject {
         }
         if let leftClickMonitor { monitors.append(leftClickMonitor) }
 
-        let rightClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .rightMouseDown) { [weak self] event in
+        let rightClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .rightMouseDown) { @Sendable [weak self] event in
             let cursorEvent = CursorEvent(
                 position: NSEvent.mouseLocation,
                 timestamp: Date(),

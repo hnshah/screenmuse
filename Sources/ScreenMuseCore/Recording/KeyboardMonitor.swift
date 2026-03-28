@@ -93,7 +93,7 @@ public final class KeyboardMonitor: ObservableObject {
         // Schedule cleanup on main actor since stopMonitoring is @MainActor
         let tap = eventTap
         let src = runLoopSource
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { @Sendable in
             if let tap = tap {
                 CGEvent.tapEnable(tap: tap, enable: false)
                 CFMachPortInvalidate(tap)

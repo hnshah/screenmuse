@@ -25,7 +25,7 @@ public final class CombinedEffectsCompositor {
     public func applyEffects(
         sourceURL: URL,
         outputURL: URL,
-        progress: ((Double) -> Void)? = nil
+        progress: (@Sendable (Double) -> Void)? = nil
     ) async throws {
         smLog.info("CombinedEffectsCompositor.applyEffects() — source=\(sourceURL.lastPathComponent)", category: .effects)
         let asset = AVAsset(url: sourceURL)

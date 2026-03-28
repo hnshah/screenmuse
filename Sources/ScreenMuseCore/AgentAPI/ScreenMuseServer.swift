@@ -63,7 +63,7 @@ public class ScreenMuseServer {
 
         let params = NWParameters.tcp
         listener = try NWListener(using: params, on: 7823)
-        listener?.newConnectionHandler = { [weak self] conn in
+        listener?.newConnectionHandler = { @Sendable [weak self] conn in
             Task { @MainActor in
                 self?.handleConnection(conn)
             }
@@ -133,7 +133,7 @@ public class ScreenMuseServer {
     private static let maxBodySize = 4_194_304
 
     private func receiveRequest(_ connection: NWConnection) {
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, _, error in
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { @Sendable [weak self] data, _, _, error in
             guard let self, let data, !data.isEmpty else {
                 if let error { smLog.debug("Connection closed with error: \(error)", category: .server) }
                 connection.cancel()
@@ -204,7 +204,7 @@ public class ScreenMuseServer {
 
     /// Read the next chunk from the connection and accumulate into the buffer.
     private func receiveNextChunk(connection: NWConnection, buffer: Data, contentLength: Int? = nil, headerEnd: Int? = nil) {
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { [weak self] data, _, isComplete, error in
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { @Sendable [weak self] data, _, isComplete, error in
             guard let self else { return }
             Task { @MainActor in
                 var accumulated = buffer
@@ -317,7 +317,7 @@ public class ScreenMuseServer {
         if method == "OPTIONS" {
             let headers = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type, X-ScreenMuse-Key\r\n\r\n"
             if let data = headers.data(using: .utf8) {
-                connection.send(content: data, completion: .contentProcessed { _ in connection.cancel() })
+                connection.send(content: data, completion: .contentProcessed { @Sendable _ in connection.cancel() })
             }
             return
         }
@@ -631,7 +631,7 @@ public class ScreenMuseServer {
         let response = "HTTP/1.1 \(status) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(jsonStr)"
 
         guard let responseData = response.data(using: .utf8) else { return }
-        connection.send(content: responseData, completion: .contentProcessed { _ in
+        connection.send(content: responseData, completion: .contentProcessed { @Sendable _ in
             connection.cancel()
         })
     }

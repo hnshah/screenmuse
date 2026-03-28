@@ -306,4 +306,6 @@ public final class ScreenMuseLogger: @unchecked Sendable {
 // MARK: - Global shorthand
 
 /// Global shorthand so any file can call `smLog.info(...)` without an import dance.
-public let smLog = ScreenMuseLogger.shared
+/// nonisolated(unsafe) is required for Swift 6: ScreenMuseLogger is @unchecked Sendable
+/// and internally synchronised with NSLock, so cross-actor access is safe.
+nonisolated(unsafe) public let smLog = ScreenMuseLogger.shared

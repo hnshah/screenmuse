@@ -201,7 +201,7 @@ public final class RecordingManager: NSObject, ObservableObject, @unchecked Send
         isRecording = true
         duration = 0
 
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { @Sendable [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.duration += 1
@@ -323,7 +323,7 @@ extension RecordingManager {
         isPausedCallback = false
         smLog.info("▶️ Resumed — frames so far: \(frameCount)", category: .recording)
 
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { @Sendable [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.duration += 1
             }
