@@ -1,0 +1,57 @@
+# SwiftLint Configuration for ScreenMuse
+
+disabled_rules:
+  - trailing_whitespace
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - explicit_init
+  - explicit_type_interface
+  - file_header
+  - multiline_arguments
+  - multiline_function_chains
+  - multiline_parameters
+  - operator_usage_whitespace
+  - overridden_super_call
+  - private_outlet
+  - redundant_nil_coalescing
+  - sorted_imports
+  - vertical_parameter_alignment_on_call
+
+included:
+  - Sources
+
+excluded:
+  - Tests
+  - .build
+  - Package.swift
+
+line_length: 120
+
+function_body_length:
+  warning: 60
+  error: 100
+
+type_body_length:
+  warning: 300
+  error: 400
+
+file_length:
+  warning: 500
+  error: 800
+
+identifier_name:
+  min_length: 2
+  max_length: 60
+
+type_name:
+  min_length: 3
+  max_length: 40
+
+nesting:
+  type_level: 2
+  
+cyclomatic_complexity:
+  warning: 10
+  error: 20

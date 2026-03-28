@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: swift build (macOS)
-    runs-on: macos-14          # Sonoma — matches minimum deployment target
+    runs-on: macos-15          # Xcode 16 + Swift 6.0 required by swift-tools-version: 6.0
 
     steps:
       - name: Checkout
