@@ -2,6 +2,38 @@ import AVFoundation
 import Foundation
 import Network
 
+// MARK: - Job Handlers (GET /job/:id, GET /jobs)
+
+extension ScreenMuseServer {
+
+    func handleJob(jobID: String, connection: NWConnection, reqID: Int) async {
+        smLog.debug("[\(reqID)] /job/\(jobID) requested", category: .server)
+        guard let job = await JobQueue.shared.get(jobID) else {
+            sendResponse(connection: connection, status: 404, body: [
+                "error": "Job not found",
+                "code": "JOB_NOT_FOUND",
+                "job_id": jobID
+            ])
+            return
+        }
+        let status: Int
+        switch job.status {
+        case .pending, .running: status = 202
+        case .completed, .failed: status = 200
+        }
+        sendResponse(connection: connection, status: status, body: job.asDictionary())
+    }
+
+    func handleJobs(connection: NWConnection, reqID: Int) async {
+        smLog.debug("[\(reqID)] /jobs list requested", category: .server)
+        let jobs = await JobQueue.shared.list()
+        sendResponse(connection: connection, status: 200, body: [
+            "jobs": jobs.map { $0.asDictionary() },
+            "count": jobs.count
+        ])
+    }
+}
+
 // MARK: - System Handlers (/status, /health, /debug, /logs, /report, /version, /recordings, DELETE /recording, /openapi, /system/*)
 
 extension ScreenMuseServer {
@@ -161,7 +193,9 @@ extension ScreenMuseServer {
             // Batch runner
             "POST /script", "POST /script/batch",
             // OpenAPI spec
-            "GET /openapi"
+            "GET /openapi",
+            // Async job queue
+            "GET /job/:id", "GET /jobs"
         ]
         sendResponse(connection: connection, status: 200, body: [
             "version": version,

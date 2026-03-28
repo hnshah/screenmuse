@@ -10,6 +10,8 @@ import Vision
 extension ScreenMuseServer {
 
     func handleExport(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/export", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleExport(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /export request", category: .server)
 
         let formatStr = body["format"] as? String ?? "gif"
@@ -156,6 +158,8 @@ extension ScreenMuseServer {
     }
 
     func handleSpeedRamp(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/speedramp", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleSpeedRamp(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /speedramp request", category: .server)
 
         let sourceStr = body["source"] as? String ?? "last"
@@ -264,6 +268,8 @@ extension ScreenMuseServer {
     }
 
     func handleConcat(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/concat", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleConcat(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /concat request", category: .server)
 
         guard let rawSources = body["sources"] as? [String], !rawSources.isEmpty else {
@@ -327,6 +333,8 @@ extension ScreenMuseServer {
     }
 
     func handleFrames(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/frames", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleFrames(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /frames request", category: .server)
 
         let sourceStr = body["source"] as? String ?? "last"
@@ -533,6 +541,8 @@ extension ScreenMuseServer {
     }
 
     func handleCrop(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/crop", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleCrop(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /crop request", category: .server)
 
         let sourceStr = body["source"] as? String ?? "last"
@@ -593,6 +603,8 @@ extension ScreenMuseServer {
     }
 
     func handleOCR(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/ocr", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleOCR(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /ocr request source=\(body["source"] as? String ?? "screen")", category: .server)
 
         let ocrSource = body["source"] as? String ?? "screen"

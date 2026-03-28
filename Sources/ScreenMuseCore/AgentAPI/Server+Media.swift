@@ -30,6 +30,8 @@ extension ScreenMuseServer {
     }
 
     func handleValidate(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/validate", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleValidate(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /validate request", category: .server)
 
         let sourceStr = body["source"] as? String ?? "last"
@@ -177,6 +179,8 @@ extension ScreenMuseServer {
     }
 
     func handleAnnotate(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/annotate", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleAnnotate(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /annotate request", category: .server)
 
         let sourceStr = body["source"] as? String ?? "last"

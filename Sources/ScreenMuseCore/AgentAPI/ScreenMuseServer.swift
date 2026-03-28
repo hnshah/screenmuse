@@ -53,6 +53,11 @@ public class ScreenMuseServer {
 
     var requestCount = 0
 
+    /// Maps dummy NWConnection instances to job IDs for async dispatch.
+    /// When sendResponse is called with a connection in this map, the result is routed
+    /// to the JobQueue instead of the wire.
+    private var jobConnections: [ObjectIdentifier: String] = [:]
+
     public func start() throws {
         loadOrGenerateAPIKey()
 
@@ -361,6 +366,12 @@ public class ScreenMuseServer {
         case ("POST", "/window/position"):       handleWindowPosition(body: body, connection: connection, reqID: reqID)
         case ("POST", "/window/hide-others"):    handleWindowHideOthers(body: body, connection: connection, reqID: reqID)
 
+        // MARK: Jobs — Server+System.swift
+        case ("GET", _) where cleanPath.hasPrefix("/job/"):
+            let jobID = String(cleanPath.dropFirst("/job/".count))
+            await handleJob(jobID: jobID, connection: connection, reqID: reqID)
+        case ("GET", "/jobs"):                   await handleJobs(connection: connection, reqID: reqID)
+
         // MARK: System — Server+System.swift
         case ("GET", "/health"):                 handleHealth(body: body, connection: connection, reqID: reqID)
         case ("GET", "/status"):                 handleStatus(body: body, connection: connection, reqID: reqID)
@@ -423,6 +434,43 @@ public class ScreenMuseServer {
                 smLog.warning("Webhook: delivery failed → \(url.absoluteString): \(error.localizedDescription)", category: .server)
             }
         }
+    }
+
+    // MARK: - Async Job Dispatch
+
+    /// Wraps a long-running endpoint for async execution. If `body["async"]` is true,
+    /// returns 202 with a job ID immediately and fires the handler in a background Task.
+    /// The handler's `sendResponse` call is intercepted via `activeJobID` and routed to the JobQueue.
+    ///
+    /// Returns `true` if async dispatch was triggered (caller should `return` immediately).
+    func dispatchAsync(
+        endpoint: String,
+        body: [String: Any],
+        connection: NWConnection,
+        reqID: Int,
+        handler: @escaping @MainActor ([String: Any], NWConnection, Int) async -> Void
+    ) async -> Bool {
+        guard body["async"] as? Bool == true else { return false }
+        let jobID = await JobQueue.shared.create(endpoint: endpoint)
+        sendResponse(connection: connection, status: 202, body: [
+            "job_id": jobID, "status": "pending", "poll": "/job/\(jobID)"
+        ])
+        Task { @MainActor in
+            await JobQueue.shared.setRunning(jobID)
+            var syncBody = body
+            syncBody.removeValue(forKey: "async")
+            // Create a dummy connection mapped to the job ID.
+            // When sendResponse is called with this connection, it routes to the JobQueue.
+            let dummyConn = NWConnection(host: "127.0.0.1", port: 1, using: .tcp)
+            let connID = ObjectIdentifier(dummyConn)
+            self.jobConnections[connID] = jobID
+            await handler(syncBody, dummyConn, reqID)
+            // If mapping is still present (handler didn't call sendResponse), clean up
+            if self.jobConnections.removeValue(forKey: connID) != nil {
+                await JobQueue.shared.fail(jobID, error: "Handler completed without sending a response")
+            }
+        }
+        return true
     }
 
     /// Compute average brightness of a CGImage (0.0 = black, 1.0 = white).
@@ -548,10 +596,23 @@ public class ScreenMuseServer {
     }
 
     func sendResponse(connection: NWConnection, status: Int, body: [String: Any]) {
+        // If running inside an async job, route result to the JobQueue instead of the wire.
+        let connID = ObjectIdentifier(connection)
+        if let jobID = jobConnections.removeValue(forKey: connID) {
+            Task {
+                if status >= 200 && status < 400 {
+                    await JobQueue.shared.complete(jobID, result: body)
+                } else {
+                    await JobQueue.shared.fail(jobID, error: body["error"] as? String ?? "Unknown error")
+                }
+            }
+            return
+        }
+
         guard let jsonData = try? JSONSerialization.data(withJSONObject: body),
               let jsonStr = String(data: jsonData, encoding: .utf8) else { return }
 
-        let statusTexts = [200: "OK", 204: "No Content", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 409: "Conflict", 413: "Payload Too Large", 500: "Internal Server Error", 503: "Service Unavailable"]
+        let statusTexts = [200: "OK", 202: "Accepted", 204: "No Content", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 409: "Conflict", 413: "Payload Too Large", 500: "Internal Server Error", 503: "Service Unavailable"]
         let statusText = statusTexts[status] ?? "Unknown"
         let response = "HTTP/1.1 \(status) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(jsonStr)"
 
