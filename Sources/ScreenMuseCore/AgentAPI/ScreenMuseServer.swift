@@ -31,6 +31,8 @@ public class ScreenMuseServer {
     /// When nil, falls back to raw RecordingManager (no effects).
     public weak var coordinator: RecordingCoordinating?
 
+    public let sessionRegistry = SessionRegistry()
+
     public internal(set) var isRecording = false
     public internal(set) var sessionName: String?
     public internal(set) var sessionID: String?
@@ -393,6 +395,15 @@ public class ScreenMuseServer {
         case ("POST", "/script"):                await handleScript(body: body, connection: connection, reqID: reqID)
         case ("POST", "/script/batch"):          await handleScriptBatch(body: body, connection: connection, reqID: reqID)
         case ("POST", "/upload/icloud"):         handleUploadICloud(body: body, connection: connection, reqID: reqID)
+
+        // MARK: Sessions — SessionRegistry
+        case ("GET", "/sessions"):               handleSessions(body: body, connection: connection, reqID: reqID)
+        case ("GET", _) where cleanPath.hasPrefix("/session/"):
+            let sid = String(cleanPath.dropFirst("/session/".count))
+            handleGetSession(sessionID: sid, connection: connection, reqID: reqID)
+        case ("DELETE", _) where cleanPath.hasPrefix("/session/"):
+            let sid = String(cleanPath.dropFirst("/session/".count))
+            handleDeleteSession(sessionID: sid, connection: connection, reqID: reqID)
 
         default:
             smLog.warning("[\(reqID)] 404 — \(method) \(cleanPath) not found", category: .server)

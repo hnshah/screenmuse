@@ -107,6 +107,8 @@ extension ScreenMuseServer {
             chapters = []
             highlightNextClick = false
             currentVideoURL = nil
+            sessionRegistry.create(id: sessionID!, name: name)
+            sessionRegistry.defaultSessionID = sessionID
             var resp: [String: Any] = [
                 "session_id": sessionID!,
                 "status": "recording",
@@ -161,11 +163,23 @@ extension ScreenMuseServer {
         sessionHighlights.removeAll()
         pendingWebhookURL = nil
 
+        // Sync session state to registry before stopping
+        if let sid = capturedSessionID {
+            sessionRegistry.update(sid) { session in
+                session.isRecording = false
+                session.chapters = capturedChapters
+                session.notes = capturedNotes
+            }
+        }
+
         if let coord = coordinator {
             smLog.debug("[\(reqID)] Awaiting coordinator.stopAndGetVideo() — effects compositing in progress...", category: .server)
             smLog.usage("EFFECTS COMPOSITING  started — applying zoom + click effects to raw video")
             if let url = await coord.stopAndGetVideo() {
                 currentVideoURL = url
+                if let sid = capturedSessionID {
+                    sessionRegistry.update(sid) { $0.videoURL = url }
+                }
                 let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
                 let sizeMB = String(format: "%.1f", Double(fileSize) / 1_048_576)
                 smLog.info("[\(reqID)] ✅ Video ready: \(url.path)", category: .server)
@@ -193,6 +207,9 @@ extension ScreenMuseServer {
             do {
                 let url = try await recordingManager.stopRecording()
                 currentVideoURL = url
+                if let sid = capturedSessionID {
+                    sessionRegistry.update(sid) { $0.videoURL = url }
+                }
                 let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
                 let sizeMB = String(format: "%.1f", Double(fileSize) / 1_048_576)
                 smLog.info("[\(reqID)] ✅ Video saved: \(url.path)", category: .server)
@@ -432,6 +449,8 @@ extension ScreenMuseServer {
         chapters = []
         highlightNextClick = false
         currentVideoURL = nil
+        sessionRegistry.create(id: sessionID!, name: name)
+        sessionRegistry.defaultSessionID = sessionID
 
         smLog.info("[\(reqID)] /record recording for \(duration)s...", category: .server)
 

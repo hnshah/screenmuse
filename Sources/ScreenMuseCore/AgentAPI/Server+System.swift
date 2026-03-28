@@ -51,7 +51,9 @@ extension ScreenMuseServer {
             "elapsed": elapsed,
             "session_id": sessionID ?? "",
             "chapters": chapters.map { ["name": $0.name, "time": $0.time] },
-            "last_video": currentVideoURL?.path ?? ""
+            "last_video": currentVideoURL?.path ?? "",
+            "sessions_active": sessionRegistry.activeCount + (isRecording ? 1 : 0),
+            "sessions_total": sessionRegistry.count + 1
         ])
     }
 
@@ -345,5 +347,106 @@ extension ScreenMuseServer {
         smLog.debug("[\(reqID)] /system/running-apps", category: .server)
         let apps = SystemState.runningApps()
         sendResponse(connection: connection, status: 200, body: ["apps": apps, "count": apps.count])
+    }
+
+    // MARK: - Session Management (GET /sessions, GET /session/:id, DELETE /session/:id)
+
+    func handleSessions(body: [String: Any], connection: NWConnection, reqID: Int) {
+        smLog.debug("[\(reqID)] /sessions", category: .server)
+        let recordingOnly = body["recording_only"] as? Bool ?? false
+        let sessions = sessionRegistry.list(recordingOnly: recordingOnly)
+        let sessionDicts = sessions.map { $0.asDictionary() }
+
+        // Include the "default" (current) session as well
+        var defaultDict: [String: Any] = [
+            "session_id": sessionID ?? "default",
+            "name": sessionName ?? "default",
+            "is_recording": isRecording
+        ]
+        if let st = startTime {
+            defaultDict["start_time"] = ISO8601DateFormatter().string(from: st)
+            defaultDict["elapsed"] = isRecording ? Date().timeIntervalSince(st) : -1
+        }
+        if let url = currentVideoURL {
+            defaultDict["video_path"] = url.path
+        }
+        defaultDict["chapters"] = chapters.map { ["name": $0.name, "time": $0.time] }
+        defaultDict["notes"] = sessionNotes.map { ["text": $0.text, "time": $0.time] }
+        defaultDict["is_default"] = true
+
+        sendResponse(connection: connection, status: 200, body: [
+            "sessions": [defaultDict] + sessionDicts,
+            "active_count": sessionRegistry.activeCount + (isRecording ? 1 : 0),
+            "total_count": sessionRegistry.count + 1
+        ])
+    }
+
+    func handleGetSession(sessionID sid: String, connection: NWConnection, reqID: Int) {
+        smLog.debug("[\(reqID)] /session/\(sid)", category: .server)
+
+        // Check if requesting the default session
+        if sid == "default" || sid == self.sessionID {
+            var dict: [String: Any] = [
+                "session_id": self.sessionID ?? "default",
+                "name": sessionName ?? "default",
+                "is_recording": isRecording,
+                "is_default": true,
+                "chapters": chapters.map { ["name": $0.name, "time": $0.time] },
+                "notes": sessionNotes.map { ["text": $0.text, "time": $0.time] },
+                "highlights": sessionHighlights
+            ]
+            if let st = startTime {
+                dict["start_time"] = ISO8601DateFormatter().string(from: st)
+                dict["elapsed"] = isRecording ? Date().timeIntervalSince(st) : -1
+            }
+            if let url = currentVideoURL { dict["video_path"] = url.path }
+            sendResponse(connection: connection, status: 200, body: dict)
+            return
+        }
+
+        // Check named sessions
+        guard let session = sessionRegistry.get(sid) else {
+            sendResponse(connection: connection, status: 404, body: [
+                "error": "Session '\(sid)' not found",
+                "code": "SESSION_NOT_FOUND",
+                "suggestion": "Call GET /sessions to see all sessions"
+            ])
+            return
+        }
+        sendResponse(connection: connection, status: 200, body: session.asDictionary())
+    }
+
+    func handleDeleteSession(sessionID sid: String, connection: NWConnection, reqID: Int) {
+        smLog.info("[\(reqID)] DELETE /session/\(sid)", category: .server)
+
+        if sid == "default" {
+            sendResponse(connection: connection, status: 400, body: [
+                "error": "Cannot delete the default session",
+                "code": "CANNOT_DELETE_DEFAULT"
+            ])
+            return
+        }
+
+        guard let session = sessionRegistry.get(sid) else {
+            sendResponse(connection: connection, status: 404, body: [
+                "error": "Session '\(sid)' not found",
+                "code": "SESSION_NOT_FOUND"
+            ])
+            return
+        }
+
+        if session.isRecording {
+            sendResponse(connection: connection, status: 409, body: [
+                "error": "Session '\(sid)' is still recording. Stop it first.",
+                "code": "SESSION_STILL_RECORDING"
+            ])
+            return
+        }
+
+        sessionRegistry.remove(sid)
+        sendResponse(connection: connection, status: 200, body: [
+            "ok": true,
+            "deleted": sid
+        ])
     }
 }
