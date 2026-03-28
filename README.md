@@ -10,7 +10,7 @@ ScreenMuse is the first screen recorder purpose-built for AI agents. When your A
 - 🤖 **AI coding agents** that record PRs and demonstrate fixes
 - 🎭 **Playwright & browser automation** with video on test failure
 - 🔄 **Agentic workflows** that prove task completion
-- 👀 **Computer-use models** for observing agent behavior
+- 👀 **Computer Use models** for observing agent behavior
 
 **Not built for:**
 - ❌ Manual screen recording (use Loom)
@@ -61,38 +61,38 @@ Grant Screen Recording permission when prompted, then relaunch.
 
 ## Core Features
 
-### 🎯 API-First Design
+### 🎯 API First Design
 - **40+ HTTP endpoints** on `localhost:7823`
 - **OpenAPI spec** at `/openapi`
 - **Zero UI** for controlling everything via HTTP
 - **Designed for code**, not humans
 
-### 🤖 Agent-Aware
+### 🤖 Agent Aware
 - **Activity detection** knows when agent is idle
 - **Click tracking** captures cursor events with timestamps
 - **Keystroke overlay** shows what agent typed
 - **Chapter markers** structure long recordings
-- **Highlight mode** auto-zooms on important moments
+- **Highlight mode** auto zooms on important moments
 
 ### 📤 Export Pipeline
 - **GIF** with custom encoder (10fps default)
 - **WebP** that's smaller than GIF with better quality
-- **Trim** with frame-accurate or fast stream copy
-- **Speed ramp** auto-speeds idle sections
+- **Trim** with frame accurate or fast stream copy
+- **Speed ramp** auto speeds idle sections
 - **Crop, thumbnail, concatenate** for post-processing
 
 ### 👁️ Vision/OCR
-- **On-device OCR** using Apple Vision
+- **On Device OCR** using Apple Vision
 - **Fast mode** for real-time processing
 - **Accurate mode** for quality processing
 - **No API key** required
 
 ### 🪟 Window Management
 - **Focus, position, hide-others** using native macOS
-- **Multi-window PiP** records 2 windows simultaneously
+- **Multi Window PiP** records 2 windows simultaneously
 - **Works where Playwright can't** via Accessibility API
 
-### 📡 Real-Time Streaming
+### 📡 Real Time Streaming
 - **SSE frame stream** in JPEG or PNG
 - **Configurable FPS and scale**
 - **Multiple clients** supported
@@ -173,7 +173,7 @@ Now you can attach the video to your PR showing exactly what the agent did.
 
 ---
 
-## Example: Computer-Use Model
+## Example: Computer Use Model
 
 Track what a computer-use AI model sees and does:
 
@@ -221,11 +221,11 @@ Native macOS with zero dependencies:
 
 - **ScreenCaptureKit** for screen capture (requires macOS 14+)
 - **AVFoundation** for video encoding
-- **Metal** for GPU-accelerated effects (click ripples, zoom)
+- **Metal** for GPU accelerated effects (click ripples, zoom)
 - **Vision** for on-device OCR
 - **Swift 6** with modern concurrency (actors, async/await)
 
-11,980 lines of Swift, all in-tree, no external frameworks.
+11,980 lines of Swift, all in tree, no external frameworks.
 
 ```
 Sources/
@@ -240,7 +240,7 @@ Sources/
 │   ├── Timeline/        # Chapter markers, event log
 │   └── Permissions/     # TCC permission management
 ├── ScreenMuseApp/       # macOS app (menu bar + viewer)
-└── ScreenMuseCLI/       # Command-line tool
+└── ScreenMuseCLI/       # Command line tool
 ```
 
 ---
@@ -252,7 +252,7 @@ Sources/
 curl http://localhost:7823/openapi > screenmuse-api.json
 ```
 
-Load into Postman, Cursor, Claude Desktop, or any OpenAPI-compatible tool.
+Load into Postman, Cursor, Claude Desktop, or any OpenAPI compatible tool.
 
 ### Quick Reference
 
@@ -268,12 +268,12 @@ Load into Postman, Cursor, Claude Desktop, or any OpenAPI-compatible tool.
 **Export:**
 - `POST /export` creates GIF or WebP (fps, scale, quality, range)
 - `POST /trim` trims to time range
-- `POST /speedramp` auto-speeds idle sections
+- `POST /speedramp` auto speeds idle sections
 - `POST /crop` crops rectangular region
 - `POST /thumbnail` extracts frame at timecode
 - `POST /concat` combines recordings
 
-**Multi-Window:**
+**Multi Window:**
 - `POST /start/pip` records 2 windows (PiP or side-by-side)
 
 **Window Management:**
@@ -317,7 +317,7 @@ Record multi-step autonomous tasks.
 
 Create audit trail with video proof of what the agent accomplished.
 
-### 4. Computer-Use Models
+### 4. Computer Use Models
 Document AI's interaction with desktop apps.
 
 Safety monitoring provides visual log of agent actions.
@@ -340,11 +340,11 @@ Marketing automation creates consistent, repeatable demos.
 |---------|-----------|------|------------|-----------|
 | **API Control** | ✅ 40+ endpoints | ❌ | ❌ | ❌ |
 | **Zero UI** | ✅ | ❌ | ❌ | ❌ |
-| **Agent-Aware** | ✅ Activity detection | ❌ | ❌ | ❌ |
+| **Agent Aware** | ✅ Activity detection | ❌ | ❌ | ❌ |
 | **Programmatic Export** | ✅ GIF, WebP, trim | ❌ | ⚠️ Manual | ❌ |
-| **Real-Time Streaming** | ✅ SSE | ❌ | ❌ | ❌ |
-| **Multi-Window PiP** | ✅ | ❌ | ⚠️ Manual | ❌ |
-| **On-Device OCR** | ✅ Vision | ❌ | ❌ | ❌ |
+| **Real Time Streaming** | ✅ SSE | ❌ | ❌ | ❌ |
+| **Multi Window PiP** | ✅ | ❌ | ⚠️ Manual | ❌ |
+| **On Device OCR** | ✅ Vision | ❌ | ❌ | ❌ |
 | **Chapter Markers** | ✅ API | ⚠️ Manual | ⚠️ Manual | ❌ |
 | **Dependencies** | ✅ Zero | ? | ? | ✅ Zero |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ |
@@ -468,7 +468,7 @@ A: Those are built for humans. ScreenMuse is built for code with 40+ API endpoin
 A: You could, but there are better tools like ScreenFlow or Camtasia. ScreenMuse is optimized for programmatic recording, not manual editing.
 
 **Q: Does it work on Windows/Linux?**  
-A: Not yet. Currently macOS-only because it requires ScreenCaptureKit. Cross-platform support is in the roadmap.
+A: Not yet. Currently macOS-only because it requires ScreenCaptureKit. Cross platform support is in the roadmap.
 
 **Q: How big are the video files?**  
 A: Approximately 5-10 MB per minute at medium quality (10 Mbps). This is configurable via the quality setting.
