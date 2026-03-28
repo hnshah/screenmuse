@@ -1,0 +1,3 @@
+module ScreenMuseCore {
+    header "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/include/ScreenMuseCore-Swift.h"
+}

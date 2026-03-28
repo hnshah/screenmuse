@@ -1,0 +1,2227 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.xctest/Contents/MacOS/ScreenMusePackageTests",
+      "packagePath" : "/private/tmp/screenmuse",
+      "productName" : "ScreenMusePackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.ScreenMuseApp-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/sources",
+      "importPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "ScreenMuseApp",
+      "moduleOutputPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseApp.swiftmodule",
+      "objects" : [
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j32",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "ScreenMuseApp_main",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseApp.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift"
+      ],
+      "tempsPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ScreenMuseCLI-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/sources",
+      "importPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCLI/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "ScreenMuseCLI",
+      "moduleOutputPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCLI.swiftmodule",
+      "objects" : [
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j32",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "ScreenMuseCLI_main",
+        "-parse-as-library",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCLI.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/private/tmp/screenmuse/Sources/ScreenMuseCLI/main.swift"
+      ],
+      "tempsPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ScreenMuseCore-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/sources",
+      "importPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Export.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Media.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+PiP.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Recording.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Stream.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+System.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Window.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ScreenMuseCore",
+      "moduleOutputPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCore.swiftmodule",
+      "objects" : [
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j32",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/include/ScreenMuseCore-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Export.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Media.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+PiP.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Recording.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Stream.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+System.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Window.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift",
+        "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift"
+      ],
+      "tempsPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ScreenMuseCoreTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/sources",
+      "importPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/ActivityAnalyzerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRampDataFlowTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRamperTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/VideoTrimmerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ScreenMuseCoreTests",
+      "moduleOutputPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCoreTests.swiftmodule",
+      "objects" : [
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/ActivityAnalyzerTests.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/SpeedRampDataFlowTests.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/SpeedRamperTests.swift.o",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/VideoTrimmerTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j32",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/ActivityAnalyzerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/SpeedRampDataFlowTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/SpeedRamperTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/VideoTrimmerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCoreTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/ActivityAnalyzerTests.swift",
+        "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRampDataFlowTests.swift",
+        "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRamperTests.swift",
+        "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/VideoTrimmerTests.swift"
+      ],
+      "tempsPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.ScreenMusePackageTests-arm64-apple-macosx26.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/sources",
+      "importPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMuseCoreTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ScreenMusePackageTests",
+      "moduleOutputPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMusePackageTests.swiftmodule",
+      "objects" : [
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j32",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/include/ScreenMusePackageTests-Swift.h",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules/ScreenMusePackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "ScreenMuseApp" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMuseApp",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift",
+      "-I",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j32",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "ScreenMuseApp_main",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "ScreenMuseCLI" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMuseCLI",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCLI/main.swift",
+      "-I",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j32",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "ScreenMuseCLI_main",
+      "-parse-as-library",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "ScreenMuseCore" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMuseCore",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Export.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Media.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+PiP.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Recording.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Stream.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+System.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Window.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift",
+      "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift",
+      "-I",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j32",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/include/ScreenMuseCore-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "ScreenMuseCoreTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMuseCoreTests",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/ActivityAnalyzerTests.swift",
+      "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRampDataFlowTests.swift",
+      "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRamperTests.swift",
+      "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/VideoTrimmerTests.swift",
+      "-I",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j32",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "ScreenMusePackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMusePackageTests",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift",
+      "-I",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j32",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/include/ScreenMusePackageTests-Swift.h",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ScreenMuseApp" : [
+      "ScreenMuseCore"
+    ],
+    "ScreenMuseCLI" : [
+
+    ],
+    "ScreenMuseCore" : [
+
+    ],
+    "ScreenMuseCoreTests" : [
+      "ScreenMuseCore"
+    ],
+    "ScreenMusePackageTests" : [
+      "ScreenMuseCoreTests",
+      "ScreenMuseCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp-entitlement.plist"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/sources"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.swift.o"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.product/Objects.LinkFileList"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCLI/main.swift"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/sources"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Export.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Media.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+PiP.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Recording.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Stream.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+System.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Window.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/sources"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/ActivityAnalyzerTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRampDataFlowTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/SpeedRamperTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/Tests/ScreenMuseCoreTests/VideoTrimmerTests.swift"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/sources"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/sources"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/ActivityAnalyzerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/SpeedRampDataFlowTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/SpeedRamperTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCoreTests.build/VideoTrimmerTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.swift.o"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.product/Objects.LinkFileList"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/screenmuse-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/screenmuse-entitlement.plist"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/screenmuse.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCLI.build/main.swift.o"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/screenmuse.product/Objects.LinkFileList"
+    },
+    "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "": {
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/master.swiftdeps"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/OpenAPISpec.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Export.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Export.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Media.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Media.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+PiP.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+PiP.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Recording.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Recording.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Stream.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Stream.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+System.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+System.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/AgentAPI/Server+Window.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/Server+Window.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorAnimationManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/FullEffectsCompositor.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeystrokeOverlayManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ActivityAnalyzer.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/GIFExporter.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SpeedRamper.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ThumbnailExtractor.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoAnnotator.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoConcatenator.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoCropper.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/VideoTrimmer.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/iCloudUploader.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseLogger.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PermissionsManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CursorTracker.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/KeyboardMonitor.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/PiPRecordingManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingConfig.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SSEStreamManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenOCR.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/SystemState.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/WindowManager.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineEvent.dia"
+  },
+  "/private/tmp/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/TimelineManager.dia"
+  }
+}

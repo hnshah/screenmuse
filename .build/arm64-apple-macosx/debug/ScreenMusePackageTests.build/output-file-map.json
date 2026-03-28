@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/master.swiftdeps"
+  },
+  "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.derived/runner.swift": {
+    "dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.d",
+    "object": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.swift.o",
+    "swiftmodule": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.swiftdeps",
+    "diagnostics": "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/runner.dia"
+  }
+}

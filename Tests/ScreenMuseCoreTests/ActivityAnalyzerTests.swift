@@ -131,9 +131,9 @@ final class ActivityAnalyzerTests: XCTestCase {
         }
 
         // First segment starts at 0
-        XCTAssertEqual(segments.first?.start, 0, accuracy: 0.001)
+        XCTAssertEqual(segments.first?.start ?? -1, 0, accuracy: 0.001)
         // Last segment ends at duration
-        XCTAssertEqual(segments.last?.end, 20.0, accuracy: 0.1)
+        XCTAssertEqual(segments.last?.end ?? -1, 20.0, accuracy: 0.1)
     }
 }
 #endif

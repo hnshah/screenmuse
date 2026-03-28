@@ -1,0 +1,3 @@
+module ScreenMusePackageTests {
+    header "/private/tmp/screenmuse/.build/arm64-apple-macosx/debug/ScreenMusePackageTests.build/include/ScreenMusePackageTests-Swift.h"
+}
