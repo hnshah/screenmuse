@@ -6,14 +6,16 @@ import ScreenCaptureKit
 import Vision
 
 // Local HTTP server for programmatic agent control.
-// Route handlers are organized into extensions:
-//   Server+Recording.swift  — /record, /start, /stop, /pause, /resume, /chapter, /highlight, /note, /screenshot
-//   Server+Export.swift     — /export, /trim, /speedramp, /concat, /frames, /frame, /thumbnail, /crop, /ocr
-//   Server+Stream.swift     — /stream, /stream/status
-//   Server+Window.swift     — /windows, /window/focus, /window/position, /window/hide-others
-//   Server+System.swift     — /status, /health, /debug, /logs, /report, /version, /recordings, DELETE /recording, /openapi, /system/*
-//   Server+Media.swift      — /timeline, /validate, /annotate, /script, /upload/icloud
-//   Server+PiP.swift        — /start/pip, PiP stop flow
+//
+// Route handlers are organized into extensions (see route table in processHTTPRequest):
+//
+//   RECORDING  Server+Recording.swift  — /record /start /stop /pause /resume /chapter /highlight /note /screenshot
+//              Server+PiP.swift        — /start/pip, PiP stop flow
+//   EXPORT     Server+Export.swift     — /export /trim /speedramp /concat /frames /frame /thumbnail /crop /ocr
+//   STREAM     Server+Stream.swift     — /stream /stream/status
+//   WINDOW     Server+Window.swift     — /windows /window/focus /window/position /window/hide-others
+//   SYSTEM     Server+System.swift     — /health /status /debug /logs /report /version /recordings /openapi /system/*
+//   MEDIA      Server+Media.swift      — /timeline /validate /annotate /script /script/batch /upload/icloud
 
 @MainActor
 public class ScreenMuseServer {
@@ -315,67 +317,71 @@ public class ScreenMuseServer {
             return
         }
 
+        // ┌──────────────────────────────────────────────────────────────┐
+        // │  Route Table                                                  │
+        // │  Grouped by category. To add a new route:                     │
+        // │    1. Add the case to the appropriate group below             │
+        // │    2. Implement the handler in the corresponding extension    │
+        // │    3. Add the endpoint to handleVersion() in Server+System   │
+        // └──────────────────────────────────────────────────────────────┘
         switch (method, cleanPath) {
-        // Recording
-        case ("POST", "/record"):         await handleRecord(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/start"):         await handleStart(body: body, connection: connection, reqID: reqID)
+
+        // MARK: Recording — Server+Recording.swift
+        case ("POST", "/record"):                await handleRecord(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/start"):                 await handleStart(body: body, connection: connection, reqID: reqID)
         case ("POST", "/stop"):
             if await handlePiPStop(body: body, connection: connection, reqID: reqID) { return }
             await handleStop(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/pause"):          await handlePause(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/resume"):         await handleResume(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/chapter"):        handleChapter(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/highlight"):      handleHighlight(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/note"):           handleNote(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/screenshot"):     await handleScreenshot(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/pause"):                 await handlePause(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/resume"):                await handleResume(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/chapter"):               handleChapter(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/highlight"):             handleHighlight(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/note"):                  handleNote(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/screenshot"):            await handleScreenshot(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/start/pip"):             await handleStartPiP(body: body, connection: connection, reqID: reqID)
 
-        // PiP
-        case ("POST", "/start/pip"):      await handleStartPiP(body: body, connection: connection, reqID: reqID)
+        // MARK: Export — Server+Export.swift
+        case ("POST", "/export"):                await handleExport(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/trim"):                  await handleTrim(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/speedramp"):             await handleSpeedRamp(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/concat"):                await handleConcat(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/frames"):                await handleFrames(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/frame"):                 await handleFrame(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/thumbnail"):             await handleThumbnail(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/crop"):                  await handleCrop(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/ocr"):                   await handleOCR(body: body, connection: connection, reqID: reqID)
 
-        // Export & Processing
-        case ("POST", "/export"):         await handleExport(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/trim"):           await handleTrim(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/speedramp"):      await handleSpeedRamp(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/concat"):         await handleConcat(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/frames"):         await handleFrames(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/frame"):          await handleFrame(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/thumbnail"):      await handleThumbnail(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/crop"):           await handleCrop(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/ocr"):            await handleOCR(body: body, connection: connection, reqID: reqID)
+        // MARK: Stream — Server+Stream.swift
+        case ("GET", "/stream"):                 handleStream(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/stream/status"):          handleStreamStatus(body: body, connection: connection, reqID: reqID)
 
-        // Stream
-        case ("GET", "/stream"):          handleStream(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/stream/status"):   handleStreamStatus(body: body, connection: connection, reqID: reqID)
+        // MARK: Window — Server+Window.swift
+        case ("GET", "/windows"):                await handleWindows(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/window/focus"):          handleWindowFocus(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/window/position"):       handleWindowPosition(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/window/hide-others"):    handleWindowHideOthers(body: body, connection: connection, reqID: reqID)
 
-        // Window
-        case ("GET", "/windows"):         await handleWindows(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/window/focus"):   handleWindowFocus(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/window/position"): handleWindowPosition(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/window/hide-others"): handleWindowHideOthers(body: body, connection: connection, reqID: reqID)
+        // MARK: System — Server+System.swift
+        case ("GET", "/health"):                 handleHealth(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/status"):                 handleStatus(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/debug"):                  handleDebug(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/logs"):                   handleLogs(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/report"):                 handleReport(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/version"):                handleVersion(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/recordings"):             handleRecordings(body: body, connection: connection, reqID: reqID)
+        case ("DELETE", "/recording"):           handleDeleteRecording(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/openapi"):                handleOpenAPI(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/system/clipboard"):       handleSystemClipboard(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/system/active-window"):   handleSystemActiveWindow(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/system/running-apps"):    handleSystemRunningApps(body: body, connection: connection, reqID: reqID)
 
-        // System & Info
-        case ("GET", "/health"):          handleHealth(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/status"):          handleStatus(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/debug"):           handleDebug(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/logs"):            handleLogs(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/report"):          handleReport(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/version"):         handleVersion(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/recordings"):      handleRecordings(body: body, connection: connection, reqID: reqID)
-        case ("DELETE", "/recording"):    handleDeleteRecording(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/openapi"):         handleOpenAPI(body: body, connection: connection, reqID: reqID)
-
-        // System State
-        case ("GET", "/system/clipboard"):     handleSystemClipboard(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/system/active-window"): handleSystemActiveWindow(body: body, connection: connection, reqID: reqID)
-        case ("GET", "/system/running-apps"):  handleSystemRunningApps(body: body, connection: connection, reqID: reqID)
-
-        // Media & Batch
-        case ("GET", "/timeline"):        handleTimeline(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/validate"):       await handleValidate(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/annotate"):       await handleAnnotate(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/script"):         await handleScript(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/script/batch"):   await handleScriptBatch(body: body, connection: connection, reqID: reqID)
-        case ("POST", "/upload/icloud"):  handleUploadICloud(body: body, connection: connection, reqID: reqID)
+        // MARK: Media & Batch — Server+Media.swift
+        case ("GET", "/timeline"):               handleTimeline(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/validate"):              await handleValidate(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/annotate"):              await handleAnnotate(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/script"):                await handleScript(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/script/batch"):          await handleScriptBatch(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/upload/icloud"):         handleUploadICloud(body: body, connection: connection, reqID: reqID)
 
         default:
             smLog.warning("[\(reqID)] 404 — \(method) \(cleanPath) not found", category: .server)
