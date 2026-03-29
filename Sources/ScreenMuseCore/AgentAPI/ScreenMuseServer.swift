@@ -615,6 +615,7 @@ public class ScreenMuseServer {
             await JobQueue.shared.setRunning(jobID)
             var syncBody = body
             syncBody.removeValue(forKey: "async")
+            syncBody["_job_id"] = jobID
             // Create a dummy connection mapped to the job ID.
             // When sendResponse is called with this connection, it routes to the JobQueue.
             let dummyConn = NWConnection(host: "127.0.0.1", port: 1, using: .tcp)

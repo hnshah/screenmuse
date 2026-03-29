@@ -74,6 +74,7 @@ extension ScreenMuseServer {
 
         smLog.info("[\(reqID)] /export source=\(resolvedSource.lastPathComponent) format=\(format.rawValue) fps=\(config.fps) scale=\(config.scale) quality=\(config.quality.rawValue) → \(outputURL.lastPathComponent)", category: .server)
 
+        let jobID = body["_job_id"] as? String
         do {
             let exporter = GIFExporter()
             let result = try await exporter.export(
@@ -82,6 +83,9 @@ extension ScreenMuseServer {
                 config: config,
                 progress: { pct in
                     smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
+                    if let jobID {
+                        Task { await JobQueue.shared.setProgress(jobID, pct) }
+                    }
                 }
             )
             let exportResp = ExportResponse(

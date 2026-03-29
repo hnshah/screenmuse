@@ -18,6 +18,7 @@ public actor JobQueue {
         public let endpoint: String
         public let createdAt: Date
         public var status: JobStatus
+        public var progress: Double = 0
         public var result: [String: Any]?
         public var error: String?
         public var completedAt: Date?
@@ -38,6 +39,13 @@ public actor JobQueue {
                 elapsedMs = Int(Date().timeIntervalSince(createdAt) * 1000)
             }
             dict["elapsed_ms"] = elapsedMs
+            dict["progress"] = progress
+
+            if status == .running, progress > 0.01 {
+                let elapsed = Date().timeIntervalSince(createdAt)
+                let eta = elapsed / progress * (1 - progress)
+                dict["eta_seconds"] = (eta * 10).rounded() / 10
+            }
 
             if let completed = completedAt {
                 dict["completed_at"] = ISO8601DateFormatter().string(from: completed)
@@ -62,6 +70,10 @@ public actor JobQueue {
 
     public func setRunning(_ id: String) {
         jobs[id]?.status = .running
+    }
+
+    public func setProgress(_ id: String, _ progress: Double) {
+        jobs[id]?.progress = max(0, min(1, progress))
     }
 
     public func complete(_ id: String, result: [String: Any]) {
