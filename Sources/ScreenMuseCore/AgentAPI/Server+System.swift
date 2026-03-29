@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreGraphics
 import Foundation
 import Network
 
@@ -40,7 +41,32 @@ extension ScreenMuseServer {
 
     func handleHealth(body: [String: Any], connection: NWConnection, reqID: Int) {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-        sendResponse(connection: connection, status: 200, body: ["ok": true, "version": version])
+        let listenerState: String
+        switch listener?.state {
+        case .ready:       listenerState = "ready"
+        case .setup:       listenerState = "setup"
+        case .waiting:     listenerState = "waiting"
+        case .failed:      listenerState = "failed"
+        case .cancelled:   listenerState = "cancelled"
+        case .none:        listenerState = "nil"
+        @unknown default:  listenerState = "unknown"
+        }
+        // Include permission status so agents can self-diagnose without grepping Console.app
+        let hasScreenRecording = CGPreflightScreenCaptureAccess()
+        var response: [String: Any] = [
+            "ok": true,
+            "version": version,
+            "listener": listenerState,
+            "port": Int(port),
+            "permissions": [
+                "screen_recording": hasScreenRecording
+            ] as [String: Any]
+        ]
+        // If permissions are missing, surface a clear hint
+        if !hasScreenRecording {
+            response["warning"] = "Screen Recording permission not granted — POST /start will fail. Grant in System Settings → Privacy & Security → Screen Recording, then relaunch."
+        }
+        sendResponse(connection: connection, status: 200, body: response)
     }
 
     func handleStatus(body: [String: Any], connection: NWConnection, reqID: Int) {

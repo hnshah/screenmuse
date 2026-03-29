@@ -25,6 +25,12 @@ extension NWConnection: @retroactive @unchecked Sendable {}
 public class ScreenMuseServer {
     public static let shared = ScreenMuseServer()
 
+    /// The port the server listens on. Resolved at start() from:
+    ///   1. SCREENMUSE_PORT env var
+    ///   2. ~/.screenmuse/config.json "port" field
+    ///   3. Default: 7823
+    public private(set) var port: UInt16 = 7823
+
     private var listener: NWListener?
     // recordingManager used when coordinator is not set (e.g. headless/test mode)
     let recordingManager = RecordingManager()
@@ -64,18 +70,109 @@ public class ScreenMuseServer {
     /// to the JobQueue instead of the wire.
     private var jobConnections: [ObjectIdentifier: String] = [:]
 
-    public func start() throws {
+    public func start(port overridePort: UInt16? = nil) throws {
         loadOrGenerateAPIKey()
+        port = resolvePort(override: overridePort)
 
         let params = NWParameters.tcp
-        listener = try NWListener(using: params, on: 7823)
+        listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: port)!)
         listener?.newConnectionHandler = { @Sendable [weak self] conn in
             Task { @MainActor in
                 self?.handleConnection(conn)
             }
         }
+        // Monitor listener state — without this, failures are completely invisible.
+        // NWListener.start() is async; the listener may enter .failed or .waiting
+        // after start() returns and there'd be no log, no error, no way to diagnose.
+        listener?.stateUpdateHandler = { @Sendable [weak self] state in
+            Task { @MainActor in
+                // Unwrap self; safe to exit early since server is a singleton but correct for Swift 6.
+                guard let self else { return }
+                switch state {
+                case .ready:
+                    smLog.info("NWListener ready — accepting connections on port \(self.port)", category: .server)
+                case .failed(let error):
+                    smLog.error("NWListener failed: \(error.localizedDescription) — HTTP API unavailable on port \(self.port)", category: .server)
+                    smLog.usage("SERVER FAILED", details: ["error": error.localizedDescription, "port": "\(self.port)"])
+                    // Attempt restart after a short delay
+                    smLog.info("Scheduling NWListener restart in 2s…", category: .server)
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    self.restartListener()
+                case .cancelled:
+                    smLog.info("NWListener cancelled", category: .server)
+                case .waiting(let error):
+                    smLog.warning("NWListener waiting (port may be in use): \(error.localizedDescription)", category: .server)
+                case .setup:
+                    break
+                @unknown default:
+                    break
+                }
+            }
+        }
         listener?.start(queue: .main)
-        smLog.info("NWListener started on port 7823", category: .server)
+        smLog.info("NWListener starting on port \(port) (async — watch for 'ready' log below)", category: .server)
+    }
+
+    /// Restart the NWListener after a failure. Called automatically by the stateUpdateHandler.
+    private func restartListener() {
+        smLog.info("Restarting NWListener on port \(port)…", category: .server)
+        listener?.cancel()
+        listener = nil
+        do {
+            let params = NWParameters.tcp
+            listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: port)!)
+            listener?.newConnectionHandler = { @Sendable [weak self] conn in
+                Task { @MainActor in
+                    self?.handleConnection(conn)
+                }
+            }
+            listener?.stateUpdateHandler = { @Sendable [weak self] state in
+                Task { @MainActor in
+                    guard let self else { return }
+                    switch state {
+                    case .ready:
+                        smLog.info("NWListener restart succeeded — accepting connections on port \(self.port)", category: .server)
+                    case .failed(let error):
+                        smLog.error("NWListener restart failed: \(error.localizedDescription) — giving up", category: .server)
+                        smLog.usage("SERVER RESTART FAILED", details: ["error": error.localizedDescription])
+                    case .waiting(let error):
+                        smLog.warning("NWListener restart waiting: \(error.localizedDescription)", category: .server)
+                    default:
+                        break
+                    }
+                }
+            }
+            listener?.start(queue: .main)
+            smLog.info("NWListener restart initiated", category: .server)
+        } catch {
+            smLog.error("NWListener restart threw: \(error.localizedDescription) — HTTP API is down", category: .server)
+            smLog.usage("SERVER RESTART ERROR", details: ["error": error.localizedDescription])
+        }
+    }
+
+    /// Resolve listening port from (in priority order):
+    ///   1. overridePort parameter passed to start()
+    ///   2. SCREENMUSE_PORT environment variable
+    ///   3. ~/.screenmuse/config.json "port" field
+    ///   4. Default 7823
+    private func resolvePort(override: UInt16?) -> UInt16 {
+        if let p = override { return p }
+        if let envStr = ProcessInfo.processInfo.environment["SCREENMUSE_PORT"],
+           let p = UInt16(envStr), p > 0 {
+            smLog.info("Using port \(p) from SCREENMUSE_PORT env var", category: .server)
+            return p
+        }
+        let fm = FileManager.default
+        let configFile = fm.homeDirectoryForCurrentUser
+            .appendingPathComponent(".screenmuse/config.json")
+        if fm.fileExists(atPath: configFile.path),
+           let data = try? Data(contentsOf: configFile),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let p = json["port"] as? Int, p > 0, p <= 65535 {
+            smLog.info("Using port \(p) from ~/.screenmuse/config.json", category: .server)
+            return UInt16(p)
+        }
+        return 7823
     }
 
     /// Load API key from ~/.screenmuse/api_key, env var, or auto-generate one.
