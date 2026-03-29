@@ -751,6 +751,15 @@ public class ScreenMuseServer {
         return ["error": error.localizedDescription, "code": "UNKNOWN_ERROR"]
     }
 
+    func sendResponse<T: Encodable>(connection: NWConnection, status: Int, body: T) {
+        guard let jsonData = try? JSONEncoder().encode(body),
+              let dict = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            sendResponse(connection: connection, status: 500, body: ["error": "Serialization failed"])
+            return
+        }
+        sendResponse(connection: connection, status: status, body: dict)
+    }
+
     func sendResponse(connection: NWConnection, status: Int, body: [String: Any]) {
         // If running inside an async job, route result to the JobQueue instead of the wire.
         let connID = ObjectIdentifier(connection)

@@ -77,15 +77,16 @@ extension ScreenMuseServer {
     func handleStatus(body: [String: Any], connection: NWConnection, reqID: Int) {
         let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
         smLog.debug("[\(reqID)] /status — recording=\(isRecording) elapsed=\(String(format: "%.1f", elapsed))s", category: .server)
-        sendResponse(connection: connection, status: 200, body: [
-            "recording": isRecording,
-            "elapsed": elapsed,
-            "session_id": sessionID ?? "",
-            "chapters": chapters.map { ["name": $0.name, "time": $0.time] },
-            "last_video": currentVideoURL?.path ?? "",
-            "sessions_active": sessionRegistry.activeCount + (isRecording ? 1 : 0),
-            "sessions_total": sessionRegistry.count + 1
-        ])
+        let resp = StatusResponse(
+            recording: isRecording,
+            elapsed: elapsed,
+            sessionId: sessionID ?? "",
+            chapters: chapters.map { ChapterEntry(name: $0.name, time: $0.time) },
+            lastVideo: currentVideoURL?.path ?? "",
+            sessionsActive: sessionRegistry.activeCount + (isRecording ? 1 : 0),
+            sessionsTotal: sessionRegistry.count + 1
+        )
+        sendResponse(connection: connection, status: 200, body: resp)
     }
 
     func handleDebug(body: [String: Any], connection: NWConnection, reqID: Int) {
