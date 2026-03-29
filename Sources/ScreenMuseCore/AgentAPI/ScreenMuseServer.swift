@@ -74,8 +74,70 @@ public class ScreenMuseServer {
                 self?.handleConnection(conn)
             }
         }
+        // Monitor listener state — without this, failures are completely invisible.
+        // NWListener.start() is async; the listener may enter .failed or .waiting
+        // after start() returns and there'd be no log, no error, no way to diagnose.
+        listener?.stateUpdateHandler = { @Sendable [weak self] state in
+            Task { @MainActor in
+                switch state {
+                case .ready:
+                    smLog.info("NWListener ready — accepting connections on port 7823", category: .server)
+                case .failed(let error):
+                    smLog.error("NWListener failed: \(error.localizedDescription) — HTTP API unavailable on port 7823", category: .server)
+                    smLog.usage("SERVER FAILED", details: ["error": error.localizedDescription, "port": "7823"])
+                    // Attempt restart after a short delay
+                    smLog.info("Scheduling NWListener restart in 2s…", category: .server)
+                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                    self?.restartListener()
+                case .cancelled:
+                    smLog.info("NWListener cancelled", category: .server)
+                case .waiting(let error):
+                    smLog.warning("NWListener waiting (port may be in use): \(error.localizedDescription)", category: .server)
+                case .setup:
+                    break
+                @unknown default:
+                    break
+                }
+            }
+        }
         listener?.start(queue: .main)
-        smLog.info("NWListener started on port 7823", category: .server)
+        smLog.info("NWListener starting on port 7823 (async — watch for 'ready' log below)", category: .server)
+    }
+
+    /// Restart the NWListener after a failure. Called automatically by the stateUpdateHandler.
+    private func restartListener() {
+        smLog.info("Restarting NWListener on port 7823…", category: .server)
+        listener?.cancel()
+        listener = nil
+        do {
+            let params = NWParameters.tcp
+            listener = try NWListener(using: params, on: 7823)
+            listener?.newConnectionHandler = { @Sendable [weak self] conn in
+                Task { @MainActor in
+                    self?.handleConnection(conn)
+                }
+            }
+            listener?.stateUpdateHandler = { @Sendable [weak self] state in
+                Task { @MainActor in
+                    switch state {
+                    case .ready:
+                        smLog.info("NWListener restart succeeded — accepting connections on port 7823", category: .server)
+                    case .failed(let error):
+                        smLog.error("NWListener restart failed: \(error.localizedDescription) — giving up", category: .server)
+                        smLog.usage("SERVER RESTART FAILED", details: ["error": error.localizedDescription])
+                    case .waiting(let error):
+                        smLog.warning("NWListener restart waiting: \(error.localizedDescription)", category: .server)
+                    default:
+                        break
+                    }
+                }
+            }
+            listener?.start(queue: .main)
+            smLog.info("NWListener restart initiated", category: .server)
+        } catch {
+            smLog.error("NWListener restart threw: \(error.localizedDescription) — HTTP API is down", category: .server)
+            smLog.usage("SERVER RESTART ERROR", details: ["error": error.localizedDescription])
+        }
     }
 
     /// Load API key from ~/.screenmuse/api_key, env var, or auto-generate one.

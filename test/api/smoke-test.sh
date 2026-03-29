@@ -13,6 +13,32 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 
+# ── API Key Auth ───────────────────────────────
+# Read from ~/.screenmuse/api_key, then SCREENMUSE_API_KEY env var, or skip if SCREENMUSE_NO_AUTH=1.
+API_KEY=""
+if [ "${SCREENMUSE_NO_AUTH:-}" = "1" ]; then
+  echo "ℹ️  Auth disabled (SCREENMUSE_NO_AUTH=1)"
+elif [ -n "${SCREENMUSE_API_KEY:-}" ]; then
+  API_KEY="$SCREENMUSE_API_KEY"
+  echo "ℹ️  Using API key from SCREENMUSE_API_KEY env var"
+elif [ -f "$HOME/.screenmuse/api_key" ]; then
+  API_KEY=$(cat "$HOME/.screenmuse/api_key" | tr -d '[:space:]')
+  echo "ℹ️  Using API key from ~/.screenmuse/api_key"
+else
+  echo -e "${YELLOW}⚠️  No API key found (set SCREENMUSE_API_KEY or check ~/.screenmuse/api_key)${NC}"
+  echo "   Requests will fail with 401 on all authenticated endpoints."
+  echo "   Set SCREENMUSE_NO_AUTH=1 if the server was started without auth."
+fi
+
+_curl() {
+  # Wrapper that injects X-ScreenMuse-Key when API_KEY is set.
+  if [ -n "$API_KEY" ]; then
+    curl -H "X-ScreenMuse-Key: $API_KEY" "$@"
+  else
+    curl "$@"
+  fi
+}
+
 check() {
   local name="$1"
   local expected_status="$2"
@@ -21,10 +47,10 @@ check() {
   local body="$5"
 
   if [ -n "$body" ]; then
-    response=$(curl -s -o /tmp/sm_resp.json -w "%{http_code}" -X "$method" "$BASE$path" \
+    response=$(_curl -s -o /tmp/sm_resp.json -w "%{http_code}" -X "$method" "$BASE$path" \
       -H "Content-Type: application/json" -d "$body" 2>/dev/null)
   else
-    response=$(curl -s -o /tmp/sm_resp.json -w "%{http_code}" -X "$method" "$BASE$path" 2>/dev/null)
+    response=$(_curl -s -o /tmp/sm_resp.json -w "%{http_code}" -X "$method" "$BASE$path" 2>/dev/null)
   fi
 
   if [ "$response" = "$expected_status" ]; then
@@ -59,7 +85,7 @@ check "GET /system/running-apps" 200 GET /system/running-apps
 # ── Version endpoint count ─────────────────────
 echo ""
 echo "Endpoint Count"
-count=$(curl -s "$BASE/version" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('api_endpoints',[])))" 2>/dev/null)
+count=$(_curl -s "$BASE/version" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('api_endpoints',[])))" 2>/dev/null)
 if [ "$count" -ge 38 ] 2>/dev/null; then
   echo -e "${GREEN}✅ PASS${NC} Endpoint count: $count (≥38)"
   PASS=$((PASS + 1))
@@ -104,9 +130,9 @@ echo ""
 echo "Error Handling"
 # Starting while already running returns 409; starting while stopped returns 200 (correct)
 # Test the 409 case: double-start
-curl -s -o /dev/null -X POST "$BASE/start" -H "Content-Type: application/json" -d '{}'  # start first
+_curl -s -o /dev/null -X POST "$BASE/start" -H "Content-Type: application/json" -d '{}'  # start first
 check "POST /start (already recording → 409)" 409 POST /start '{}' 2>/dev/null || true
-curl -s -o /dev/null -X POST "$BASE/stop"  # cleanup
+_curl -s -o /dev/null -X POST "$BASE/stop"  # cleanup
 check "POST /export (no video)" 404 POST /export '{"source":"/tmp/__nonexistent_video__.mp4","format":"gif"}'
 check "POST /trim (invalid range)" 400 POST /trim '{"start":99,"end":1}'
 check "DELETE /recording (not found)" 404 DELETE /recording '{"filename":"__nonexistent__.mp4"}'
@@ -116,7 +142,7 @@ check "POST /window/focus (missing app)" 400 POST /window/focus '{}'
 # ── iCloud (best effort — may 503 if not configured) ──
 echo ""
 echo "iCloud (may 503 if iCloud not configured)"
-icloud_status=$(curl -s -o /tmp/sm_resp.json -w "%{http_code}" -X POST "$BASE/upload/icloud" \
+icloud_status=$(_curl -s -o /tmp/sm_resp.json -w "%{http_code}" -X POST "$BASE/upload/icloud" \
   -H "Content-Type: application/json" -d '{"source":"last"}' 2>/dev/null)
 if [ "$icloud_status" = "200" ] || [ "$icloud_status" = "503" ] || [ "$icloud_status" = "404" ]; then
   echo -e "${GREEN}✅ PASS${NC} POST /upload/icloud (HTTP $icloud_status — expected 200/503/404)"
