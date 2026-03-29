@@ -10,6 +10,7 @@ let package = Package(
     products: [
         .executable(name: "ScreenMuseApp", targets: ["ScreenMuseApp"]),
         .executable(name: "screenmuse", targets: ["ScreenMuseCLI"]),
+        .executable(name: "ScreenMuseMCP", targets: ["ScreenMuseMCP"]),
         .library(name: "ScreenMuseCore", targets: ["ScreenMuseCore"])
     ],
     targets: [
@@ -29,6 +30,12 @@ let package = Package(
         .executableTarget(
             name: "ScreenMuseCLI",
             dependencies: ["ScreenMuseCore"],
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
+        .executableTarget(
+            name: "ScreenMuseMCP",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
