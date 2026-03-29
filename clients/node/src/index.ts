@@ -12,7 +12,7 @@ export interface RecordingStatus {
   last_video: string;
   sessions_active: number;
   sessions_total: number;
-  paused?: boolean;
+  // Note: paused is NOT returned by the server; removed to match actual response
 }
 
 /** Actual /stop response from enrichedStopResponse() */
@@ -40,13 +40,38 @@ export interface RecordingResult {
   gif_path?: string;
 }
 
+/** Matches GIFExporter.ExportResult.asDictionary() */
 export interface ExportResult {
   path: string;
   format: "gif" | "webp";
+  width: number;
+  height: number;
+  /** Number of frames in the exported animation */
+  frames: number;
+  fps: number;
+  /** Duration of the exported clip in seconds */
+  duration: number;
+  /** File size in bytes */
   size: number;
+  /** File size in megabytes (2 decimal places) */
   size_mb: number;
-  frames?: number;
-  fps?: number;
+}
+
+/** Matches VideoTrimmer.TrimResult.asDictionary() */
+export interface TrimResult {
+  path: string;
+  /** Duration of the source video before trimming (seconds, 1 decimal place) */
+  original_duration: number;
+  /** Duration of the trimmed output (seconds, 1 decimal place) */
+  trimmed_duration: number;
+  /** Start time used for the trim (seconds) */
+  start: number;
+  /** End time used for the trim (seconds) */
+  end: number;
+  /** File size in bytes */
+  size: number;
+  /** File size in megabytes (2 decimal places) */
+  size_mb: number;
 }
 
 export interface StartResult {
@@ -63,6 +88,14 @@ export interface HealthResult {
   version: string;
   listener: "ready" | "setup" | "waiting" | "failed" | "cancelled" | "nil" | "unknown";
   port: number;
+  /** Number of currently open connections to the server */
+  active_connections: number;
+  /** Permission status for macOS capabilities */
+  permissions: {
+    screen_recording: boolean;
+  };
+  /** Present when a non-fatal issue is detected (e.g. missing permissions, high connection count) */
+  warning?: string;
 }
 
 // ── Client ────────────────────────────────────────────────────────────────────
@@ -152,11 +185,13 @@ export class ScreenMuse {
     return this.request("POST", "/stop");
   }
 
-  async pause(): Promise<{ paused: boolean }> {
+  /** Returns { status: "paused", elapsed } — actual server response shape */
+  async pause(): Promise<{ status: "paused"; elapsed: number }> {
     return this.request("POST", "/pause");
   }
 
-  async resume(): Promise<{ resumed: boolean }> {
+  /** Returns { status: "recording", elapsed } — actual server response shape */
+  async resume(): Promise<{ status: "recording"; elapsed: number }> {
     return this.request("POST", "/resume");
   }
 
@@ -176,9 +211,10 @@ export class ScreenMuse {
     await this.request("POST", "/highlight");
   }
 
-  async screenshot(outputPath?: string): Promise<{ path: string }> {
+  async screenshot(outputPath?: string): Promise<{ path: string; width: number; height: number; size: number }> {
     const body: Record<string, unknown> = {};
-    if (outputPath) body.output_path = outputPath;
+    // Server reads body["path"] — not "output_path"
+    if (outputPath) body.path = outputPath;
     return this.request("POST", "/screenshot", body);
   }
 
@@ -248,7 +284,7 @@ function loadApiKey(): string | undefined {
   if (process.env.SCREENMUSE_API_KEY) return process.env.SCREENMUSE_API_KEY;
   if (process.env.SCREENMUSE_NO_AUTH === "1") return undefined;
 
-  // 2. ~/.screenmuse/api_key
+  // 2. ~/.screenmuse/api_key file
   const keyFile = path.join(os.homedir(), ".screenmuse", "api_key");
   try {
     if (fs.existsSync(keyFile)) {
