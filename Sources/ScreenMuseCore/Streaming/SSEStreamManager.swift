@@ -2,7 +2,7 @@ import CoreImage
 import AppKit
 import Foundation
 import Network
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 /// Manages Server-Sent Events (SSE) connections for real-time frame streaming.
 ///

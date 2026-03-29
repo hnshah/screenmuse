@@ -136,7 +136,7 @@ public class ScreenMuseServer {
     }
 
     /// Maximum HTTP body size: 4 MB.  Requests larger than this are rejected.
-    nonisolated(unsafe) private static let maxBodySize = 4_194_304
+    private static let maxBodySize = 4_194_304
 
     private func receiveRequest(_ connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { @Sendable [weak self] data, _, _, error in
@@ -420,7 +420,7 @@ public class ScreenMuseServer {
     /// POST the recording-complete payload to a webhook URL.
     /// Retries up to 3 times with exponential backoff (0s, 2s, 8s).
     /// Does not block the response to the caller.
-    nonisolated(unsafe) static let webhookBackoffSeconds: [Double] = [0, 2, 8]
+    static let webhookBackoffSeconds: [Double] = [0, 2, 8]
 
     func fireWebhook(_ webhookURL: URL?, videoURL: URL, sessionID: String?, elapsed: TimeInterval) {
         guard let url = webhookURL else { return }

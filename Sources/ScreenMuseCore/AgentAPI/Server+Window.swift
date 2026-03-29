@@ -1,6 +1,6 @@
 import Foundation
 import Network
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 // MARK: - Window Handlers (/windows, /window/focus, /window/position, /window/hide-others)
 

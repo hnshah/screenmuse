@@ -1,5 +1,5 @@
-import AVFoundation
-import ScreenCaptureKit
+@preconcurrency import AVFoundation
+@preconcurrency import ScreenCaptureKit
 
 // RecordingManager bridges two concurrency domains:
 //   1. @MainActor for Published state (isRecording, duration)

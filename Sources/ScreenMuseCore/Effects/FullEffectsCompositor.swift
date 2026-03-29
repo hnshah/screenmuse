@@ -1,4 +1,4 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import CoreImage
 import Foundation
 
@@ -126,11 +126,11 @@ public final class FullEffectsCompositor {
 
 /// Custom compositor for all effects
 final class FullEffectsVideoCompositor: NSObject, AVVideoCompositing, @unchecked Sendable {
-    var sourcePixelBufferAttributes: [String : Any]? = [
+    var sourcePixelBufferAttributes: [String : any Sendable]? = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     
-    var requiredPixelBufferAttributesForRenderContext: [String : Any] = [
+    var requiredPixelBufferAttributesForRenderContext: [String : any Sendable] = [
         kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
     ]
     

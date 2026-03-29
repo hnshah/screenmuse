@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import Network
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 // MARK: - Recording Handlers (/start, /stop, /pause, /resume, /chapter, /highlight, /note, /screenshot)
 

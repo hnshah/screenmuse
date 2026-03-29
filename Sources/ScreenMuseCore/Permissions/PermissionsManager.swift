@@ -1,5 +1,5 @@
 import AVFoundation
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 @MainActor
 public final class PermissionsManager: ObservableObject {

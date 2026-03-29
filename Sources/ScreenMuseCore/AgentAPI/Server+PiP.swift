@@ -1,6 +1,6 @@
 import Foundation
 import Network
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 // MARK: - PiP Handlers (/start/pip, PiP stop flow)
 
