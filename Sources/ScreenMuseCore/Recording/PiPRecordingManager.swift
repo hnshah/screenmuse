@@ -1,7 +1,7 @@
-import AVFoundation
+@preconcurrency import AVFoundation
 import CoreImage
 import Foundation
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 
 /// Records two windows simultaneously and composites them into a single video.
 ///

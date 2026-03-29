@@ -23,7 +23,7 @@ public struct CursorEvent: Sendable {
 public final class CursorTracker: ObservableObject {
     @Published public private(set) var events: [CursorEvent] = []
 
-    private var monitors: [Any] = []
+    nonisolated(unsafe) private var monitors: [Any] = []
     private var isTracking = false
 
     public init() {}
