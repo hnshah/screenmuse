@@ -433,20 +433,39 @@ No external dependencies required.
 
 ## Installation
 
-### Option 1: Run from Source
+### Option 1: Homebrew (coming soon)
+```bash
+brew install hnshah/screenmuse/screenmuse
+```
+
+### Option 2: Download from GitHub Releases (coming soon)
+
+Download the latest universal binary (arm64 + x86_64) from
+[GitHub Releases](https://github.com/hnshah/screenmuse/releases):
+
+```bash
+# Download and unzip
+curl -LO https://github.com/hnshah/screenmuse/releases/latest/download/screenmuse-<version>.zip
+unzip screenmuse-<version>.zip -d /usr/local/bin/
+
+# Verify
+screenmuse --help
+```
+
+### Option 3: Build from Source
 ```bash
 git clone https://github.com/hnshah/screenmuse
 cd screenmuse
 ./scripts/dev-run.sh
 ```
 
-### Option 2: Build CLI
+### Option 4: Build CLI
 ```bash
 swift build -c release
 .build/release/screenmuse --help
 ```
 
-### Option 3: Xcode
+### Option 5: Xcode
 ```bash
 open Package.swift
 # Build and run ScreenMuseApp target
