@@ -112,7 +112,7 @@ struct MCPRequest: Decodable, Sendable {
 
 // MARK: - Tool Definitions
 
-struct ToolDef: Sendable {
+struct ToolDef: @unchecked Sendable {
     let name: String
     let description: String
     /// JSON-compatible dict for the input schema
