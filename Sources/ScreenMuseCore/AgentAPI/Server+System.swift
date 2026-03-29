@@ -57,7 +57,7 @@ extension ScreenMuseServer {
             "ok": true,
             "version": version,
             "listener": listenerState,
-            "port": 7823,
+            "port": Int(port),
             "permissions": [
                 "screen_recording": hasScreenRecording
             ] as [String: Any]
