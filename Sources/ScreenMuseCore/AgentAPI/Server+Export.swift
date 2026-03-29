@@ -14,7 +14,8 @@ extension ScreenMuseServer {
                                handler: { b, c, r in await self.handleExport(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /export request", category: .server)
 
-        let formatStr = body["format"] as? String ?? "gif"
+        let req = try? JSONDecoder().decode(ExportRequest.self, from: JSONSerialization.data(withJSONObject: body))
+        let formatStr = req?.format ?? body["format"] as? String ?? "gif"
         guard let format = GIFExporter.Config.Format(rawValue: formatStr.lowercased()) else {
             sendResponse(connection: connection, status: 400, body: [
                 "error": "Unsupported format '\(formatStr)'",
@@ -24,7 +25,7 @@ extension ScreenMuseServer {
             return
         }
 
-        let sourceStr = body["source"] as? String ?? "last"
+        let sourceStr = req?.source ?? body["source"] as? String ?? "last"
         let sourceURL: URL?
         if sourceStr == "last" {
             sourceURL = currentVideoURL
@@ -43,18 +44,20 @@ extension ScreenMuseServer {
 
         var config = GIFExporter.Config()
         config.format = format
-        if let fps = body["fps"] as? Double { config.fps = fps }
+        if let fps = req?.fps { config.fps = Double(fps) }
+        else if let fps = body["fps"] as? Double { config.fps = fps }
         else if let fps = body["fps"] as? Int { config.fps = Double(fps) }
-        if let scale = body["scale"] as? Int { config.scale = scale }
+        if let scale = req?.scale { config.scale = scale }
+        else if let scale = body["scale"] as? Int { config.scale = scale }
         else if let scale = body["scale"] as? Double { config.scale = Int(scale) }
-        if let q = body["quality"] as? String,
+        if let q = req?.quality ?? body["quality"] as? String,
            let quality = GIFExporter.Config.Quality(rawValue: q.lowercased()) {
             config.quality = quality
         }
-        if let start = body["start"] as? Double,
-           let end = body["end"] as? Double {
+        if let start = req?.startTime ?? body["start"] as? Double,
+           let end = req?.endTime ?? body["end"] as? Double {
             config.timeRange = start...end
-        } else if let start = body["start"] as? Double {
+        } else if let start = req?.startTime ?? body["start"] as? Double {
             config.timeRange = start...Double.infinity
         }
 
@@ -63,7 +66,7 @@ extension ScreenMuseServer {
         try? FileManager.default.createDirectory(at: exportsDir, withIntermediateDirectories: true)
 
         let outputURL: URL
-        if let customOutput = body["output"] as? String {
+        if let customOutput = req?.outputPath ?? body["output"] as? String {
             outputURL = URL(fileURLWithPath: customOutput)
         } else {
             outputURL = GIFExporter.defaultOutputURL(for: resolvedSource, format: format, exportsDir: exportsDir)
@@ -81,7 +84,18 @@ extension ScreenMuseServer {
                     smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
                 }
             )
-            sendResponse(connection: connection, status: 200, body: result.asDictionary())
+            let exportResp = ExportResponse(
+                path: result.outputURL.path,
+                format: result.format.rawValue,
+                width: result.width,
+                height: result.height,
+                frames: result.frameCount,
+                fps: result.fps,
+                duration: result.duration,
+                size: result.fileSize,
+                sizeMb: (result.sizeMB * 100).rounded() / 100
+            )
+            sendResponse(connection: connection, status: 200, body: exportResp)
         } catch let err as GIFExporter.ExportError {
             smLog.error("[\(reqID)] /export failed: \(err.localizedDescription)", category: .server)
             sendResponse(connection: connection, status: 500, body: [

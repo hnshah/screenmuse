@@ -17,20 +17,24 @@ extension ScreenMuseServer {
             ])
             return
         }
-        let name = body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
-        let windowTitle = body["window_title"] as? String
-        let windowPid = body["window_pid"] as? Int
-        let quality = body["quality"] as? String
-        let audioSourceStr = body["audio_source"] as? String
-        let regionDict = body["region"] as? [String: Any]
-        let regionRect: CGRect? = regionDict.flatMap { d in
+        let req = try? JSONDecoder().decode(StartRequest.self, from: JSONSerialization.data(withJSONObject: body))
+        let name = req?.name ?? body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
+        let windowTitle = req?.windowTitle ?? body["window_title"] as? String
+        let windowPid = req?.windowPid ?? body["window_pid"] as? Int
+        let quality = req?.quality ?? body["quality"] as? String
+        let audioSourceStr = req?.audioSource ?? body["audio_source"] as? String
+        let regionRect: CGRect? = {
+            if let r = req?.region, r.width > 0, r.height > 0 {
+                return CGRect(x: r.x ?? 0, y: r.y ?? 0, width: r.width, height: r.height)
+            }
+            guard let d = body["region"] as? [String: Any] else { return nil }
             guard let w = (d["width"] as? Double) ?? (d["width"] as? Int).map(Double.init),
                   let h = (d["height"] as? Double) ?? (d["height"] as? Int).map(Double.init),
                   w > 0, h > 0 else { return nil }
             let x = (d["x"] as? Double) ?? (d["x"] as? Int).map(Double.init) ?? 0
             let y = (d["y"] as? Double) ?? (d["y"] as? Int).map(Double.init) ?? 0
             return CGRect(x: x, y: y, width: w, height: h)
-        }
+        }()
         // Validate region against display bounds before attempting capture
         if let rect = regionRect {
             let unionBounds = NSScreen.screens.reduce(CGRect.null) { $0.union($1.frame) }
@@ -48,7 +52,7 @@ extension ScreenMuseServer {
             }
         }
 
-        let webhookURL: URL? = (body["webhook"] as? String).flatMap { URL(string: $0) }
+        let webhookURL: URL? = (req?.webhook ?? body["webhook"] as? String).flatMap { URL(string: $0) }
         if let wh = webhookURL { self.pendingWebhookURL = wh }
         smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") region=\(regionRect.map { "\(Int($0.width))x\(Int($0.height))" } ?? "full")", category: .server)
         do {
@@ -105,14 +109,14 @@ extension ScreenMuseServer {
             currentVideoURL = nil
             sessionRegistry.create(id: sessionID!, name: name)
             sessionRegistry.defaultSessionID = sessionID
-            var resp: [String: Any] = [
-                "session_id": sessionID!,
-                "status": "recording",
-                "name": name,
-                "quality": quality ?? "medium"
-            ]
-            if let wt = windowTitle { resp["window_title"] = wt }
-            if let wp = windowPid { resp["window_pid"] = wp }
+            let resp = StartResponse(
+                sessionId: sessionID!,
+                status: "recording",
+                name: name,
+                quality: quality ?? "medium",
+                windowTitle: windowTitle,
+                windowPid: windowPid
+            )
             smLog.info("[\(reqID)] ✅ Recording started — session=\(sessionID!)", category: .server)
             var usageDetails: [String: String] = ["name": name, "quality": quality ?? "medium", "session": sessionID!]
             if let wt = windowTitle { usageDetails["window"] = wt }
@@ -378,8 +382,9 @@ extension ScreenMuseServer {
     // MARK: POST /record — convenience: start + wait + stop in one call
 
     func handleRecord(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        let req = try? JSONDecoder().decode(RecordRequest.self, from: JSONSerialization.data(withJSONObject: body))
         let rawDuration = body["duration_seconds"] ?? body["duration"]
-        let parsedDuration = (rawDuration as? Double) ?? (rawDuration as? Int).map(Double.init)
+        let parsedDuration = req?.durationSeconds ?? req?.duration ?? (rawDuration as? Double) ?? (rawDuration as? Int).map(Double.init)
         if let error = validateRecordDuration(parsedDuration) {
             sendResponse(connection: connection, status: 400, body: [
                 "error": error,
@@ -399,10 +404,10 @@ extension ScreenMuseServer {
         }
 
         // Start recording using the same logic as /start
-        let name = body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
-        let windowTitle = body["window_title"] as? String
-        let windowPid = body["window_pid"] as? Int
-        let quality = body["quality"] as? String
+        let name = req?.name ?? body["name"] as? String ?? "recording-\(Date().timeIntervalSince1970)"
+        let windowTitle = req?.windowTitle ?? body["window_title"] as? String
+        let windowPid = req?.windowPid ?? body["window_pid"] as? Int
+        let quality = req?.quality ?? body["quality"] as? String
         let webhookURL: URL? = (body["webhook"] as? String).flatMap { URL(string: $0) }
         if let wh = webhookURL { self.pendingWebhookURL = wh }
 
