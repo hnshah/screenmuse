@@ -294,7 +294,7 @@ const TOOLS = [
   },
   {
     name: 'screenmuse_script',
-    description: 'Run a sequence of recording commands (start, stop, chapter, sleep, etc.) as a batch script.',
+    description: 'Run a sequence of screen recording automation commands (start, stop, pause, resume, chapter, note, highlight, sleep) as a batch. No shell or AppleScript execution — actions are strictly allowlisted.',
     inputSchema: {
       type: 'object',
       required: ['commands'],
@@ -309,7 +309,7 @@ const TOOLS = [
   },
   {
     name: 'screenmuse_script_batch',
-    description: 'Run multiple named scripts in sequence. Each script contains a commands array. Stops on first failure unless continue_on_error is true.',
+    description: 'Run multiple named recording automation scripts in sequence. Each script contains a commands array (same allowlisted actions as screenmuse_script). Stops on first failure unless continue_on_error is true.',
     inputSchema: {
       type: 'object',
       required: ['scripts'],
