@@ -19,6 +19,29 @@ ScreenMuse is the first screen recorder purpose-built for AI agents. When your A
 
 ---
 
+## Demo
+
+<!-- Once generated, replace this section with: -->
+<!-- ![ScreenMuse Demo](docs/demo.gif) -->
+
+```bash
+$ curl -X POST localhost:7823/start -d '{"name":"demo"}'
+{"session_id":"...","status":"recording"}
+
+$ curl -X POST localhost:7823/chapter -d '{"name":"Step 1"}'
+{"status":"ok"}
+
+$ curl -X POST localhost:7823/stop
+{"path":"/Users/.../demo.mp4","duration":8.2}
+
+$ curl -X POST localhost:7823/export -d '{"format":"gif"}'
+{"path":"/Users/.../demo.gif","frames":82}
+```
+
+> **Want to generate the real GIF?** Run `vhs docs/demo.tape` with the server running on macOS. See [docs/CONTRIBUTING-DEMO.md](docs/CONTRIBUTING-DEMO.md) for full instructions.
+
+---
+
 ## Why ScreenMuse?
 
 **The Problem:**
