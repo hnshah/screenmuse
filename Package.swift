@@ -18,14 +18,16 @@ let package = Package(
             name: "ScreenMuseApp",
             dependencies: ["ScreenMuseCore"],
             swiftSettings: [
-                .swiftLanguageMode(.v6)
+                // Swift 5 concurrency mode: SCShareableContent Sendable + MainActor issues
+                // need a dedicated refactor pass — tracked post-2.0.
+                .swiftLanguageMode(.v5)
             ]
         ),
         .target(
             name: "ScreenMuseCore",
             swiftSettings: [
-                // Swift 5 concurrency mode: strict concurrency requires larger
-                // refactoring of Recording/Export classes — tracked for a future release.
+                // Swift 5 concurrency mode: Recording/Export strict concurrency
+                // needs refactoring — tracked post-2.0.
                 .swiftLanguageMode(.v5)
             ]
         ),
@@ -33,12 +35,13 @@ let package = Package(
             name: "ScreenMuseCLI",
             dependencies: ["ScreenMuseCore"],
             swiftSettings: [
-                .swiftLanguageMode(.v6)
+                .swiftLanguageMode(.v5)
             ]
         ),
         .executableTarget(
             name: "ScreenMuseMCP",
             swiftSettings: [
+                // New target — Swift 6 strict mode, kept as-is.
                 .swiftLanguageMode(.v6)
             ]
         ),
