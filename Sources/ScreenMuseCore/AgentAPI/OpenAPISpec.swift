@@ -227,7 +227,70 @@ enum OpenAPISpec {
         ] } },
         "/report":  { "get": { "summary": "Human-readable session report with usage timeline and warnings" } },
         "/version": { "get": { "summary": "Server version, build info, and full endpoint list" } },
-        "/openapi": { "get": { "summary": "This OpenAPI 3.0 specification" } }
+        "/openapi": { "get": { "summary": "This OpenAPI 3.0 specification" } },
+        "/health":  { "get": { "summary": "Server liveness probe. No auth required. Returns listener state and permissions.", "security": [] } },
+        "/debug":   { "get": { "summary": "Internal debug snapshot — request count, session state, job queue, log buffer size" } },
+        "/health":  { "get": { "summary": "Server health check — listener state, version, permissions. No auth required.", "security": [] } },
+        "/record":  {
+          "post": {
+            "summary": "Start recording and stop after a fixed duration",
+            "description": "Convenience endpoint: starts recording, waits for duration, stops, returns result.",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "properties": {
+                "duration": { "type": "number", "description": "Recording duration in seconds (required)" },
+                "name": { "type": "string" },
+                "quality": { "type": "string", "enum": ["low", "medium", "high", "max"] }
+              },
+              "required": ["duration"]
+            } } } }
+          }
+        },
+        "/frames": {
+          "post": {
+            "summary": "Extract multiple frames from a video at regular intervals",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "properties": {
+                "source": { "type": "string", "description": "Video path or 'last'" },
+                "count":  { "type": "integer", "default": 10 },
+                "format": { "type": "string", "enum": ["jpeg", "png"], "default": "jpeg" },
+                "scale":  { "type": "integer", "default": 1280 }
+              }
+            } } } }
+          }
+        },
+        "/validate": {
+          "post": {
+            "summary": "Validate a video file — check for real content vs black/empty recording",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "properties": {
+                "source": { "type": "string", "description": "Video path or 'last'" }
+              }
+            } } } }
+          }
+        },
+        "/script/batch": {
+          "post": {
+            "summary": "Run multiple named scripts in sequence",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "required": ["scripts"],
+              "properties": {
+                "scripts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" },
+                      "commands": { "type": "array", "items": { "type": "object" } }
+                    }
+                  }
+                },
+                "continue_on_error": { "type": "boolean", "default": false }
+              }
+            } } } }
+          }
+        },
+        "/sessions": { "get": { "summary": "List all named recording sessions with metadata" } },
+        "/jobs": { "get": { "summary": "List all background async jobs and their status" } }
       }
     }
     """
