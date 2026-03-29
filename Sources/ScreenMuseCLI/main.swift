@@ -298,11 +298,34 @@ func cmdHealth(args: Args, client: ScreenMuseClient) async throws {
     let resp = try await client.get("/health")
     let ok = resp["ok"] as? Bool ?? false
     let version = resp["version"] as? String ?? "?"
+
+    if args.bool("json") {
+        printJSON(resp)
+        return
+    }
+
     if ok {
         print("✓ ScreenMuse \(version) — healthy")
     } else {
         print("✗ Unhealthy response")
         Foundation.exit(1)
+    }
+
+    // Surface permission status so CLI users get a clear diagnostic
+    if let permissions = resp["permissions"] as? [String: Any] {
+        let hasScreenRecording = permissions["screen_recording"] as? Bool ?? true
+        if hasScreenRecording {
+            print("  Screen Recording: ✓ granted")
+        } else {
+            print("  Screen Recording: ✗ NOT granted — POST /start will fail")
+            print("  → Open System Settings → Privacy & Security → Screen Recording")
+            print("  → Enable ScreenMuse, then relaunch the app")
+        }
+    }
+
+    // Surface any server-level warning (e.g. high connection count)
+    if let warning = resp["warning"] as? String {
+        print("  ⚠️  \(warning)")
     }
 }
 

@@ -3,6 +3,11 @@ import SwiftUI
 struct PermissionView: View {
     @ObservedObject var permissions: PermissionManager
 
+    /// Poll every 2 s while this view is visible so the app auto-advances the
+    /// moment the user grants Screen Recording in System Settings — even if they
+    /// never switch back to ScreenMuse manually.
+    private let permissionPoller = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -72,6 +77,11 @@ struct PermissionView: View {
         }
         .frame(width: 480, height: 500)
         .onAppear { permissions.checkAll() }
+        // Auto-advance: re-check every 2 s so the app moves to the main UI the
+        // moment the user grants Screen Recording — no manual "Check Again" click needed.
+        .onReceive(permissionPoller) { _ in
+            permissions.checkAll()
+        }
     }
 }
 
