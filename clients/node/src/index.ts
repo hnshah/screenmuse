@@ -203,7 +203,7 @@ export class ScreenMuse {
     source?: string;
     output?: string;
     fastCopy?: boolean;
-  }): Promise<{ path: string; duration: number }> {
+  }): Promise<TrimResult> {
     const body: Record<string, unknown> = {
       start: options.start,
       end: options.end,
