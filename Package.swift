@@ -24,7 +24,9 @@ let package = Package(
         .target(
             name: "ScreenMuseCore",
             swiftSettings: [
-                .swiftLanguageMode(.v6)
+                // Swift 5 concurrency mode: strict concurrency requires larger
+                // refactoring of Recording/Export classes — tracked for a future release.
+                .swiftLanguageMode(.v5)
             ]
         ),
         .executableTarget(
@@ -44,7 +46,7 @@ let package = Package(
             name: "ScreenMuseCoreTests",
             dependencies: ["ScreenMuseCore"],
             swiftSettings: [
-                .swiftLanguageMode(.v6)
+                .swiftLanguageMode(.v5)
             ]
         )
     ]
