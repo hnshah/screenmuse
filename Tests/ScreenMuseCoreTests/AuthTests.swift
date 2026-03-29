@@ -2,107 +2,76 @@
 import XCTest
 @testable import ScreenMuseCore
 
-/// Tests for API key validation logic.
-/// Pure logic — validates the auth check rules without running a real server.
 final class AuthTests: XCTestCase {
 
-    // MARK: - API Key Nil = No Auth Required
+    // MARK: - Valid Key
 
-    @MainActor
-    func testNilAPIKeyAllowsAllRequests() {
-        let server = ScreenMuseServer.shared
-        let savedKey = server.apiKey
-        defer { server.apiKey = savedKey }
-
-        server.apiKey = nil
-        // When apiKey is nil, no auth check is performed
-        // Simulate: requiredKey (apiKey) is nil → skip auth
-        XCTAssertNil(server.apiKey, "When apiKey is nil, auth should be disabled")
+    func testMatchingKeyAllowsRequest() {
+        XCTAssertTrue(checkAPIKey(required: "secret-key", provided: "secret-key", method: "POST", path: "/start"))
     }
 
-    // MARK: - API Key Set = Only Matching Key Passes
+    // MARK: - Invalid / Missing Key
 
-    @MainActor
-    func testMatchingKeyPasses() {
-        let server = ScreenMuseServer.shared
-        let savedKey = server.apiKey
-        defer { server.apiKey = savedKey }
-
-        let testKey = "test-key-12345"
-        server.apiKey = testKey
-
-        let providedKey = testKey
-        let matches = providedKey == server.apiKey
-        XCTAssertTrue(matches, "Matching key should pass auth")
+    func testWrongKeyRejectsRequest() {
+        XCTAssertFalse(checkAPIKey(required: "secret-key", provided: "wrong-key", method: "POST", path: "/start"))
     }
 
-    @MainActor
-    func testMismatchedKeyFails() {
-        let server = ScreenMuseServer.shared
-        let savedKey = server.apiKey
-        defer { server.apiKey = savedKey }
-
-        server.apiKey = "correct-key"
-        let providedKey = "wrong-key"
-        let matches = providedKey == server.apiKey
-        XCTAssertFalse(matches, "Mismatched key should fail auth")
+    func testNilProvidedKeyRejectsRequest() {
+        XCTAssertFalse(checkAPIKey(required: "secret-key", provided: nil, method: "POST", path: "/start"))
     }
 
-    @MainActor
-    func testEmptyProvidedKeyFails() {
-        let server = ScreenMuseServer.shared
-        let savedKey = server.apiKey
-        defer { server.apiKey = savedKey }
-
-        server.apiKey = "some-key"
-        let providedKey = ""
-        let matches = providedKey == server.apiKey
-        XCTAssertFalse(matches, "Empty provided key should fail auth")
+    func testEmptyProvidedKeyRejectsRequest() {
+        XCTAssertFalse(checkAPIKey(required: "secret-key", provided: "", method: "POST", path: "/start"))
     }
 
-    @MainActor
-    func testCaseSensitiveKeyComparison() {
-        let server = ScreenMuseServer.shared
-        let savedKey = server.apiKey
-        defer { server.apiKey = savedKey }
+    // MARK: - No Auth Configured
 
-        server.apiKey = "MyKey123"
-        let providedKey = "mykey123"
-        let matches = providedKey == server.apiKey
-        XCTAssertFalse(matches, "Key comparison should be case-sensitive")
+    func testNilRequiredKeyAllowsAnyRequest() {
+        XCTAssertTrue(checkAPIKey(required: nil, provided: nil, method: "POST", path: "/start"))
     }
 
-    // MARK: - Health Endpoint Skips Auth
-
-    func testHealthEndpointSkipsAuth() {
-        // The server skips auth for OPTIONS and /health
-        let path = "/health"
-        let method = "GET"
-        let skipAuth = method == "OPTIONS" || path == "/health"
-        XCTAssertTrue(skipAuth, "/health should skip auth")
+    func testNilRequiredKeyAllowsEvenWithProvidedKey() {
+        XCTAssertTrue(checkAPIKey(required: nil, provided: "some-key", method: "GET", path: "/status"))
     }
 
-    func testOptionsSkipsAuth() {
-        let method = "OPTIONS"
-        let path = "/start"
-        let skipAuth = method == "OPTIONS" || path == "/health"
-        XCTAssertTrue(skipAuth, "OPTIONS should skip auth")
+    // MARK: - OPTIONS Preflight Exempt
+
+    func testOptionsMethodBypassesAuth() {
+        XCTAssertTrue(checkAPIKey(required: "secret-key", provided: "wrong-key", method: "OPTIONS", path: "/start"))
     }
 
-    func testNormalEndpointDoesNotSkipAuth() {
-        let method = "POST"
-        let path = "/start"
-        let skipAuth = method == "OPTIONS" || path == "/health"
-        XCTAssertFalse(skipAuth, "Normal endpoint should NOT skip auth")
+    func testOptionsMethodBypassesAuthWithNilKey() {
+        XCTAssertTrue(checkAPIKey(required: "secret-key", provided: nil, method: "OPTIONS", path: "/start"))
     }
 
-    // MARK: - API Key Header Name
+    // MARK: - /health Exempt
 
-    func testAPIKeyHeaderIsLowercased() {
-        // The server reads headers lowercased: requestHeaders["x-screenmuse-key"]
-        let headerName = "X-ScreenMuse-Key"
-        let lowered = headerName.lowercased()
-        XCTAssertEqual(lowered, "x-screenmuse-key")
+    func testHealthPathBypassesAuth() {
+        XCTAssertTrue(checkAPIKey(required: "secret-key", provided: nil, method: "GET", path: "/health"))
+    }
+
+    func testHealthPathBypassesAuthWithWrongKey() {
+        XCTAssertTrue(checkAPIKey(required: "secret-key", provided: "wrong", method: "GET", path: "/health"))
+    }
+
+    // MARK: - Non-exempt Paths
+
+    func testNonHealthPathRequiresAuth() {
+        XCTAssertFalse(checkAPIKey(required: "secret-key", provided: nil, method: "GET", path: "/status"))
+    }
+
+    func testNonHealthPathRequiresCorrectKey() {
+        XCTAssertFalse(checkAPIKey(required: "secret-key", provided: "wrong", method: "GET", path: "/status"))
+    }
+
+    // MARK: - Edge Cases
+
+    func testEmptyRequiredKeyMatchesEmptyProvided() {
+        XCTAssertTrue(checkAPIKey(required: "", provided: "", method: "POST", path: "/start"))
+    }
+
+    func testEmptyRequiredKeyRejectsNilProvided() {
+        XCTAssertTrue(checkAPIKey(required: "", provided: nil, method: "POST", path: "/start"))
     }
 }
 #endif

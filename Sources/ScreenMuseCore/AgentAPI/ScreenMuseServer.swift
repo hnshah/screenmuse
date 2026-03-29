@@ -265,8 +265,8 @@ public class ScreenMuseServer {
         connection.start(queue: .main)
     }
 
-    /// Maximum HTTP body size: 4 MB.  Requests larger than this are rejected.
-    private static let maxBodySize = 4_194_304
+    /// Maximum HTTP body size: 10 MB.  Requests larger than this are rejected.
+    private static let maxBodySize = 10_485_760
 
     private func receiveRequest(_ connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { @Sendable [weak self] data, _, _, error in
@@ -292,7 +292,7 @@ public class ScreenMuseServer {
             // Haven't received full headers yet — keep reading
             if buffer.count > Self.maxBodySize {
                 smLog.warning("Request too large (\(buffer.count) bytes) — rejecting", category: .server)
-                sendResponse(connection: connection, status: 413, body: ["error": "Request entity too large", "max_bytes": Self.maxBodySize])
+                sendResponse(connection: connection, status: 413, body: ["error": "Request body too large", "code": "BODY_TOO_LARGE", "max_bytes": Self.maxBodySize])
                 return
             }
             receiveNextChunk(connection: connection, buffer: buffer)
@@ -318,7 +318,7 @@ public class ScreenMuseServer {
         if let cl = contentLength {
             if cl > Self.maxBodySize {
                 smLog.warning("Content-Length \(cl) exceeds max \(Self.maxBodySize) — rejecting", category: .server)
-                sendResponse(connection: connection, status: 413, body: ["error": "Request entity too large", "max_bytes": Self.maxBodySize])
+                sendResponse(connection: connection, status: 413, body: ["error": "Request body too large", "code": "BODY_TOO_LARGE", "max_bytes": Self.maxBodySize])
                 return
             }
             if bodyReceived >= cl {
@@ -351,7 +351,7 @@ public class ScreenMuseServer {
                 // Hard cap check
                 if accumulated.count > Self.maxBodySize {
                     smLog.warning("Accumulated \(accumulated.count) bytes exceeds max — rejecting", category: .server)
-                    self.sendResponse(connection: connection, status: 413, body: ["error": "Request entity too large", "max_bytes": Self.maxBodySize])
+                    self.sendResponse(connection: connection, status: 413, body: ["error": "Request body too large", "code": "BODY_TOO_LARGE", "max_bytes": Self.maxBodySize])
                     return
                 }
 

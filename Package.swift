@@ -28,7 +28,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "ScreenMuseCLI",
-            dependencies: [],
+            dependencies: ["ScreenMuseCore"],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

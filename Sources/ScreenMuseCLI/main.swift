@@ -27,6 +27,7 @@
 //   screenmuse job <id>
 
 import Foundation
+import ScreenMuseCore
 
 // MARK: - HTTP Client
 
@@ -560,6 +561,60 @@ func cmdJob(args: Args, client: ScreenMuseClient) async throws {
     }
 }
 
+func cmdConfig(args: Args) throws {
+    let sub = args.positional.first ?? "show"
+    switch sub {
+    case "show":
+        var config = ScreenMuseConfig.load()
+        // Overlay env vars for display
+        if let envKey = ProcessInfo.processInfo.environment["SCREENMUSE_API_KEY"] {
+            config.apiKey = envKey + " (env)"
+        }
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let data = try? encoder.encode(config),
+           let str = String(data: data, encoding: .utf8) {
+            print(str)
+        }
+    case "set":
+        guard args.positional.count >= 3 else {
+            throw CLIError.usage("Usage: screenmuse config set <key> <value>")
+        }
+        let key = args.positional[1]
+        let value = args.positional[2]
+        var config = ScreenMuseConfig.load()
+        switch key {
+        case "port":
+            guard let p = Int(value) else { throw CLIError.usage("port must be an integer") }
+            config.port = p
+        case "apiKey", "api_key", "api-key":
+            config.apiKey = value == "null" ? nil : value
+        case "defaultQuality", "default_quality":
+            config.defaultQuality = value
+        case "outputDirectory", "output_directory":
+            config.outputDirectory = value == "null" ? nil : value
+        case "logLevel", "log_level":
+            config.logLevel = value
+        case "webhookURL", "webhook_url":
+            config.webhookURL = value == "null" ? nil : value
+        default:
+            throw CLIError.usage("Unknown config key: \(key). Valid keys: port, api-key, defaultQuality, outputDirectory, logLevel, webhookURL")
+        }
+        try config.save()
+        print("Updated \(key)")
+    case "init":
+        if FileManager.default.fileExists(atPath: ScreenMuseConfig.configPath.path) {
+            print("Config already exists at \(ScreenMuseConfig.configPath.path)")
+        } else {
+            try ScreenMuseConfig().save()
+            print("Created \(ScreenMuseConfig.configPath.path)")
+        }
+    default:
+        throw CLIError.usage("Unknown config subcommand: \(sub). Use: show, set, init")
+    }
+}
+
 func printHelp() {
     print("""
     screenmuse — control ScreenMuse from the command line
@@ -591,6 +646,7 @@ func printHelp() {
       job         Get status of an async job
       health      Check if ScreenMuse is running
       version     Print ScreenMuse version
+      config      View or edit ~/.screenmuse.json configuration
 
     OPTIONS
       --port <n>       API port (default: 7823, or $SCREENMUSE_PORT)
@@ -617,6 +673,9 @@ func printHelp() {
       screenmuse recordings
       screenmuse jobs
       screenmuse job abc12345
+      screenmuse config show
+      screenmuse config set port 8080
+      screenmuse config init
     """)
 }
 
@@ -633,10 +692,11 @@ struct ScreenMuseCLI {
             return
         }
 
-        // Build client from global options
-        let portStr = rawArgs["port"] ?? ProcessInfo.processInfo.environment["SCREENMUSE_PORT"] ?? "7823"
+        // Load config for defaults (CLI flags > env var > config file > built-in default)
+        let fileConfig = ScreenMuseConfig.load()
+        let portStr = rawArgs["port"] ?? ProcessInfo.processInfo.environment["SCREENMUSE_PORT"] ?? String(fileConfig.port)
         let port = Int(portStr) ?? 7823
-        let apiKey = rawArgs["api-key"]
+        let apiKey = rawArgs["api-key"] ?? ProcessInfo.processInfo.environment["SCREENMUSE_API_KEY"] ?? fileConfig.apiKey
         let client = ScreenMuseClient(port: port, apiKey: apiKey)
 
         // Strip the command from positional so subcommands see clean args
@@ -667,6 +727,7 @@ struct ScreenMuseCLI {
             case "recordings":  try await cmdRecordings(args: subArgs, client: client)
             case "jobs":        try await cmdJobs(args: subArgs, client: client)
             case "job":         try await cmdJob(args: subArgs, client: client)
+            case "config":      try cmdConfig(args: subArgs)
             case "help", "--help", "-h":
                 printHelp()
             default:
