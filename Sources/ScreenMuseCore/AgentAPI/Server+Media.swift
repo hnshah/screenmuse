@@ -8,6 +8,26 @@ import Vision
 
 extension ScreenMuseServer {
 
+    /// Validates a user-supplied string label (name, text, window_title, etc.).
+    /// Rejects strings longer than 500 characters or containing null bytes / control characters
+    /// (except newline and tab which are reasonable in note text).
+    private func sanitizedString(_ value: String?, maxLength: Int = 500) -> (String?, String?) {
+        guard let str = value else { return (nil, nil) }
+        if str.count > maxLength {
+            return (nil, "String exceeds maximum length of \(maxLength) characters")
+        }
+        for scalar in str.unicodeScalars {
+            if scalar.value == 0 {
+                return (nil, "String contains null bytes")
+            }
+            // Reject control characters except \n (0x0A) and \t (0x09)
+            if scalar.value < 0x20 && scalar.value != 0x0A && scalar.value != 0x09 {
+                return (nil, "String contains disallowed control characters")
+            }
+        }
+        return (str, nil)
+    }
+
     func handleTimeline(body: [String: Any], connection: NWConnection, reqID: Int) {
         let sid = sessionID ?? "last"
         let sessionStart = startTime
@@ -231,6 +251,12 @@ extension ScreenMuseServer {
         }
     }
 
+    // SECURITY: This endpoint does NOT execute arbitrary AppleScript or shell commands.
+    // It is a recording automation script runner with a strict action allowlist:
+    //   start, stop, pause, resume, chapter, note, highlight, sleep
+    // The switch-case below is an intentional security boundary — unknown actions
+    // are rejected with an error. Do NOT add cases that execute user-supplied code,
+    // shell commands, or AppleScript via osascript/NSAppleScript.
     func handleScript(body: [String: Any], connection: NWConnection, reqID: Int) async {
         smLog.info("[\(reqID)] /script request", category: .server)
 
@@ -258,10 +284,15 @@ extension ScreenMuseServer {
             do {
                 switch action {
                 case "start":
-                    let name = cmd["name"] as? String ?? "script-recording"
+                    let (name, nameErr) = sanitizedString(cmd["name"] as? String ?? "script-recording")
+                    let (windowTitle, wtErr) = sanitizedString(cmd["window_title"] as? String)
+                    if let err = nameErr ?? wtErr {
+                        stepResult["ok"] = false; stepResult["error"] = err
+                        scriptResults.append(stepResult); break
+                    }
                     let quality = cmd["quality"] as? String
                     if let coord = coordinator {
-                        try await coord.startRecording(name: name, windowTitle: cmd["window_title"] as? String, windowPid: nil, quality: quality)
+                        try await coord.startRecording(name: name!, windowTitle: windowTitle, windowPid: nil, quality: quality)
                     } else {
                         try await recordingManager.startRecording(config: RecordingConfig(
                             captureSource: .fullScreen,
@@ -270,7 +301,7 @@ extension ScreenMuseServer {
                         ))
                     }
                     sessionID = UUID().uuidString
-                    sessionName = name
+                    sessionName = name!
                     startTime = Date()
                     isRecording = true
                     chapters = []
@@ -278,7 +309,7 @@ extension ScreenMuseServer {
                     sessionHighlights.removeAll()
                     highlightNextClick = false
                     currentVideoURL = nil
-                    sessionRegistry.create(id: sessionID!, name: name)
+                    sessionRegistry.create(id: sessionID!, name: name!)
                     sessionRegistry.defaultSessionID = sessionID
                     stepResult["ok"] = true
 
@@ -326,19 +357,27 @@ extension ScreenMuseServer {
                     stepResult["ok"] = true
 
                 case "chapter":
-                    let chapterName = cmd["name"] as? String ?? "Chapter \(chapters.count + 1)"
+                    let (chapterName, chErr) = sanitizedString(cmd["name"] as? String ?? "Chapter \(chapters.count + 1)")
+                    if let err = chErr {
+                        stepResult["ok"] = false; stepResult["error"] = err
+                        scriptResults.append(stepResult); break
+                    }
                     let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
-                    chapters.append((name: chapterName, time: elapsed))
-                    smLog.usage("CHAPTER \(chapterName)  t=\(String(format:"%.1f",elapsed))s")
-                    stepResult["name"] = chapterName
+                    chapters.append((name: chapterName!, time: elapsed))
+                    smLog.usage("CHAPTER \(chapterName!)  t=\(String(format:"%.1f",elapsed))s")
+                    stepResult["name"] = chapterName!
                     stepResult["timestamp"] = elapsed
                     stepResult["ok"] = true
 
                 case "note":
-                    let noteText = cmd["text"] as? String ?? ""
+                    let (noteText, noteErr) = sanitizedString(cmd["text"] as? String ?? "")
+                    if let err = noteErr {
+                        stepResult["ok"] = false; stepResult["error"] = err
+                        scriptResults.append(stepResult); break
+                    }
                     let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
-                    sessionNotes.append((text: noteText, time: elapsed))
-                    smLog.usage("📝 NOTE", details: ["text": noteText])
+                    sessionNotes.append((text: noteText!, time: elapsed))
+                    smLog.usage("📝 NOTE", details: ["text": noteText!])
                     stepResult["ok"] = true
 
                 case "highlight":
@@ -347,7 +386,7 @@ extension ScreenMuseServer {
 
                 default:
                     stepResult["ok"] = false
-                    stepResult["error"] = "Unknown action '\(action)'. Supported: start, stop, pause, resume, chapter, note, highlight, sleep"
+                    stepResult["error"] = "Unknown action '\(action)'. Allowed actions: start, stop, pause, resume, chapter, note, highlight, sleep. This endpoint does not execute arbitrary scripts."
                 }
             } catch {
                 stepResult["ok"] = false
@@ -369,6 +408,7 @@ extension ScreenMuseServer {
 
     // MARK: POST /script/batch — run multiple named scripts in sequence
 
+    // SECURITY: Same allowlist as handleScript() above — no arbitrary code execution.
     func handleScriptBatch(body: [String: Any], connection: NWConnection, reqID: Int) async {
         smLog.info("[\(reqID)] /script/batch request", category: .server)
 
@@ -417,10 +457,15 @@ extension ScreenMuseServer {
                 do {
                     switch action {
                     case "start":
-                        let name = cmd["name"] as? String ?? "script-recording"
+                        let (name, nameErr) = sanitizedString(cmd["name"] as? String ?? "script-recording")
+                        let (windowTitle, wtErr) = sanitizedString(cmd["window_title"] as? String)
+                        if let err = nameErr ?? wtErr {
+                            stepResult["ok"] = false; stepResult["error"] = err
+                            stepResults.append(stepResult); break
+                        }
                         let quality = cmd["quality"] as? String
                         if let coord = coordinator {
-                            try await coord.startRecording(name: name, windowTitle: cmd["window_title"] as? String, windowPid: nil, quality: quality)
+                            try await coord.startRecording(name: name!, windowTitle: windowTitle, windowPid: nil, quality: quality)
                         } else {
                             try await recordingManager.startRecording(config: RecordingConfig(
                                 captureSource: .fullScreen,
@@ -429,7 +474,7 @@ extension ScreenMuseServer {
                             ))
                         }
                         sessionID = UUID().uuidString
-                        sessionName = name
+                        sessionName = name!
                         startTime = Date()
                         isRecording = true
                         chapters = []
@@ -437,7 +482,7 @@ extension ScreenMuseServer {
                         sessionHighlights.removeAll()
                         highlightNextClick = false
                         currentVideoURL = nil
-                        sessionRegistry.create(id: sessionID!, name: name)
+                        sessionRegistry.create(id: sessionID!, name: name!)
                         sessionRegistry.defaultSessionID = sessionID
                         stepResult["ok"] = true
 
@@ -485,17 +530,25 @@ extension ScreenMuseServer {
                         stepResult["ok"] = true
 
                     case "chapter":
-                        let chapterName = cmd["name"] as? String ?? "Chapter \(chapters.count + 1)"
+                        let (chapterName, chErr) = sanitizedString(cmd["name"] as? String ?? "Chapter \(chapters.count + 1)")
+                        if let err = chErr {
+                            stepResult["ok"] = false; stepResult["error"] = err
+                            stepResults.append(stepResult); break
+                        }
                         let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
-                        chapters.append((name: chapterName, time: elapsed))
-                        stepResult["name"] = chapterName
+                        chapters.append((name: chapterName!, time: elapsed))
+                        stepResult["name"] = chapterName!
                         stepResult["timestamp"] = elapsed
                         stepResult["ok"] = true
 
                     case "note":
-                        let noteText = cmd["text"] as? String ?? ""
+                        let (noteText, noteErr) = sanitizedString(cmd["text"] as? String ?? "")
+                        if let err = noteErr {
+                            stepResult["ok"] = false; stepResult["error"] = err
+                            stepResults.append(stepResult); break
+                        }
                         let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
-                        sessionNotes.append((text: noteText, time: elapsed))
+                        sessionNotes.append((text: noteText!, time: elapsed))
                         stepResult["ok"] = true
 
                     case "highlight":
@@ -504,7 +557,7 @@ extension ScreenMuseServer {
 
                     default:
                         stepResult["ok"] = false
-                        stepResult["error"] = "Unknown action '\(action)'. Supported: start, stop, pause, resume, chapter, note, highlight, sleep"
+                        stepResult["error"] = "Unknown action '\(action)'. Allowed actions: start, stop, pause, resume, chapter, note, highlight, sleep. This endpoint does not execute arbitrary scripts."
                     }
                 } catch {
                     stepResult["ok"] = false
