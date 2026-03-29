@@ -34,20 +34,16 @@ extension ScreenMuseServer {
         // Validate region against display bounds before attempting capture
         if let rect = regionRect {
             let unionBounds = NSScreen.screens.reduce(CGRect.null) { $0.union($1.frame) }
-            guard rect.width > 0, rect.height > 0 else {
-                sendResponse(connection: connection, status: 400, body: [
-                    "error": "Invalid region: width and height must be greater than 0",
-                    "code": "INVALID_REGION"
-                ])
-                return
-            }
-            guard rect.origin.x >= unionBounds.minX, rect.origin.y >= unionBounds.minY,
-                  rect.maxX <= unionBounds.maxX, rect.maxY <= unionBounds.maxY else {
-                sendResponse(connection: connection, status: 400, body: [
-                    "error": "Region \(Int(rect.width))×\(Int(rect.height)) at (\(Int(rect.origin.x)),\(Int(rect.origin.y))) falls outside display bounds \(Int(unionBounds.width))×\(Int(unionBounds.height))",
-                    "code": "REGION_OUT_OF_BOUNDS",
-                    "display_bounds": ["x": unionBounds.origin.x, "y": unionBounds.origin.y, "width": unionBounds.width, "height": unionBounds.height]
-                ])
+            if let regionError = validateRegion(rect, against: unionBounds) {
+                let code = rect.width <= 0 || rect.height <= 0 ? "INVALID_REGION" : "REGION_OUT_OF_BOUNDS"
+                var errorBody: [String: Any] = [
+                    "error": regionError,
+                    "code": code
+                ]
+                if code == "REGION_OUT_OF_BOUNDS" {
+                    errorBody["display_bounds"] = ["x": unionBounds.origin.x, "y": unionBounds.origin.y, "width": unionBounds.width, "height": unionBounds.height]
+                }
+                sendResponse(connection: connection, status: 400, body: errorBody)
                 return
             }
         }
@@ -382,15 +378,16 @@ extension ScreenMuseServer {
     // MARK: POST /record — convenience: start + wait + stop in one call
 
     func handleRecord(body: [String: Any], connection: NWConnection, reqID: Int) async {
-        guard let rawDuration = body["duration_seconds"] ?? body["duration"],
-              let duration = (rawDuration as? Double) ?? (rawDuration as? Int).map(Double.init),
-              duration > 0, duration <= 3600 else {
+        let rawDuration = body["duration_seconds"] ?? body["duration"]
+        let parsedDuration = (rawDuration as? Double) ?? (rawDuration as? Int).map(Double.init)
+        if let error = validateRecordDuration(parsedDuration) {
             sendResponse(connection: connection, status: 400, body: [
-                "error": "duration_seconds is required and must be between 1 and 3600",
+                "error": error,
                 "code": "INVALID_DURATION"
             ])
             return
         }
+        let duration = parsedDuration!
 
         guard !isRecording else {
             sendResponse(connection: connection, status: 409, body: [

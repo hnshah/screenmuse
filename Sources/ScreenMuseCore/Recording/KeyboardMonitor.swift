@@ -1,5 +1,5 @@
 @preconcurrency import AppKit
-import ApplicationServices
+@preconcurrency import ApplicationServices
 import Combine
 import Carbon
 

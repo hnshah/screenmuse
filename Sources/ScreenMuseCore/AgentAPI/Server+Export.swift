@@ -2,7 +2,7 @@
 import AppKit
 import Foundation
 import Network
-import ScreenCaptureKit
+@preconcurrency import ScreenCaptureKit
 import Vision
 
 // MARK: - Export Handlers (/export, /trim, /speedramp, /concat, /frames, /frame, /thumbnail, /crop, /ocr)

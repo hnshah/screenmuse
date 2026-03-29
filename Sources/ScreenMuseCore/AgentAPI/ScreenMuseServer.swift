@@ -31,7 +31,7 @@ public class ScreenMuseServer {
     ///   3. Default: 7823
     public private(set) var port: UInt16 = 7823
 
-    private var listener: NWListener?
+    var listener: NWListener?
     // recordingManager used when coordinator is not set (e.g. headless/test mode)
     let recordingManager = RecordingManager()
     let pipManager = PiPRecordingManager()
@@ -405,17 +405,14 @@ public class ScreenMuseServer {
         }
 
         // API key auth — skip OPTIONS (preflight) and /health (liveness probes)
-        if let requiredKey = apiKey, method != "OPTIONS", path != "/health" {
-            let providedKey = requestHeaders["x-screenmuse-key"] ?? ""
-            guard providedKey == requiredKey else {
-                smLog.warning("[\(reqID)] 401 — invalid or missing X-ScreenMuse-Key", category: .server)
-                sendResponse(connection: connection, status: 401, body: [
-                    "error": "Unauthorized",
-                    "code": "INVALID_API_KEY",
-                    "suggestion": "Include your API key in the X-ScreenMuse-Key header"
-                ])
-                return
-            }
+        if !checkAPIKey(required: apiKey, provided: requestHeaders["x-screenmuse-key"], method: method, path: path) {
+            smLog.warning("[\(reqID)] 401 — invalid or missing X-ScreenMuse-Key", category: .server)
+            sendResponse(connection: connection, status: 401, body: [
+                "error": "Unauthorized",
+                "code": "INVALID_API_KEY",
+                "suggestion": "Include your API key in the X-ScreenMuse-Key header"
+            ])
+            return
         }
 
         // Parse JSON body
