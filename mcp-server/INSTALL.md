@@ -1,6 +1,37 @@
 # Installing screenmuse-mcp
 
-## Option 1: npx (no install needed)
+## Option 1: Native Swift binary (recommended)
+
+No Node.js required — single binary, zero external dependencies.
+
+**Build:**
+```bash
+cd /path/to/screenmuse
+swift build -c release
+```
+
+The binary is at `.build/release/ScreenMuseMCP`.
+
+**Claude Desktop config** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "screenmuse": {
+      "command": "/path/to/screenmuse/.build/release/ScreenMuseMCP",
+      "env": {
+        "SCREENMUSE_API_KEY": "your-key-here"
+      }
+    }
+  }
+}
+```
+
+**Cursor config** (settings.json mcpServers):
+```json
+"screenmuse": { "command": "/path/to/screenmuse/.build/release/ScreenMuseMCP" }
+```
+
+## Option 2: npx (no install needed)
 
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
