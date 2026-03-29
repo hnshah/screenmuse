@@ -58,6 +58,7 @@ extension ScreenMuseServer {
             "version": version,
             "listener": listenerState,
             "port": Int(port),
+            "active_connections": activeConnectionCount,
             "permissions": [
                 "screen_recording": hasScreenRecording
             ] as [String: Any]
@@ -65,6 +66,10 @@ extension ScreenMuseServer {
         // If permissions are missing, surface a clear hint
         if !hasScreenRecording {
             response["warning"] = "Screen Recording permission not granted — POST /start will fail. Grant in System Settings → Privacy & Security → Screen Recording, then relaunch."
+        }
+        // If too many connections are open, flag it as a potential issue
+        if activeConnectionCount > 50 {
+            response["warning"] = "High active connection count (\(activeConnectionCount)) — possible connection leak. Restart ScreenMuse if the API is unresponsive."
         }
         sendResponse(connection: connection, status: 200, body: response)
     }

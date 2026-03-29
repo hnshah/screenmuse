@@ -65,6 +65,11 @@ public class ScreenMuseServer {
 
     var requestCount = 0
 
+    /// Count of currently-open incoming connections.
+    /// Incremented in handleConnection, decremented when the connection reaches
+    /// .cancelled or .failed state.  Exposed via GET /health for diagnostics.
+    public private(set) var activeConnectionCount = 0
+
     /// Maps dummy NWConnection instances to job IDs for async dispatch.
     /// When sendResponse is called with a connection in this map, the result is routed
     /// to the JobQueue instead of the wire.
@@ -228,8 +233,36 @@ public class ScreenMuseServer {
     }
 
     private func handleConnection(_ connection: NWConnection) {
+        activeConnectionCount += 1
+        smLog.debug("Connection accepted — active=\(activeConnectionCount)", category: .server)
+
+        // Monitor connection state transitions so failed/cancelled connections are
+        // always cleaned up and never accumulate as leaked file descriptors.
+        // Without this handler, a client that connects then drops immediately would
+        // leave the NWConnection object alive, consuming a file descriptor indefinitely.
+        // Enough of these will exhaust the process limit and cause the listener to stop
+        // accepting new connections (the symptom reported in issue #13).
+        connection.stateUpdateHandler = { @Sendable [weak self] state in
+            Task { @MainActor in
+                guard let self else { return }
+                switch state {
+                case .ready:
+                    // Connection is established — safe to start reading.
+                    self.receiveRequest(connection)
+                case .failed(let error):
+                    self.activeConnectionCount = max(0, self.activeConnectionCount - 1)
+                    smLog.debug("Incoming connection failed: \(error.localizedDescription) — active=\(self.activeConnectionCount)", category: .server)
+                    connection.cancel()
+                case .cancelled:
+                    self.activeConnectionCount = max(0, self.activeConnectionCount - 1)
+                    smLog.debug("Connection cancelled — active=\(self.activeConnectionCount)", category: .server)
+                default:
+                    break
+                }
+            }
+        }
+
         connection.start(queue: .main)
-        receiveRequest(connection)
     }
 
     /// Maximum HTTP body size: 4 MB.  Requests larger than this are rejected.
