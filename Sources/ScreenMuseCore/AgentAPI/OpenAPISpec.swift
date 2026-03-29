@@ -228,9 +228,8 @@ enum OpenAPISpec {
         "/report":  { "get": { "summary": "Human-readable session report with usage timeline and warnings" } },
         "/version": { "get": { "summary": "Server version, build info, and full endpoint list" } },
         "/openapi": { "get": { "summary": "This OpenAPI 3.0 specification" } },
-        "/health":  { "get": { "summary": "Server liveness probe. No auth required. Returns listener state and permissions.", "security": [] } },
+        "/health":  { "get": { "summary": "Liveness probe — listener state, version, permissions. No auth required. Returns {ok, listener, port, permissions, warning?}.", "security": [] } },
         "/debug":   { "get": { "summary": "Internal debug snapshot — request count, session state, job queue, log buffer size" } },
-        "/health":  { "get": { "summary": "Server health check — listener state, version, permissions. No auth required.", "security": [] } },
         "/record":  {
           "post": {
             "summary": "Start recording and stop after a fixed duration",

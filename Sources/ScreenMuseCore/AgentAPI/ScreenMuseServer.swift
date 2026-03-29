@@ -86,16 +86,18 @@ public class ScreenMuseServer {
         // after start() returns and there'd be no log, no error, no way to diagnose.
         listener?.stateUpdateHandler = { @Sendable [weak self] state in
             Task { @MainActor in
+                // Unwrap self; safe to exit early since server is a singleton but correct for Swift 6.
+                guard let self else { return }
                 switch state {
                 case .ready:
-                    smLog.info("NWListener ready — accepting connections on port \(port)", category: .server)
+                    smLog.info("NWListener ready — accepting connections on port \(self.port)", category: .server)
                 case .failed(let error):
-                    smLog.error("NWListener failed: \(error.localizedDescription) — HTTP API unavailable on port \(port)", category: .server)
-                    smLog.usage("SERVER FAILED", details: ["error": error.localizedDescription, "port": "\(port)"])
+                    smLog.error("NWListener failed: \(error.localizedDescription) — HTTP API unavailable on port \(self.port)", category: .server)
+                    smLog.usage("SERVER FAILED", details: ["error": error.localizedDescription, "port": "\(self.port)"])
                     // Attempt restart after a short delay
                     smLog.info("Scheduling NWListener restart in 2s…", category: .server)
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
-                    self?.restartListener()
+                    self.restartListener()
                 case .cancelled:
                     smLog.info("NWListener cancelled", category: .server)
                 case .waiting(let error):
@@ -126,9 +128,10 @@ public class ScreenMuseServer {
             }
             listener?.stateUpdateHandler = { @Sendable [weak self] state in
                 Task { @MainActor in
+                    guard let self else { return }
                     switch state {
                     case .ready:
-                        smLog.info("NWListener restart succeeded — accepting connections on port \(port)", category: .server)
+                        smLog.info("NWListener restart succeeded — accepting connections on port \(self.port)", category: .server)
                     case .failed(let error):
                         smLog.error("NWListener restart failed: \(error.localizedDescription) — giving up", category: .server)
                         smLog.usage("SERVER RESTART FAILED", details: ["error": error.localizedDescription])
