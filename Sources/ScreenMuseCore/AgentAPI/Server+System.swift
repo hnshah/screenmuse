@@ -40,7 +40,22 @@ extension ScreenMuseServer {
 
     func handleHealth(body: [String: Any], connection: NWConnection, reqID: Int) {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-        sendResponse(connection: connection, status: 200, body: ["ok": true, "version": version])
+        let listenerState: String
+        switch listener?.state {
+        case .ready:       listenerState = "ready"
+        case .setup:       listenerState = "setup"
+        case .waiting:     listenerState = "waiting"
+        case .failed:      listenerState = "failed"
+        case .cancelled:   listenerState = "cancelled"
+        case .none:        listenerState = "nil"
+        @unknown default:  listenerState = "unknown"
+        }
+        sendResponse(connection: connection, status: 200, body: [
+            "ok": true,
+            "version": version,
+            "listener": listenerState,
+            "port": 7823
+        ])
     }
 
     func handleStatus(body: [String: Any], connection: NWConnection, reqID: Int) {
