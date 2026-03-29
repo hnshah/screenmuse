@@ -64,7 +64,7 @@ public struct StopResponse: Codable, Sendable {
     public let notes: [NoteEntry]
     public let resolution: Resolution?
     public let fps: Double?
-    public let window: WindowInfo?
+    public let window: WindowInfoResponse?
 
     enum CodingKeys: String, CodingKey {
         case path
@@ -91,7 +91,8 @@ public struct Resolution: Codable, Sendable {
     public let height: Int
 }
 
-public struct WindowInfo: Codable, Sendable {
+/// JSON representation of window info in API responses (distinct from WindowManager.WindowInfo).
+public struct WindowInfoResponse: Codable, Sendable {
     public let app: String?
     public let pid: Int?
     public let title: String?
