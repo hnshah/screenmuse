@@ -28,10 +28,19 @@
  */
 
 import { readFileSync } from 'fs';
+import { homedir } from 'os';
 import { createServer } from 'http';
 
 const BASE_URL = process.env.SCREENMUSE_URL || 'http://localhost:7823';
-const API_KEY = process.env.SCREENMUSE_API_KEY || null;
+// Load API key: SCREENMUSE_API_KEY env > ~/.screenmuse/api_key file > null (no auth)
+const API_KEY = (() => {
+  if (process.env.SCREENMUSE_NO_AUTH === '1') return null;
+  if (process.env.SCREENMUSE_API_KEY) return process.env.SCREENMUSE_API_KEY;
+  try {
+    const keyFile = `${homedir()}/.screenmuse/api_key`;
+    return readFileSync(keyFile, 'utf8').trim() || null;
+  } catch { return null; }
+})();
 
 // ── MCP Protocol Helpers ───────────────────────────────────────────────────
 
@@ -324,6 +333,88 @@ const TOOLS = [
     name: 'screenmuse_highlight',
     description: 'Flag the next mouse click to be highlighted with an enhanced visual effect (auto-zoom + ring).',
     inputSchema: { type: 'object', properties: {} }
+  },
+  // ── Window Management (missing from v1 surface) ───────────────────────────
+  {
+    name: 'screenmuse_windows',
+    description: 'List all visible on-screen windows with title, app name, pid, and position. Use before recording to find a specific window.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'screenmuse_window_position',
+    description: 'Move and resize an application window.',
+    inputSchema: {
+      type: 'object',
+      required: ['app'],
+      properties: {
+        app: { type: 'string', description: 'Application name (e.g. "Google Chrome")' },
+        x: { type: 'number', description: 'New X position in screen coordinates' },
+        y: { type: 'number', description: 'New Y position in screen coordinates' },
+        width: { type: 'number', description: 'New window width' },
+        height: { type: 'number', description: 'New window height' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_hide_others',
+    description: 'Hide all windows except the specified application. Useful for recording clean demos.',
+    inputSchema: {
+      type: 'object',
+      required: ['app'],
+      properties: {
+        app: { type: 'string', description: 'Application name to keep visible (all others will be hidden)' }
+      }
+    }
+  },
+  // ── Recordings Management ─────────────────────────────────────────────────
+  {
+    name: 'screenmuse_delete_recording',
+    description: 'Delete a specific recording file from disk.',
+    inputSchema: {
+      type: 'object',
+      required: ['filename'],
+      properties: {
+        filename: { type: 'string', description: 'Filename of the recording to delete (not full path — basename only)' }
+      }
+    }
+  },
+  // ── Frame Extraction ──────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_frames',
+    description: 'Extract multiple frames from a video at regular intervals. Returns base64-encoded JPEG images.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', description: 'Video path, or "last" to use the most recent recording' },
+        count: { type: 'number', description: 'Number of frames to extract (default: 10)' },
+        format: { type: 'string', enum: ['jpeg', 'png'], description: 'Image format (default: jpeg)' },
+        scale: { type: 'number', description: 'Max width in pixels (default: 1280)' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_frame',
+    description: 'Extract a single frame at a specific timestamp.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', description: 'Video path, or "last" for the most recent recording' },
+        time: { type: 'number', description: 'Timestamp in seconds (default: 0 = first frame)' },
+        format: { type: 'string', enum: ['jpeg', 'png'], description: 'Image format (default: jpeg)' },
+        scale: { type: 'number', description: 'Max width in pixels (default: 1280)' }
+      }
+    }
+  },
+  // ── Validation ────────────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_validate',
+    description: 'Validate a video file — check if it has real content (not a black/empty recording). Returns quality score and recommendations.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', description: 'Video path, or "last" for the most recent recording' }
+      }
+    }
   }
 ];
 
@@ -361,6 +452,17 @@ async function executeTool(name, args) {
       case 'screenmuse_script':        result = await callScreenMuse('/script', args || {}); break;
       case 'screenmuse_script_batch':  result = await callScreenMuse('/script/batch', args || {}); break;
       case 'screenmuse_highlight':     result = await callScreenMuse('/highlight', {}); break;
+      // Window management
+      case 'screenmuse_windows':         result = await callScreenMuse('/windows', null); break;
+      case 'screenmuse_window_position': result = await callScreenMuse('/window/position', args || {}); break;
+      case 'screenmuse_hide_others':     result = await callScreenMuse('/window/hide-others', args || {}); break;
+      // Recordings management
+      case 'screenmuse_delete_recording': result = await callScreenMuse('/recording', args || {}, 'DELETE'); break;
+      // Frame extraction
+      case 'screenmuse_frames':          result = await callScreenMuse('/frames', args || {}); break;
+      case 'screenmuse_frame':           result = await callScreenMuse('/frame', args || {}); break;
+      // Validation
+      case 'screenmuse_validate':        result = await callScreenMuse('/validate', args || {}); break;
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
     }
