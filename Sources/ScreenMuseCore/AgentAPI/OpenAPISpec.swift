@@ -181,7 +181,17 @@ enum OpenAPISpec {
                 "name":   { "type": "string" },
                 "text":   { "type": "string" }
               } } }
-            } } } } }
+            } } } } },
+            "responses": {
+              "200": { "description": "All steps completed successfully", "content": { "application/json": { "schema": { "type": "object", "properties": {
+                "ok":        { "type": "boolean" },
+                "steps_run": { "type": "integer" },
+                "steps":     { "type": "array", "items": { "type": "object" } },
+                "error":     { "type": "string", "nullable": true }
+              } } } } },
+              "400": { "description": "Invalid request (empty or missing commands array)" },
+              "500": { "description": "A step failed during execution" }
+            }
           }
         },
         "/upload/icloud": {
@@ -261,8 +271,16 @@ enum OpenAPISpec {
           "post": {
             "summary": "Validate a video file — check for real content vs black/empty recording",
             "requestBody": { "content": { "application/json": { "schema": {
+              "required": ["checks"],
               "properties": {
-                "source": { "type": "string", "description": "Video path or 'last'" }
+                "source": { "type": "string", "description": "Video path or 'last'", "default": "last" },
+                "checks": { "type": "array", "description": "Non-empty array of validation checks to run", "items": { "type": "object", "required": ["type"], "properties": {
+                  "type":     { "type": "string", "enum": ["duration", "frame_count", "no_black_frames", "text_at"], "description": "Check type" },
+                  "min":      { "type": "number", "description": "Minimum value (for duration, frame_count)" },
+                  "max":      { "type": "number", "description": "Maximum value (for duration)" },
+                  "time":     { "type": "number", "description": "Timestamp in seconds (for text_at)" },
+                  "expected": { "type": "string", "description": "Expected text to find (for text_at)" }
+                } } }
               }
             } } } }
           }
@@ -285,7 +303,16 @@ enum OpenAPISpec {
                 },
                 "continue_on_error": { "type": "boolean", "default": false }
               }
-            } } } }
+            } } } },
+            "responses": {
+              "200": { "description": "All scripts completed successfully", "content": { "application/json": { "schema": { "type": "object", "properties": {
+                "ok":          { "type": "boolean" },
+                "scripts_run": { "type": "integer" },
+                "scripts":     { "type": "array", "items": { "type": "object" } }
+              } } } } },
+              "400": { "description": "Invalid request (empty or missing scripts array)" },
+              "500": { "description": "One or more scripts failed during execution" }
+            }
           }
         },
         "/sessions": { "get": { "summary": "List all named recording sessions with metadata" } },

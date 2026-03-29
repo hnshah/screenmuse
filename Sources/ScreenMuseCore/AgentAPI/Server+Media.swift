@@ -281,6 +281,7 @@ extension ScreenMuseServer {
             }
 
             var stepResult: [String: Any] = ["step": idx + 1, "action": action]
+            var appended = false
             do {
                 switch action {
                 case "start":
@@ -288,7 +289,7 @@ extension ScreenMuseServer {
                     let (windowTitle, wtErr) = sanitizedString(cmd["window_title"] as? String)
                     if let err = nameErr ?? wtErr {
                         stepResult["ok"] = false; stepResult["error"] = err
-                        scriptResults.append(stepResult); break
+                        scriptResults.append(stepResult); appended = true; break
                     }
                     let quality = cmd["quality"] as? String
                     if let coord = coordinator {
@@ -360,7 +361,7 @@ extension ScreenMuseServer {
                     let (chapterName, chErr) = sanitizedString(cmd["name"] as? String ?? "Chapter \(chapters.count + 1)")
                     if let err = chErr {
                         stepResult["ok"] = false; stepResult["error"] = err
-                        scriptResults.append(stepResult); break
+                        scriptResults.append(stepResult); appended = true; break
                     }
                     let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
                     chapters.append((name: chapterName!, time: elapsed))
@@ -373,7 +374,7 @@ extension ScreenMuseServer {
                     let (noteText, noteErr) = sanitizedString(cmd["text"] as? String ?? "")
                     if let err = noteErr {
                         stepResult["ok"] = false; stepResult["error"] = err
-                        scriptResults.append(stepResult); break
+                        scriptResults.append(stepResult); appended = true; break
                     }
                     let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
                     sessionNotes.append((text: noteText!, time: elapsed))
@@ -395,7 +396,7 @@ extension ScreenMuseServer {
                 scriptResults.append(stepResult)
                 break
             }
-            scriptResults.append(stepResult)
+            if !appended { scriptResults.append(stepResult) }
         }
 
         sendResponse(connection: connection, status: scriptError == nil ? 200 : 500, body: [
@@ -454,6 +455,7 @@ extension ScreenMuseServer {
                 }
 
                 var stepResult: [String: Any] = ["step": idx + 1, "action": action]
+                var appended = false
                 do {
                     switch action {
                     case "start":
@@ -461,7 +463,7 @@ extension ScreenMuseServer {
                         let (windowTitle, wtErr) = sanitizedString(cmd["window_title"] as? String)
                         if let err = nameErr ?? wtErr {
                             stepResult["ok"] = false; stepResult["error"] = err
-                            stepResults.append(stepResult); break
+                            stepResults.append(stepResult); appended = true; break
                         }
                         let quality = cmd["quality"] as? String
                         if let coord = coordinator {
@@ -533,7 +535,7 @@ extension ScreenMuseServer {
                         let (chapterName, chErr) = sanitizedString(cmd["name"] as? String ?? "Chapter \(chapters.count + 1)")
                         if let err = chErr {
                             stepResult["ok"] = false; stepResult["error"] = err
-                            stepResults.append(stepResult); break
+                            stepResults.append(stepResult); appended = true; break
                         }
                         let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
                         chapters.append((name: chapterName!, time: elapsed))
@@ -545,7 +547,7 @@ extension ScreenMuseServer {
                         let (noteText, noteErr) = sanitizedString(cmd["text"] as? String ?? "")
                         if let err = noteErr {
                             stepResult["ok"] = false; stepResult["error"] = err
-                            stepResults.append(stepResult); break
+                            stepResults.append(stepResult); appended = true; break
                         }
                         let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
                         sessionNotes.append((text: noteText!, time: elapsed))
@@ -566,7 +568,7 @@ extension ScreenMuseServer {
                     stepResults.append(stepResult)
                     break
                 }
-                stepResults.append(stepResult)
+                if !appended { stepResults.append(stepResult) }
             }
 
             let scriptOK = scriptError == nil
