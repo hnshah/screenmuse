@@ -64,7 +64,7 @@ final class ResponseFormatTests: XCTestCase {
     @MainActor
     func testStructuredErrorPermissionDenied() {
         let server = ScreenMuseServer.shared
-        let result = server.structuredError(RecordingError.permissionDenied)
+        let result = server.structuredError(RecordingError.permissionDenied("Screen Recording permission required"))
         XCTAssertEqual(result["code"] as? String, "PERMISSION_DENIED")
         XCTAssertNotNil(result["error"])
         XCTAssertNotNil(result["suggestion"])

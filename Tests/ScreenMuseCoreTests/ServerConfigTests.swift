@@ -79,7 +79,7 @@ final class ServerConfigTests: XCTestCase {
         // Verify values
         XCTAssertEqual(resp["path"] as? String, tmpURL.path)
         XCTAssertEqual(resp["video_path"] as? String, tmpURL.path)
-        XCTAssertEqual(resp["duration"] as? TimeInterval, 12.5, accuracy: 0.001)
+        XCTAssertEqual((resp["duration"] as? TimeInterval)!, 12.5, accuracy: 0.001)
         XCTAssertEqual(resp["session_id"] as? String, "test-session-id")
 
         let chapters = resp["chapters"] as? [[String: Any]] ?? []
