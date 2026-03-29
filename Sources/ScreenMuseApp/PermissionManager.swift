@@ -14,9 +14,21 @@ public final class PermissionManager: ObservableObject {
         checkAll()
     }
 
+    /// Re-check both permissions and publish updates.
+    /// Safe to call frequently — CGPreflightScreenCaptureAccess() is a lightweight
+    /// preflight that does not show any system prompt.
     public func checkAll() {
         hasScreenRecording = CGPreflightScreenCaptureAccess()
         hasAccessibility = AXIsProcessTrusted()
+    }
+
+    /// Human-readable description of missing permissions for diagnostic display.
+    public var missingPermissionsSummary: String? {
+        var missing: [String] = []
+        if !hasScreenRecording { missing.append("Screen Recording (required)") }
+        if !hasAccessibility   { missing.append("Accessibility (optional)") }
+        guard !missing.isEmpty else { return nil }
+        return missing.joined(separator: ", ")
     }
 
     public func requestScreenRecording() {
