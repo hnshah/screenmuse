@@ -520,6 +520,21 @@ CI/CD runs via GitHub Actions on every push (Build + Test).
 
 ---
 
+## Troubleshooting
+
+Common issues and their solutions:
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| All curl requests time out | Port 7823 already in use | Run `lsof -i :7823` to find the conflicting process, then kill it or change the port with `SCREENMUSE_PORT=7824 ./scripts/dev-run.sh` |
+| `/start` returns 403 | Screen Recording permission not granted | Go to **System Settings → Privacy & Security → Screen Recording**, enable ScreenMuse, then **relaunch the app** |
+| Output file is 0 bytes or has no video track | TCC timing race condition | Run `./scripts/reset-permissions.sh`, then relaunch ScreenMuse and grant permissions again |
+| Permissions loop after rebuild | Code signature changed (ad-hoc signing) | Always use `./scripts/dev-run.sh` (which uses `xcodebuild`), not `swift build`, to maintain a consistent code signature |
+
+> 💡 **Tip**: If permissions get stuck, run `./scripts/reset-permissions.sh` to clear TCC cache, then restart your Mac.
+
+---
+
 ## FAQ
 
 **Q: Why not just use OBS or Loom?**  
