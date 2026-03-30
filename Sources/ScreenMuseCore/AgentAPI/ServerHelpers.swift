@@ -41,6 +41,16 @@ public func validateRecordDuration(_ duration: Double?) -> String? {
     return nil
 }
 
+/// Resolves the source URL from a request body's `"source"` key.
+///
+/// If the value is `"last"` (or absent), returns the `fallback` URL (typically the current video).
+/// Otherwise, treats the value as a file path and returns a file URL.
+public func resolveSourceURL(from body: [String: Any], fallback currentURL: URL?) -> URL? {
+    let sourceStr = body["source"] as? String ?? "last"
+    if sourceStr == "last" { return currentURL }
+    return URL(fileURLWithPath: sourceStr)
+}
+
 /// Parse Content-Length from raw HTTP request headers.
 ///
 /// Returns the integer value of the Content-Length header, or `nil` if not found or malformed.

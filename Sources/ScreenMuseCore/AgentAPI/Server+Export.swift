@@ -25,16 +25,9 @@ extension ScreenMuseServer {
             return
         }
 
-        let sourceStr = req?.source ?? body["source"] as? String ?? "last"
-        let sourceURL: URL?
-        if sourceStr == "last" {
-            sourceURL = currentVideoURL
-        } else {
-            sourceURL = URL(fileURLWithPath: sourceStr)
-        }
-        guard let resolvedSource = sourceURL,
+        guard let resolvedSource = resolveSourceURL(from: body, fallback: currentVideoURL),
               FileManager.default.fileExists(atPath: resolvedSource.path) else {
-            smLog.warning("[\(reqID)] /export no video source (source='\(sourceStr)')", category: .server)
+            smLog.warning("[\(reqID)] /export no video source (source='\(body["source"] as? String ?? "last")')", category: .server)
             sendResponse(connection: connection, status: 404, body: [
                 "error": "No video available. Record something first, or pass 'source' with a file path.",
                 "code": "NO_VIDEO"
@@ -115,14 +108,7 @@ extension ScreenMuseServer {
     func handleTrim(body: [String: Any], connection: NWConnection, reqID: Int) async {
         smLog.info("[\(reqID)] /trim request", category: .server)
 
-        let sourceStr = body["source"] as? String ?? "last"
-        let sourceURL: URL?
-        if sourceStr == "last" {
-            sourceURL = currentVideoURL
-        } else {
-            sourceURL = URL(fileURLWithPath: sourceStr)
-        }
-        guard let resolvedSource = sourceURL,
+        guard let resolvedSource = resolveSourceURL(from: body, fallback: currentVideoURL),
               FileManager.default.fileExists(atPath: resolvedSource.path) else {
             sendResponse(connection: connection, status: 404, body: [
                 "error": "No video available. Record something first, or pass 'source' with a file path.",
@@ -180,14 +166,7 @@ extension ScreenMuseServer {
                                handler: { b, c, r in await self.handleSpeedRamp(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /speedramp request", category: .server)
 
-        let sourceStr = body["source"] as? String ?? "last"
-        let sourceURL: URL?
-        if sourceStr == "last" {
-            sourceURL = currentVideoURL
-        } else {
-            sourceURL = URL(fileURLWithPath: sourceStr)
-        }
-        guard let resolvedSource = sourceURL,
+        guard let resolvedSource = resolveSourceURL(from: body, fallback: currentVideoURL),
               FileManager.default.fileExists(atPath: resolvedSource.path) else {
             sendResponse(connection: connection, status: 404, body: [
                 "error": "No video available. Record something first, or pass 'source' with a file path.",
@@ -300,18 +279,14 @@ extension ScreenMuseServer {
 
         var sourceURLs: [URL] = []
         for s in rawSources {
-            if s == "last" {
-                guard let last = currentVideoURL else {
-                    sendResponse(connection: connection, status: 404, body: [
-                        "error": "No recent recording available for 'last'",
-                        "code": "NO_VIDEO"
-                    ])
-                    return
-                }
-                sourceURLs.append(last)
-            } else {
-                sourceURLs.append(URL(fileURLWithPath: s))
+            guard let url = resolveSourceURL(from: ["source": s], fallback: currentVideoURL) else {
+                sendResponse(connection: connection, status: 404, body: [
+                    "error": "No recent recording available for 'last'",
+                    "code": "NO_VIDEO"
+                ])
+                return
             }
+            sourceURLs.append(url)
         }
 
         let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
@@ -355,9 +330,8 @@ extension ScreenMuseServer {
                                handler: { b, c, r in await self.handleFrames(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /frames request", category: .server)
 
-        let sourceStr = body["source"] as? String ?? "last"
-        let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
-        guard let src = sourceURL, FileManager.default.fileExists(atPath: src.path) else {
+        guard let src = resolveSourceURL(from: body, fallback: currentVideoURL),
+              FileManager.default.fileExists(atPath: src.path) else {
             sendResponse(connection: connection, status: 404, body: [
                 "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
                 "code": "NO_VIDEO"
@@ -513,9 +487,7 @@ extension ScreenMuseServer {
     func handleThumbnail(body: [String: Any], connection: NWConnection, reqID: Int) async {
         smLog.info("[\(reqID)] /thumbnail request", category: .server)
 
-        let sourceStr = body["source"] as? String ?? "last"
-        let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
-        guard let src = sourceURL else {
+        guard let src = resolveSourceURL(from: body, fallback: currentVideoURL) else {
             sendResponse(connection: connection, status: 404, body: [
                 "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
                 "code": "NO_VIDEO"
@@ -563,9 +535,7 @@ extension ScreenMuseServer {
                                handler: { b, c, r in await self.handleCrop(body: b, connection: c, reqID: r) }) { return }
         smLog.info("[\(reqID)] /crop request", category: .server)
 
-        let sourceStr = body["source"] as? String ?? "last"
-        let sourceURL: URL? = (sourceStr == "last") ? currentVideoURL : URL(fileURLWithPath: sourceStr)
-        guard let src = sourceURL else {
+        guard let src = resolveSourceURL(from: body, fallback: currentVideoURL) else {
             sendResponse(connection: connection, status: 404, body: [
                 "error": "No video available. Record first or pass 'source': '/path/to/video.mp4'",
                 "code": "NO_VIDEO"
