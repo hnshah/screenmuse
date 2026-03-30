@@ -53,7 +53,7 @@ npx playwright install chromium
 ### 2. Test Basic Recording
 
 ```bash
-cd /Users/Vera/.openclaw/workspace/skills/screenmuse-video-production
+cd <your-skill-directory>
 
 node scripts/produce-video.js \
   --workflow=google-search \
@@ -62,8 +62,8 @@ node scripts/produce-video.js \
 
 **Expected output:**
 ```
-✅ Video: /Users/Vera/Movies/ScreenMuse/google-search-....mp4
-✅ GIF: /Users/Vera/Movies/ScreenMuse/Exports/google-search-....gif
+✅ Video: ~/Movies/ScreenMuse/google-search-<timestamp>.mp4
+✅ GIF: ~/Movies/ScreenMuse/Exports/google-search-<timestamp>.gif
 ✅ Quality: HAS CONTENT (0.089 MB/s)
 ```
 
@@ -369,6 +369,6 @@ console.log(windows.data);
 ---
 
 **Official repo:** https://github.com/hnshah/screenmuse  
-**Our system:** `/Users/Vera/.openclaw/workspace/skills/screenmuse-video-production/`
+**Our system:** `docs/agent-integration/`
 
 **Ready to create production-quality demo videos in 3 minutes.** 🎬

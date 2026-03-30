@@ -239,7 +239,7 @@ $ curl http://localhost:7823/status
 **For debugging:**
 ```bash
 # Where should we look for logs?
-/Users/Vera/Library/Logs/ScreenMuse/app.log ?
+~/Library/Logs/ScreenMuse/app.log
 
 # What indicates HTTP server started successfully?
 # Add startup log: "HTTP server listening on :7823"
@@ -338,7 +338,7 @@ $ curl http://localhost:7823/status
 ### 1. Basic Smoke Test
 
 ```bash
-cd /Users/Vera/.openclaw/workspace/skills/screenmuse-video-production
+cd docs/agent-integration
 
 # Test pre-flight check
 node scripts/produce-video.js
@@ -350,8 +350,8 @@ node scripts/produce-video.js \
   --query="stripe api documentation"
 
 # Expected output:
-# ✅ Video: /Users/Vera/Movies/ScreenMuse/google-search-stripe-api-....mp4
-# ✅ GIF: /Users/Vera/Movies/ScreenMuse/Exports/google-search-stripe-api-....gif
+# ✅ Video: ~/Movies/ScreenMuse/google-search-stripe-api-....mp4
+# ✅ GIF: ~/Movies/ScreenMuse/Exports/google-search-stripe-api-....gif
 # ✅ Quality: HAS CONTENT (> 0.05 MB/s)
 ```
 
@@ -601,7 +601,7 @@ skills/screenmuse-video-production/
 8. Implement frame drop detection
 9. Add batch export formats
 
-### For Us (OpenClaw/Vera)
+### For OpenClaw Agents
 
 **Once API is reliable:**
 1. Build remaining 3 workflows (form-fill, product-hunt, landing-page)
