@@ -30,8 +30,11 @@ final class ScriptBatchTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         try await MainActor.run {
-            ScreenMuseServer.shared.apiKey = nil
+            // Start first (loadOrGenerateAPIKey runs inside start()), then disable auth.
+            // Setting apiKey = nil before start() is ineffective because start() always
+            // calls loadOrGenerateAPIKey() which re-reads ~/.screenmuse/api_key from disk.
             try ScreenMuseServer.shared.start(port: ScriptBatchTests.testPort)
+            ScreenMuseServer.shared.apiKey = nil  // disable auth AFTER start() overwrites it
         }
         try await Task.sleep(nanoseconds: 400_000_000) // 400ms for NWListener
     }
