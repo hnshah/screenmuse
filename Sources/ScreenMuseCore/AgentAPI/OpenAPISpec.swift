@@ -316,7 +316,32 @@ enum OpenAPISpec {
           }
         },
         "/sessions": { "get": { "summary": "List all named recording sessions with metadata" } },
-        "/jobs": { "get": { "summary": "List all background async jobs and their status" } }
+        "/jobs": { "get": { "summary": "List all background async jobs and their status" } },
+        "/job/{id}": {
+          "get": {
+            "summary": "Get status and result for a specific background job",
+            "parameters": [
+              { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Job ID returned by async operations" }
+            ],
+            "responses": { "200": { "description": "Job status and result (if complete)" }, "404": { "description": "Job not found" } }
+          }
+        },
+        "/session/{id}": {
+          "get": {
+            "summary": "Get metadata for a named recording session",
+            "parameters": [
+              { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Session ID" }
+            ],
+            "responses": { "200": { "description": "Session metadata" }, "404": { "description": "Session not found" } }
+          },
+          "delete": {
+            "summary": "Delete a named recording session",
+            "parameters": [
+              { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Session ID" }
+            ],
+            "responses": { "200": { "description": "Session deleted" }, "404": { "description": "Session not found" } }
+          }
+        }
       }
     }
     """
