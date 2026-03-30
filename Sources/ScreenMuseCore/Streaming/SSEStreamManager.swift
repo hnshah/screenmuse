@@ -285,6 +285,7 @@ public final class SSEStreamManager {
             "Connection: keep-alive\r\n" +
             "Access-Control-Allow-Origin: *\r\n" +
             "X-Accel-Buffering: no\r\n" +
+            "X-ScreenMuse-Version: \(ScreenMuseServer.currentVersion)\r\n" +
             "\r\n"
         guard let data = headers.data(using: .utf8) else { return }
         // isComplete: false — keeps the connection open
