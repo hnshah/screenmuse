@@ -24,6 +24,13 @@ final class HTTPIntegrationTests: XCTestCase {
     // Use a port separate from production (7823) and the existing config tests
     static let testPort: UInt16 = 7825
 
+    /// True when running in GitHub Actions or any CI environment.
+    /// Use with `try XCTSkipIf(Self.isCI, "Screen Recording not available in CI")`
+    /// for tests that require Screen Recording permission.
+    private static var isCI: Bool {
+        ProcessInfo.processInfo.environment["CI"] != nil
+    }
+
     // MARK: - setUp / tearDown
 
     override func setUp() async throws {

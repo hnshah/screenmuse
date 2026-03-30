@@ -18,6 +18,13 @@ final class ScriptBatchTests: XCTestCase {
 
     static let testPort: UInt16 = 7826
 
+    /// True when running in GitHub Actions or any CI environment.
+    /// Use with `try XCTSkipIf(Self.isCI, "Screen Recording not available in CI")`
+    /// for tests that require Screen Recording permission.
+    private static var isCI: Bool {
+        ProcessInfo.processInfo.environment["CI"] != nil
+    }
+
     // MARK: - setUp / tearDown
 
     override func setUp() async throws {

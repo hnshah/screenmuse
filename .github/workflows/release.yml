@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Universal Binary & Release
+    runs-on: macos-15  # Xcode 16 + Swift 6.0
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build for arm64
+        run: swift build -c release --arch arm64
+
+      - name: Build for x86_64
+        run: swift build -c release --arch x86_64
+
+      - name: Create universal binaries with lipo
+        run: |
+          mkdir -p .build/universal
+          for bin in ScreenMuseApp screenmuse ScreenMuseMCP; do
+            lipo -create \
+              ".build/arm64-apple-macosx/release/${bin}" \
+              ".build/x86_64-apple-macosx/release/${bin}" \
+              -output ".build/universal/${bin}"
+          done
+
+      - name: Verify universal binaries
+        run: |
+          for bin in ScreenMuseApp screenmuse ScreenMuseMCP; do
+            echo "=== ${bin} ==="
+            file ".build/universal/${bin}"
+            lipo -info ".build/universal/${bin}"
+          done
+
+      - name: Create release zip
+        run: |
+          cd .build/universal
+          zip "screenmuse-${{ steps.version.outputs.VERSION }}.zip" \
+            ScreenMuseApp screenmuse ScreenMuseMCP
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            ".build/universal/screenmuse-${{ steps.version.outputs.VERSION }}.zip" \
+            --title "ScreenMuse ${{ steps.version.outputs.VERSION }}" \
+            --generate-notes
