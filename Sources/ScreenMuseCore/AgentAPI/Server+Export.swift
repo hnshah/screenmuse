@@ -75,41 +75,52 @@ extension ScreenMuseServer {
         smLog.info("[\(reqID)] /export source=\(resolvedSource.lastPathComponent) format=\(format.rawValue) fps=\(config.fps) scale=\(config.scale) quality=\(config.quality.rawValue) → \(outputURL.lastPathComponent)", category: .server)
 
         let jobID = body["_job_id"] as? String
-        do {
-            let exporter = GIFExporter()
-            let result = try await exporter.export(
-                sourceURL: resolvedSource,
-                outputURL: outputURL,
-                config: config,
-                progress: { pct in
-                    smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
-                    if let jobID {
-                        Task { await JobQueue.shared.setProgress(jobID, pct) }
+
+        // Use Task.detached to run the CPU-intensive GIF/WebP export off the MainActor.
+        // ScreenMuseServer is @MainActor, so without detaching, export work blocks the
+        // main thread and freezes the UI in the GUI app.
+        let capturedConfig = config
+        let capturedOutputURL = outputURL
+        let capturedResolvedSource = resolvedSource
+        await Task.detached(priority: .userInitiated) {
+            do {
+                let exporter = GIFExporter()
+                let result = try await exporter.export(
+                    sourceURL: capturedResolvedSource,
+                    outputURL: capturedOutputURL,
+                    config: capturedConfig,
+                    progress: { pct in
+                        smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
+                        if let jobID {
+                            Task { await JobQueue.shared.setProgress(jobID, pct) }
+                        }
                     }
+                )
+                let exportResp = ExportResponse(
+                    path: result.outputURL.path,
+                    format: result.format.rawValue,
+                    width: result.width,
+                    height: result.height,
+                    frames: result.frameCount,
+                    fps: result.fps,
+                    duration: result.duration,
+                    size: result.fileSize,
+                    sizeMb: (result.sizeMB * 100).rounded() / 100
+                )
+                await MainActor.run { self.sendResponse(connection: connection, status: 200, body: exportResp) }
+            } catch let err as GIFExporter.ExportError {
+                smLog.error("[\(reqID)] /export failed: \(err.localizedDescription)", category: .server)
+                await MainActor.run {
+                    self.sendResponse(connection: connection, status: 500, body: [
+                        "error": err.errorDescription ?? err.localizedDescription,
+                        "code": "EXPORT_FAILED"
+                    ])
                 }
-            )
-            let exportResp = ExportResponse(
-                path: result.outputURL.path,
-                format: result.format.rawValue,
-                width: result.width,
-                height: result.height,
-                frames: result.frameCount,
-                fps: result.fps,
-                duration: result.duration,
-                size: result.fileSize,
-                sizeMb: (result.sizeMB * 100).rounded() / 100
-            )
-            sendResponse(connection: connection, status: 200, body: exportResp)
-        } catch let err as GIFExporter.ExportError {
-            smLog.error("[\(reqID)] /export failed: \(err.localizedDescription)", category: .server)
-            sendResponse(connection: connection, status: 500, body: [
-                "error": err.errorDescription ?? err.localizedDescription,
-                "code": "EXPORT_FAILED"
-            ])
-        } catch {
-            smLog.error("[\(reqID)] /export error: \(error.localizedDescription)", category: .server)
-            sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
-        }
+            } catch {
+                smLog.error("[\(reqID)] /export error: \(error.localizedDescription)", category: .server)
+                await MainActor.run { self.sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription]) }
+            }
+        }.value
     }
 
     func handleTrim(body: [String: Any], connection: NWConnection, reqID: Int) async {
@@ -262,27 +273,38 @@ extension ScreenMuseServer {
 
         smLog.info("[\(reqID)] /speedramp segments=\(segments.count) idle=\(segments.filter{$0.isIdle}.count) → \(rampOutputURL.lastPathComponent)", category: .server)
 
-        do {
-            let ramper = SpeedRamper()
-            let result = try await ramper.ramp(
-                sourceURL: resolvedSource,
-                outputURL: rampOutputURL,
-                segments: segments,
-                config: rampConfig
-            )
-            var responseBody = result.asDictionary()
-            responseBody["analysis_method"] = analysisMethod
-            sendResponse(connection: connection, status: 200, body: responseBody)
-        } catch let err as SpeedRamper.SpeedRampError {
-            smLog.error("[\(reqID)] /speedramp failed: \(err.localizedDescription)", category: .server)
-            sendResponse(connection: connection, status: 500, body: [
-                "error": err.errorDescription ?? err.localizedDescription,
-                "code": "SPEEDRAMP_FAILED"
-            ])
-        } catch {
-            smLog.error("[\(reqID)] /speedramp error: \(error.localizedDescription)", category: .server)
-            sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
-        }
+        // Use Task.detached to run the CPU-intensive speed ramp off the MainActor.
+        // ScreenMuseServer is @MainActor, so without detaching, ramp work blocks the
+        // main thread and freezes the UI in the GUI app.
+        let capturedSegments = segments
+        let capturedRampConfig = rampConfig
+        let capturedResolvedSource = resolvedSource
+        let capturedRampOutputURL = rampOutputURL
+        await Task.detached(priority: .userInitiated) {
+            do {
+                let ramper = SpeedRamper()
+                let result = try await ramper.ramp(
+                    sourceURL: capturedResolvedSource,
+                    outputURL: capturedRampOutputURL,
+                    segments: capturedSegments,
+                    config: capturedRampConfig
+                )
+                var responseBody = result.asDictionary()
+                responseBody["analysis_method"] = analysisMethod
+                await MainActor.run { self.sendResponse(connection: connection, status: 200, body: responseBody) }
+            } catch let err as SpeedRamper.SpeedRampError {
+                smLog.error("[\(reqID)] /speedramp failed: \(err.localizedDescription)", category: .server)
+                await MainActor.run {
+                    self.sendResponse(connection: connection, status: 500, body: [
+                        "error": err.errorDescription ?? err.localizedDescription,
+                        "code": "SPEEDRAMP_FAILED"
+                    ])
+                }
+            } catch {
+                smLog.error("[\(reqID)] /speedramp error: \(error.localizedDescription)", category: .server)
+                await MainActor.run { self.sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription]) }
+            }
+        }.value
     }
 
     func handleConcat(body: [String: Any], connection: NWConnection, reqID: Int) async {
@@ -327,27 +349,38 @@ extension ScreenMuseServer {
             outputURL = exportsDir.appendingPathComponent("ScreenMuse_\(ts).concat.mp4")
         }
 
-        do {
-            let concatenator = VideoConcatenator()
-            let result = try await concatenator.concatenate(sources: sourceURLs, outputURL: outputURL)
-            currentVideoURL = outputURL
-            sendResponse(connection: connection, status: 200, body: [
-                "path": result.outputURL.path,
-                "duration": result.duration,
-                "source_count": result.sourceCount,
-                "size_mb": result.fileSizeMB
-            ])
-        } catch let err as VideoConcatenator.ConcatError {
-            smLog.error("[\(reqID)] /concat failed: \(err.localizedDescription)", category: .server)
-            let status = (err.localizedDescription.contains("not found")) ? 404 : 500
-            sendResponse(connection: connection, status: status, body: [
-                "error": err.errorDescription ?? err.localizedDescription,
-                "code": "CONCAT_FAILED"
-            ])
-        } catch {
-            smLog.error("[\(reqID)] /concat error: \(error.localizedDescription)", category: .server)
-            sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
-        }
+        // Use Task.detached to run the CPU-intensive concatenation off the MainActor.
+        // ScreenMuseServer is @MainActor, so without detaching, concat work blocks the
+        // main thread and freezes the UI in the GUI app.
+        let capturedSourceURLs = sourceURLs
+        let capturedOutputURL = outputURL
+        await Task.detached(priority: .userInitiated) {
+            do {
+                let concatenator = VideoConcatenator()
+                let result = try await concatenator.concatenate(sources: capturedSourceURLs, outputURL: capturedOutputURL)
+                await MainActor.run {
+                    self.currentVideoURL = capturedOutputURL
+                    self.sendResponse(connection: connection, status: 200, body: [
+                        "path": result.outputURL.path,
+                        "duration": result.duration,
+                        "source_count": result.sourceCount,
+                        "size_mb": result.fileSizeMB
+                    ])
+                }
+            } catch let err as VideoConcatenator.ConcatError {
+                smLog.error("[\(reqID)] /concat failed: \(err.localizedDescription)", category: .server)
+                let status = (err.localizedDescription.contains("not found")) ? 404 : 500
+                await MainActor.run {
+                    self.sendResponse(connection: connection, status: status, body: [
+                        "error": err.errorDescription ?? err.localizedDescription,
+                        "code": "CONCAT_FAILED"
+                    ])
+                }
+            } catch {
+                smLog.error("[\(reqID)] /concat error: \(error.localizedDescription)", category: .server)
+                await MainActor.run { self.sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription]) }
+            }
+        }.value
     }
 
     func handleFrames(body: [String: Any], connection: NWConnection, reqID: Int) async {
@@ -385,43 +418,54 @@ extension ScreenMuseServer {
         let framesDir = URL(fileURLWithPath: "/tmp/screenmuse-frames")
         try? FileManager.default.createDirectory(at: framesDir, withIntermediateDirectories: true)
 
-        let asset = AVURLAsset(url: src)
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
-        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
+        // Use Task.detached to run the CPU-intensive frame extraction loop off the MainActor.
+        // ScreenMuseServer is @MainActor, so without detaching, the AVAssetImageGenerator
+        // loop blocks the main thread and freezes the UI in the GUI app.
+        let capturedSrc = src
+        let capturedTimestamps = timestamps
+        let capturedUsePNG = usePNG
+        let capturedFramesDir = framesDir
+        await Task.detached(priority: .userInitiated) {
+            let asset = AVURLAsset(url: capturedSrc)
+            let generator = AVAssetImageGenerator(asset: asset)
+            generator.appliesPreferredTrackTransform = true
+            generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
+            generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
 
-        var frames: [[String: Any]] = []
-        for ts in timestamps {
-            let cmTime = CMTime(seconds: ts, preferredTimescale: 600)
-            let ext = usePNG ? "png" : "jpg"
-            let filename = "frame-\(String(format: "%.1f", ts))s.\(ext)"
-            let outputPath = framesDir.appendingPathComponent(filename)
+            var frames: [[String: Any]] = []
+            for ts in capturedTimestamps {
+                let cmTime = CMTime(seconds: ts, preferredTimescale: 600)
+                let ext = capturedUsePNG ? "png" : "jpg"
+                let filename = "frame-\(String(format: "%.1f", ts))s.\(ext)"
+                let outputPath = capturedFramesDir.appendingPathComponent(filename)
 
-            do {
-                let (cgImage, _) = try await generator.image(at: cmTime)
-                let rep = NSBitmapImageRep(cgImage: cgImage)
-                let imageData: Data?
-                if usePNG {
-                    imageData = rep.representation(using: .png, properties: [:])
-                } else {
-                    imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+                do {
+                    let (cgImage, _) = try await generator.image(at: cmTime)
+                    let rep = NSBitmapImageRep(cgImage: cgImage)
+                    let imageData: Data?
+                    if capturedUsePNG {
+                        imageData = rep.representation(using: .png, properties: [:])
+                    } else {
+                        imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+                    }
+                    if let data = imageData {
+                        try data.write(to: outputPath)
+                        frames.append(["time": ts, "path": outputPath.path])
+                    } else {
+                        frames.append(["time": ts, "error": "Image conversion failed"])
+                    }
+                } catch {
+                    frames.append(["time": ts, "error": error.localizedDescription])
                 }
-                if let data = imageData {
-                    try data.write(to: outputPath)
-                    frames.append(["time": ts, "path": outputPath.path])
-                } else {
-                    frames.append(["time": ts, "error": "Image conversion failed"])
-                }
-            } catch {
-                frames.append(["time": ts, "error": error.localizedDescription])
             }
-        }
 
-        sendResponse(connection: connection, status: 200, body: [
-            "frames": frames,
-            "count": frames.filter { $0["path"] != nil }.count
-        ])
+            await MainActor.run {
+                self.sendResponse(connection: connection, status: 200, body: [
+                    "frames": frames,
+                    "count": frames.filter { $0["path"] != nil }.count
+                ])
+            }
+        }.value
     }
 
     func handleFrame(body: [String: Any], connection: NWConnection, reqID: Int) async {
