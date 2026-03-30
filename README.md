@@ -81,6 +81,51 @@ Grant Screen Recording permission when prompted, then relaunch.
 > **Use `dev-run.sh` or Xcode, not `swift build`.** Ad-hoc signed binaries get a new code signature hash on every rebuild. macOS TCC identifies apps by hash, so screen recording permission needs re-granting after each `swift build`. The script uses xcodebuild for a consistent signature. If permissions get stuck, run `./scripts/reset-permissions.sh`
 
 ---
+## Troubleshooting
+
+> **Always launch via `./scripts/dev-run.sh`**, not `swift build`. A direct build changes the code signature, which invalidates TCC permissions and is the root cause of most issues below.
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| All `curl` requests time out | Port 7823 already in use | `lsof -i :7823` to find the process, then `kill <PID>` |
+| `/start` returns `403` | Screen Recording not granted | System Settings → Privacy & Security → Screen Recording → enable **ScreenMuse** → **fully quit and relaunch** |
+| Output file is 0 bytes or has no video track | TCC timing race | `./scripts/reset-permissions.sh` then relaunch |
+| Permissions loop after every rebuild | Code signature changed by `swift build` | Use `dev-run.sh` exclusively; never use `swift build` to launch |
+
+### Port conflict
+```bash
+lsof -i :7823   # find what's holding the port
+kill <PID>     # free it, then relaunch via dev-run.sh
+```
+
+### Screen Recording (`403` on `/start`)
+
+Granting permission while the app is already running has **no effect** — the entitlement is checked at launch. The correct sequence is:
+
+1. Open System Settings → Privacy & Security → Screen Recording
+2. Enable **ScreenMuse**
+3. Fully quit the app (`⌘Q` or `kill`)
+4. Relaunch with `./scripts/dev-run.sh`
+
+### 0-byte / no-video-track output
+
+This is almost always a TCC race: the capture session started before macOS finished propagating the Screen Recording grant.
+```bash
+./scripts/reset-permissions.sh   # resets TCC state for the app
+./scripts/dev-run.sh             # relaunch; permission prompt will reappear
+```
+
+Re-grant Screen Recording when prompted, then retry the capture.
+
+### Permissions loop after rebuild
+
+`swift build` produces a differently-signed binary. macOS treats it as a new app identity and revokes all TCC grants. `dev-run.sh` signs consistently and avoids this entirely. If you've already triggered the loop:
+```bash
+./scripts/reset-permissions.sh
+./scripts/dev-run.sh
+```
+
+---
 
 ## Core Features
 
