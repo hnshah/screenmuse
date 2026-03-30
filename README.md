@@ -540,8 +540,19 @@ A: Yes! Use the CLI (`screenmuse`) or control via HTTP API directly.
 **Q: Is there a cloud/SaaS version?**  
 A: No. ScreenMuse is local-first by design. Your recordings never leave your machine unless you explicitly upload them.
 
-**Q: Can I contribute?**  
+**Q: Can I contribute?**
 A: Yes! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| All curl requests time out | Port 7823 already in use | Run `lsof -i :7823` to find the conflicting process, then kill it or choose a different port via `SCREENMUSE_PORT` |
+| `/start` returns 403 | Screen Recording permission not granted | System Settings → Privacy & Security → Screen Recording → enable ScreenMuse, then **relaunch the app** |
+| Output file is 0 bytes / no video track | TCC timing race — permission was granted but not yet effective | Run `./scripts/reset-permissions.sh`, then relaunch the app |
+| Permissions break after every rebuild | Code signature changed (`swift build` produces ad-hoc signatures) | Use `./scripts/dev-run.sh` instead of `swift build` — it uses xcodebuild for a stable signature |
 
 ---
 
