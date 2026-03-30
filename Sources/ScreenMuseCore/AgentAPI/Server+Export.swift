@@ -76,18 +76,23 @@ extension ScreenMuseServer {
 
         let jobID = body["_job_id"] as? String
         do {
-            let exporter = GIFExporter()
-            let result = try await exporter.export(
-                sourceURL: resolvedSource,
-                outputURL: outputURL,
-                config: config,
-                progress: { pct in
-                    smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
-                    if let jobID {
-                        Task { await JobQueue.shared.setProgress(jobID, pct) }
+            // Offload heavy export work to a background thread so the main actor
+            // remains responsive (GIF/WebP encoding can take 5-10s for long recordings).
+            let capturedConfig = config
+            let result = try await Task.detached(priority: .userInitiated) {
+                let exporter = GIFExporter()
+                return try await exporter.export(
+                    sourceURL: resolvedSource,
+                    outputURL: outputURL,
+                    config: capturedConfig,
+                    progress: { pct in
+                        smLog.debug("[\(reqID)] /export progress \(Int(pct * 100))%", category: .server)
+                        if let jobID {
+                            Task { await JobQueue.shared.setProgress(jobID, pct) }
+                        }
                     }
-                }
-            )
+                )
+            }.value
             let exportResp = ExportResponse(
                 path: result.outputURL.path,
                 format: result.format.rawValue,
@@ -206,82 +211,116 @@ extension ScreenMuseServer {
         let keystrokeTimestamps: [Date] = coordinator?.keystrokeTimestamps ?? []
         let recordingStart = startTime
 
-        let analyzer = ActivityAnalyzer()
-        let asset = AVURLAsset(url: resolvedSource)
-        let assetDuration: Double
-        do {
-            let dur = try await asset.load(.duration)
-            assetDuration = CMTimeGetSeconds(dur)
-        } catch {
-            sendResponse(connection: connection, status: 500, body: [
-                "error": "Could not load video duration: \(error.localizedDescription)",
-                "code": "ASSET_LOAD_FAILED"
-            ])
-            return
-        }
+        // Offload heavy analysis + speed ramp work to a background thread so the
+        // main actor remains responsive (analysis + re-encode can take several seconds).
+        let capturedRampConfig = rampConfig
+        let capturedCursorEvents = cursorEvents
+        let capturedKeystrokeTimestamps = keystrokeTimestamps
+        let capturedRecordingStart = recordingStart
+        let capturedBody = body
 
-        let segments: [ActivityAnalyzer.Segment]
-        let analysisMethod: String
-        if !cursorEvents.isEmpty || !keystrokeTimestamps.isEmpty, let start = recordingStart {
-            segments = analyzer.analyze(
-                cursorEvents: cursorEvents,
-                keystrokeTimestamps: keystrokeTimestamps,
-                recordingStart: start,
-                duration: assetDuration,
-                idleThreshold: rampConfig.idleThresholdSec
-            )
-            analysisMethod = "cursor_keystroke"
-            smLog.info("[\(reqID)] /speedramp using agent event data (\(cursorEvents.count) cursor, \(keystrokeTimestamps.count) keystrokes)", category: .server)
-        } else {
-            smLog.info("[\(reqID)] /speedramp no event data — falling back to audio analysis", category: .server)
-            do {
-                segments = try await analyzer.analyzeFromAudio(
-                    asset: asset,
-                    duration: assetDuration,
-                    idleThreshold: rampConfig.idleThresholdSec
-                )
-            } catch {
-                sendResponse(connection: connection, status: 500, body: [
-                    "error": "Activity analysis failed: \(error.localizedDescription)",
-                    "code": "ANALYSIS_FAILED"
-                ])
-                return
+        // Struct to carry the background result back to MainActor for response.
+        struct SpeedRampOutcome: Sendable {
+            enum Value: Sendable {
+                case success(SpeedRamper.SpeedRampResult, String)
+                case assetLoadFailed(String)
+                case analysisFailed(String)
+                case rampError(String, String?)
+                case unknownError(String)
             }
-            analysisMethod = "audio"
+            let value: Value
         }
 
-        let moviesURL2 = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
-        let exportsDir2 = moviesURL2.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
-        try? FileManager.default.createDirectory(at: exportsDir2, withIntermediateDirectories: true)
-        let rampOutputURL: URL
-        if let customOut = body["output"] as? String {
-            rampOutputURL = URL(fileURLWithPath: customOut)
-        } else {
-            rampOutputURL = SpeedRamper.defaultOutputURL(for: resolvedSource, exportsDir: exportsDir2)
-        }
+        let outcome: SpeedRampOutcome = await Task.detached(priority: .userInitiated) {
+            let analyzer = ActivityAnalyzer()
+            let asset = AVURLAsset(url: resolvedSource)
+            let assetDuration: Double
+            do {
+                let dur = try await asset.load(.duration)
+                assetDuration = CMTimeGetSeconds(dur)
+            } catch {
+                return SpeedRampOutcome(value: .assetLoadFailed(error.localizedDescription))
+            }
 
-        smLog.info("[\(reqID)] /speedramp segments=\(segments.count) idle=\(segments.filter{$0.isIdle}.count) → \(rampOutputURL.lastPathComponent)", category: .server)
+            let segments: [ActivityAnalyzer.Segment]
+            let analysisMethod: String
+            if !capturedCursorEvents.isEmpty || !capturedKeystrokeTimestamps.isEmpty, let start = capturedRecordingStart {
+                segments = analyzer.analyze(
+                    cursorEvents: capturedCursorEvents,
+                    keystrokeTimestamps: capturedKeystrokeTimestamps,
+                    recordingStart: start,
+                    duration: assetDuration,
+                    idleThreshold: capturedRampConfig.idleThresholdSec
+                )
+                analysisMethod = "cursor_keystroke"
+                smLog.info("[\(reqID)] /speedramp using agent event data (\(capturedCursorEvents.count) cursor, \(capturedKeystrokeTimestamps.count) keystrokes)", category: .server)
+            } else {
+                smLog.info("[\(reqID)] /speedramp no event data — falling back to audio analysis", category: .server)
+                do {
+                    segments = try await analyzer.analyzeFromAudio(
+                        asset: asset,
+                        duration: assetDuration,
+                        idleThreshold: capturedRampConfig.idleThresholdSec
+                    )
+                } catch {
+                    return SpeedRampOutcome(value: .analysisFailed(error.localizedDescription))
+                }
+                analysisMethod = "audio"
+            }
 
-        do {
-            let ramper = SpeedRamper()
-            let result = try await ramper.ramp(
-                sourceURL: resolvedSource,
-                outputURL: rampOutputURL,
-                segments: segments,
-                config: rampConfig
-            )
+            let moviesURL2 = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+            let exportsDir2 = moviesURL2.appendingPathComponent("ScreenMuse/Exports", isDirectory: true)
+            try? FileManager.default.createDirectory(at: exportsDir2, withIntermediateDirectories: true)
+            let rampOutputURL: URL
+            if let customOut = capturedBody["output"] as? String {
+                rampOutputURL = URL(fileURLWithPath: customOut)
+            } else {
+                rampOutputURL = SpeedRamper.defaultOutputURL(for: resolvedSource, exportsDir: exportsDir2)
+            }
+
+            smLog.info("[\(reqID)] /speedramp segments=\(segments.count) idle=\(segments.filter{$0.isIdle}.count) → \(rampOutputURL.lastPathComponent)", category: .server)
+
+            do {
+                let ramper = SpeedRamper()
+                let result = try await ramper.ramp(
+                    sourceURL: resolvedSource,
+                    outputURL: rampOutputURL,
+                    segments: segments,
+                    config: capturedRampConfig
+                )
+                return SpeedRampOutcome(value: .success(result, analysisMethod))
+            } catch let err as SpeedRamper.SpeedRampError {
+                return SpeedRampOutcome(value: .rampError(err.localizedDescription, err.errorDescription))
+            } catch {
+                return SpeedRampOutcome(value: .unknownError(error.localizedDescription))
+            }
+        }.value
+
+        // Send response back on MainActor
+        switch outcome.value {
+        case .success(let result, let analysisMethod):
             var responseBody = result.asDictionary()
             responseBody["analysis_method"] = analysisMethod
             sendResponse(connection: connection, status: 200, body: responseBody)
-        } catch let err as SpeedRamper.SpeedRampError {
-            smLog.error("[\(reqID)] /speedramp failed: \(err.localizedDescription)", category: .server)
+        case .assetLoadFailed(let msg):
             sendResponse(connection: connection, status: 500, body: [
-                "error": err.errorDescription ?? err.localizedDescription,
+                "error": "Could not load video duration: \(msg)",
+                "code": "ASSET_LOAD_FAILED"
+            ])
+        case .analysisFailed(let msg):
+            sendResponse(connection: connection, status: 500, body: [
+                "error": "Activity analysis failed: \(msg)",
+                "code": "ANALYSIS_FAILED"
+            ])
+        case .rampError(let msg, let desc):
+            smLog.error("[\(reqID)] /speedramp failed: \(msg)", category: .server)
+            sendResponse(connection: connection, status: 500, body: [
+                "error": desc ?? msg,
                 "code": "SPEEDRAMP_FAILED"
             ])
-        } catch {
-            smLog.error("[\(reqID)] /speedramp error: \(error.localizedDescription)", category: .server)
-            sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+        case .unknownError(let msg):
+            smLog.error("[\(reqID)] /speedramp error: \(msg)", category: .server)
+            sendResponse(connection: connection, status: 500, body: ["error": msg])
         }
     }
 
@@ -328,8 +367,12 @@ extension ScreenMuseServer {
         }
 
         do {
-            let concatenator = VideoConcatenator()
-            let result = try await concatenator.concatenate(sources: sourceURLs, outputURL: outputURL)
+            // Offload heavy concatenation work to a background thread so the main
+            // actor remains responsive.
+            let result = try await Task.detached(priority: .userInitiated) {
+                let concatenator = VideoConcatenator()
+                return try await concatenator.concatenate(sources: sourceURLs, outputURL: outputURL)
+            }.value
             currentVideoURL = outputURL
             sendResponse(connection: connection, status: 200, body: [
                 "path": result.outputURL.path,
