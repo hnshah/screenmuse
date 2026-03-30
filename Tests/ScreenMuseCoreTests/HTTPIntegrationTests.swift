@@ -2,6 +2,7 @@
 import XCTest
 @testable import ScreenMuseCore
 import Foundation
+import Network
 
 /// HTTP Integration Tests for ScreenMuseServer (issue #5).
 ///
@@ -279,24 +280,78 @@ final class HTTPIntegrationTests: XCTestCase {
     }
 
     func testOversizedContentLengthReturns413() async throws {
-        // URLSession silently overrides manually set Content-Length headers with the
-        // actual body size. We must send a real oversized body (> maxBodySize 4_194_304).
-        // Use a safe endpoint (/chapter) — not /start — to avoid triggering a recording.
-        let url = URL(string: "http://127.0.0.1:\(HTTPIntegrationTests.testPort)/chapter")!
-        var request = URLRequest(url: url, timeoutInterval: 10)
-        request.httpMethod = "POST"
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        // 4.5 MB of zero bytes — safely over the 4 MB hard cap
-        request.httpBody = Data(count: 4_718_592)
+        // URLSession always sets Content-Length to match the actual body size, so we
+        // cannot send a fake oversized header through it without transferring real data.
+        // Sending 4.5 MB in CI reliably times out. Solution: use NWConnection (raw TCP)
+        // to send only the HTTP request headers with Content-Length: 5000000 and no body.
+        // The server rejects at header-parse time and returns 413 immediately — zero
+        // data transfer required.
+        let port = HTTPIntegrationTests.testPort
+        let rawRequest = "POST /chapter HTTP/1.1\r\n" +
+            "Host: 127.0.0.1:\(port)\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            "Content-Length: 5000000\r\n" +
+            "\r\n"
+        let requestData = rawRequest.data(using: .utf8)!
 
-        let (data, response) = try await URLSession.shared.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+        let conn = NWConnection(
+            host: "127.0.0.1",
+            port: NWEndpoint.Port(rawValue: port)!,
+            using: .tcp
+        )
 
-        XCTAssertEqual(status, 413, "Body > 4MB must return 413 Payload Too Large")
-        XCTAssertNotNil(json["error"], "413 response must include 'error'")
-        XCTAssertNotNil(json["max_bytes"],
-                        "413 response must include 'max_bytes' so clients know the limit")
+        struct TestError: Error { let message: String }
+
+        let (statusCode, json): (Int, [String: Any]) = try await withCheckedThrowingContinuation { continuation in
+            conn.stateUpdateHandler = { state in
+                switch state {
+                case .ready:
+                    conn.send(content: requestData, completion: .contentProcessed { sendErr in
+                        if let sendErr = sendErr {
+                            conn.cancel()
+                            continuation.resume(throwing: sendErr)
+                            return
+                        }
+                        conn.receive(minimumIncompleteLength: 12, maximumLength: 4096) { data, _, _, recvErr in
+                            conn.cancel()
+                            if let recvErr = recvErr {
+                                continuation.resume(throwing: recvErr)
+                                return
+                            }
+                            guard let data = data,
+                                  let responseStr = String(data: data, encoding: .utf8) else {
+                                continuation.resume(throwing: TestError(message: "No response data"))
+                                return
+                            }
+                            // Parse status code from "HTTP/1.1 413 Payload Too Large"
+                            let firstLine = responseStr.components(separatedBy: "\r\n").first ?? ""
+                            let parts = firstLine.split(separator: " ", maxSplits: 2)
+                            let code = parts.count >= 2 ? Int(String(parts[1])) ?? 0 : 0
+                            // Parse JSON body (after blank header separator)
+                            var parsedJSON: [String: Any] = [:]
+                            if let sep = responseStr.range(of: "\r\n\r\n"),
+                               let bodyData = String(responseStr[sep.upperBound...]).data(using: .utf8),
+                               let obj = try? JSONSerialization.jsonObject(with: bodyData) as? [String: Any] {
+                                parsedJSON = obj
+                            }
+                            continuation.resume(returning: (code, parsedJSON))
+                        }
+                    })
+                case .failed(let err):
+                    conn.cancel()
+                    continuation.resume(throwing: err)
+                case .cancelled:
+                    break
+                default:
+                    break
+                }
+            }
+            conn.start(queue: .global())
+        }
+
+        XCTAssertEqual(statusCode, 413, "Content-Length > 4MB must return 413 Payload Too Large")
+        XCTAssertNotNil(json["error"], "413 response must include \'error\'")
+        XCTAssertNotNil(json["max_bytes"], "413 response must include \'max_bytes\' so clients know the limit")
     }
 
     // MARK: - Health Response Shape (critical for ops monitoring)
@@ -340,3 +395,4 @@ final class HTTPIntegrationTests: XCTestCase {
     }
 }
 #endif
+
