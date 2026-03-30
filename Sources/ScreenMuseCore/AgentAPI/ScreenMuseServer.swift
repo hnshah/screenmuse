@@ -266,7 +266,7 @@ public class ScreenMuseServer {
     }
 
     /// Maximum HTTP body size: 10 MB.  Requests larger than this are rejected.
-    private static let maxBodySize = 10_485_760
+    private static let maxBodySize = 4_194_304
 
     private func receiveRequest(_ connection: NWConnection) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { @Sendable [weak self] data, _, _, error in
