@@ -40,7 +40,6 @@ extension ScreenMuseServer {
 extension ScreenMuseServer {
 
     func handleHealth(body: [String: Any], connection: NWConnection, reqID: Int) {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
         let listenerState: String
         switch listener?.state {
         case .ready:       listenerState = "ready"
@@ -56,7 +55,7 @@ extension ScreenMuseServer {
         var response: [String: Any] = [
             "status": "ok",
             "ok": true,
-            "version": version,
+            "version": Self.currentVersion,
             "listener": listenerState,
             "port": Int(port),
             "active_connections": activeConnectionCount,
@@ -192,7 +191,6 @@ extension ScreenMuseServer {
     }
 
     func handleVersion(body: [String: Any], connection: NWConnection, reqID: Int) {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown"
         smLog.debug("[\(reqID)] /version requested", category: .server)
         let endpoints: [String] = [
@@ -233,7 +231,7 @@ extension ScreenMuseServer {
             "GET /job/:id", "GET /jobs"
         ]
         sendResponse(connection: connection, status: 200, body: [
-            "version": version,
+            "version": Self.currentVersion,
             "build": build,
             "min_macos": "14.0 (Sonoma)",
             "endpoint_count": endpoints.count,
@@ -358,8 +356,7 @@ extension ScreenMuseServer {
             sendResponse(connection: connection, status: 500, body: ["error": "spec encoding failed"])
             return
         }
-        let openAPIVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-        let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\nX-ScreenMuse-Version: \(openAPIVersion)\r\n\r\n\(OpenAPISpec.json)"
+        let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\nX-ScreenMuse-Version: \(Self.currentVersion)\r\n\r\n\(OpenAPISpec.json)"
         if let responseData = response.data(using: .utf8) {
             connection.send(content: responseData, completion: .contentProcessed { @Sendable _ in connection.cancel() })
         }

@@ -66,6 +66,17 @@ final class HTTPIntegrationTests: XCTestCase {
         body: String? = nil,
         headers: [String: String] = [:]
     ) async throws -> (Int, [String: Any]) {
+        let (status, json, _) = try await reqFull(method, path, body: body, headers: headers)
+        return (status, json)
+    }
+
+    /// Send an HTTP request and return (statusCode, parsed JSON body, HTTPURLResponse).
+    private func reqFull(
+        _ method: String,
+        _ path: String,
+        body: String? = nil,
+        headers: [String: String] = [:]
+    ) async throws -> (Int, [String: Any], HTTPURLResponse?) {
         let url = URL(string: "http://127.0.0.1:\(HTTPIntegrationTests.testPort)\(path)")!
         var request = URLRequest(url: url, timeoutInterval: 5)
         request.httpMethod = method
@@ -77,9 +88,10 @@ final class HTTPIntegrationTests: XCTestCase {
             }
         }
         let (data, response) = try await URLSession.shared.data(for: request)
-        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let httpResponse = response as? HTTPURLResponse
+        let statusCode = httpResponse?.statusCode ?? 0
         let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
-        return (statusCode, json)
+        return (statusCode, json, httpResponse)
     }
 
     // MARK: - 1. Route Dispatch
@@ -368,6 +380,10 @@ final class HTTPIntegrationTests: XCTestCase {
         XCTAssertEqual(status, 200)
         XCTAssertNotNil(json["ok"],
                         "/health must include 'ok'")
+        XCTAssertEqual(json["status"] as? String, "ok",
+                       "/health must include 'status: ok' for agent compatibility checks")
+        XCTAssertNotNil(json["version"],
+                        "/health must include 'version' so agents can detect compatibility")
         XCTAssertNotNil(json["listener"],
                         "/health must include 'listener' — used to diagnose port-bind failures")
         XCTAssertNotNil(json["port"],
@@ -399,6 +415,51 @@ final class HTTPIntegrationTests: XCTestCase {
         let connections = json["active_connections"] as? Int ?? -1
         XCTAssertGreaterThanOrEqual(connections, 0,
                                     "'active_connections' must be a non-negative integer")
+    }
+
+    // MARK: - API Versioning (X-ScreenMuse-Version header)
+
+    func testHealthResponseIncludesVersionHeader() async throws {
+        let (status, _, httpResponse) = try await reqFull("GET", "/health")
+        XCTAssertEqual(status, 200)
+        let versionHeader = httpResponse?.value(forHTTPHeaderField: "X-ScreenMuse-Version")
+        XCTAssertNotNil(versionHeader,
+                        "All responses must include X-ScreenMuse-Version header")
+        XCTAssertFalse(versionHeader?.isEmpty ?? true,
+                       "X-ScreenMuse-Version must not be empty")
+    }
+
+    func testStatusResponseIncludesVersionHeader() async throws {
+        let (status, _, httpResponse) = try await reqFull("GET", "/status")
+        XCTAssertEqual(status, 200)
+        let versionHeader = httpResponse?.value(forHTTPHeaderField: "X-ScreenMuse-Version")
+        XCTAssertNotNil(versionHeader,
+                        "GET /status must include X-ScreenMuse-Version header")
+    }
+
+    func testNotFoundResponseIncludesVersionHeader() async throws {
+        let (status, _, httpResponse) = try await reqFull("GET", "/nonexistent-route")
+        XCTAssertEqual(status, 404)
+        let versionHeader = httpResponse?.value(forHTTPHeaderField: "X-ScreenMuse-Version")
+        XCTAssertNotNil(versionHeader,
+                        "Even error responses must include X-ScreenMuse-Version header")
+    }
+
+    func testVersionHeaderMatchesHealthBodyVersion() async throws {
+        let (_, json, httpResponse) = try await reqFull("GET", "/health")
+        let headerVersion = httpResponse?.value(forHTTPHeaderField: "X-ScreenMuse-Version")
+        let bodyVersion = json["version"] as? String
+        XCTAssertNotNil(headerVersion)
+        XCTAssertNotNil(bodyVersion)
+        XCTAssertEqual(headerVersion, bodyVersion,
+                       "X-ScreenMuse-Version header must match the 'version' field in /health body")
+    }
+
+    func testExposeHeadersIncludesVersionHeader() async throws {
+        let (_, _, httpResponse) = try await reqFull("GET", "/health")
+        let exposeHeaders = httpResponse?.value(forHTTPHeaderField: "Access-Control-Expose-Headers") ?? ""
+        XCTAssertTrue(exposeHeaders.contains("X-ScreenMuse-Version"),
+                      "Access-Control-Expose-Headers must include X-ScreenMuse-Version so browsers can read it")
     }
 }
 #endif
