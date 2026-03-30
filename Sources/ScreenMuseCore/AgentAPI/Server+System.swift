@@ -54,6 +54,7 @@ extension ScreenMuseServer {
         // Include permission status so agents can self-diagnose without grepping Console.app
         let hasScreenRecording = CGPreflightScreenCaptureAccess()
         var response: [String: Any] = [
+            "status": "ok",
             "ok": true,
             "version": version,
             "listener": listenerState,
@@ -357,7 +358,8 @@ extension ScreenMuseServer {
             sendResponse(connection: connection, status: 500, body: ["error": "spec encoding failed"])
             return
         }
-        let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(OpenAPISpec.json)"
+        let openAPIVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+        let response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: \(specData.count)\r\nAccess-Control-Allow-Origin: *\r\nX-ScreenMuse-Version: \(openAPIVersion)\r\n\r\n\(OpenAPISpec.json)"
         if let responseData = response.data(using: .utf8) {
             connection.send(content: responseData, completion: .contentProcessed { @Sendable _ in connection.cancel() })
         }
