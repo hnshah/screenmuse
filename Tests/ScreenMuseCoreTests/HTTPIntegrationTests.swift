@@ -279,20 +279,21 @@ final class HTTPIntegrationTests: XCTestCase {
     }
 
     func testOversizedContentLengthReturns413() async throws {
-        // Set Content-Length to 9 999 999 bytes (> maxBodySize 4 194 304).
-        // The server inspects Content-Length before reading the full body.
-        let url = URL(string: "http://127.0.0.1:\(HTTPIntegrationTests.testPort)/start")!
-        var request = URLRequest(url: url, timeoutInterval: 5)
+        // URLSession silently overrides manually set Content-Length headers with the
+        // actual body size. We must send a real oversized body (> maxBodySize 4_194_304).
+        // Use a safe endpoint (/chapter) — not /start — to avoid triggering a recording.
+        let url = URL(string: "http://127.0.0.1:\(HTTPIntegrationTests.testPort)/chapter")!
+        var request = URLRequest(url: url, timeoutInterval: 10)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("9999999", forHTTPHeaderField: "Content-Length")
-        request.httpBody = #"{"name":"test"}"#.data(using: .utf8)! // small actual body
+        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+        // 4.5 MB of zero bytes — safely over the 4 MB hard cap
+        request.httpBody = Data(count: 4_718_592)
 
         let (data, response) = try await URLSession.shared.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         let json = (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
 
-        XCTAssertEqual(status, 413, "Content-Length > 4MB must return 413 Payload Too Large")
+        XCTAssertEqual(status, 413, "Body > 4MB must return 413 Payload Too Large")
         XCTAssertNotNil(json["error"], "413 response must include 'error'")
         XCTAssertNotNil(json["max_bytes"],
                         "413 response must include 'max_bytes' so clients know the limit")
