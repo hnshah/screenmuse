@@ -26,3 +26,9 @@ jobs:
 
       - name: Build ScreenMuseCore
         run: swift build --target ScreenMuseCore 2>&1
+
+      - name: Test ScreenMuseCoreTests
+        run: swift test --filter ScreenMuseCoreTests 2>&1
+        env:
+          CI: true
+
