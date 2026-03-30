@@ -448,7 +448,8 @@ public class ScreenMuseServer {
 
         // CORS preflight
         if method == "OPTIONS" {
-            let headers = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type, X-ScreenMuse-Key\r\n\r\n"
+            let optionsVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+            let headers = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, DELETE, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type, X-ScreenMuse-Key\r\nX-ScreenMuse-Version: \(optionsVersion)\r\n\r\n"
             if let data = headers.data(using: .utf8) {
                 connection.send(content: data, completion: .contentProcessed { @Sendable _ in connection.cancel() })
             }
@@ -802,7 +803,8 @@ public class ScreenMuseServer {
 
         let statusTexts = [200: "OK", 202: "Accepted", 204: "No Content", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 409: "Conflict", 413: "Payload Too Large", 500: "Internal Server Error", 503: "Service Unavailable"]
         let statusText = statusTexts[resolvedStatus] ?? "Unknown"
-        let response = "HTTP/1.1 \(resolvedStatus) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(jsonStr)"
+        let serverVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+        let response = "HTTP/1.1 \(resolvedStatus) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\nX-ScreenMuse-Version: \(serverVersion)\r\n\r\n\(jsonStr)"
 
         guard let responseData = response.data(using: .utf8) else {
             connection.cancel()
