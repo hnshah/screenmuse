@@ -439,10 +439,10 @@ await browser.close();
 
 **Video files saved to:**
 ```
-/Users/Vera/Movies/ScreenMuse/
+~/Movies/ScreenMuse/
   google-search-stripe-api_2026-03-28_18-30-45.mp4
   
-/Users/Vera/Movies/ScreenMuse/Exports/
+~/Movies/ScreenMuse/Exports/
   google-search-stripe-api_2026-03-28_18-30-45.gif
 ```
 
@@ -498,7 +498,7 @@ await preflight();
 await produceVideo(plan);
 
 // 4. Validate + report
-"✅ Video complete: /Users/Vera/Movies/ScreenMuse/...
+"✅ Video complete: ~/Movies/ScreenMuse/...
 Size: 1.8 MB, Duration: 20.3s, Quality: ✅ (0.089 MB/s)"
 ```
 

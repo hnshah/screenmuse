@@ -1,0 +1,17 @@
+{
+  "name": "screenmuse-agent-scripts",
+  "version": "1.0.0",
+  "description": "Autonomous video production scripts for AI agents using ScreenMuse",
+  "main": "produce-video.js",
+  "scripts": {
+    "record": "node produce-video.js",
+    "google-search": "node produce-video.js --workflow=google-search",
+    "docs": "node produce-video.js --workflow=docs-navigation"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
