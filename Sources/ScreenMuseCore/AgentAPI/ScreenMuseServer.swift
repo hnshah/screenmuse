@@ -775,14 +775,39 @@ public class ScreenMuseServer {
             return
         }
 
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: body),
-              let jsonStr = String(data: jsonData, encoding: .utf8) else { return }
+        let resolvedBody: [String: Any]
+        let resolvedStatus: Int
+        if let jsonData = try? JSONSerialization.data(withJSONObject: body),
+           String(data: jsonData, encoding: .utf8) != nil {
+            resolvedBody = body
+            resolvedStatus = status
+        } else {
+            // JSON serialization failed — send a 500 rather than silently closing the connection.
+            smLog.error("sendResponse: JSONSerialization failed for status \(status), sending 500 fallback", category: .server)
+            resolvedBody = ["error": "internal serialization failure", "code": "SERIALIZATION_ERROR"]
+            resolvedStatus = 500
+        }
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: resolvedBody),
+              let jsonStr = String(data: jsonData, encoding: .utf8) else {
+            // Absolute fallback: hardcoded bytes so the connection always gets a response.
+            let hardcoded = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: application/json\r\nContent-Length: 51\r\nAccess-Control-Allow-Origin: *\r\n\r\n{\"error\":\"serialization failure\",\"code\":\"FATAL_ERROR\"}"
+            if let data = hardcoded.data(using: .utf8) {
+                connection.send(content: data, completion: .contentProcessed { @Sendable _ in connection.cancel() })
+            } else {
+                connection.cancel()
+            }
+            return
+        }
 
         let statusTexts = [200: "OK", 202: "Accepted", 204: "No Content", 400: "Bad Request", 401: "Unauthorized", 404: "Not Found", 409: "Conflict", 413: "Payload Too Large", 500: "Internal Server Error", 503: "Service Unavailable"]
-        let statusText = statusTexts[status] ?? "Unknown"
-        let response = "HTTP/1.1 \(status) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(jsonStr)"
+        let statusText = statusTexts[resolvedStatus] ?? "Unknown"
+        let response = "HTTP/1.1 \(resolvedStatus) \(statusText)\r\nContent-Type: application/json\r\nContent-Length: \(jsonData.count)\r\nAccess-Control-Allow-Origin: *\r\n\r\n\(jsonStr)"
 
-        guard let responseData = response.data(using: .utf8) else { return }
+        guard let responseData = response.data(using: .utf8) else {
+            connection.cancel()
+            return
+        }
         connection.send(content: responseData, completion: .contentProcessed { @Sendable _ in
             connection.cancel()
         })
