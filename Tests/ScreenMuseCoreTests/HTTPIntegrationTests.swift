@@ -28,10 +28,13 @@ final class HTTPIntegrationTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        // Disable auth by default so tests can focus on routing and response shape
+        // Start the server first (which internally calls loadOrGenerateAPIKey()),
+        // then override apiKey to nil so tests run without auth enforcement.
+        // Setting apiKey before start() is insufficient because start() always
+        // calls loadOrGenerateAPIKey() which re-reads ~/.screenmuse/api_key.
         try await MainActor.run {
-            ScreenMuseServer.shared.apiKey = nil
             try ScreenMuseServer.shared.start(port: HTTPIntegrationTests.testPort)
+            ScreenMuseServer.shared.apiKey = nil  // disable auth AFTER start() overwrites it
         }
         // Give NWListener time to transition .setup → .waiting → .ready (async)
         try await Task.sleep(nanoseconds: 400_000_000) // 400ms

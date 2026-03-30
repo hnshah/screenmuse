@@ -20,8 +20,12 @@ public func checkAPIKey(required: String?, provided: String?, method: String, pa
 /// Validates that a capture region falls within the given display bounds.
 ///
 /// Returns `nil` if the region is valid, or an error string describing the problem.
+///
+/// Note: CGRect normalises negative width/height values (e.g. CGRect with height -100 is stored
+/// as origin.y -= 100, height = 100). We therefore validate the raw `size` struct rather than
+/// the computed `width`/`height` properties, which would hide negative inputs.
 public func validateRegion(_ rect: CGRect, against displayBounds: CGRect) -> String? {
-    if rect.width <= 0 || rect.height <= 0 {
+    if rect.size.width <= 0 || rect.size.height <= 0 {
         return "width and height must be greater than 0"
     }
     if rect.origin.x < displayBounds.minX || rect.origin.y < displayBounds.minY ||
@@ -45,6 +49,7 @@ public func validateRecordDuration(_ duration: Double?) -> String? {
 ///
 /// Returns the integer value of the Content-Length header, or `nil` if not found or malformed.
 /// Matching is case-insensitive per HTTP spec.
+/// Returns `nil` for negative values — a negative Content-Length is invalid per RFC 7230.
 public func parseContentLength(from raw: String) -> Int? {
     let lines = raw.components(separatedBy: "\r\n")
     for line in lines {
@@ -52,7 +57,8 @@ public func parseContentLength(from raw: String) -> Int? {
         let lower = line.lowercased()
         if lower.hasPrefix("content-length:") {
             let value = line.dropFirst("content-length:".count).trimmingCharacters(in: .whitespaces)
-            return Int(value)
+            guard let parsed = Int(value), parsed >= 0 else { return nil }
+            return parsed
         }
     }
     return nil

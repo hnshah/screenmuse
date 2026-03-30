@@ -126,6 +126,12 @@ struct Args {
     let flags: [String: String]
     let boolFlags: Set<String>
 
+    /// Flags that never take a value argument — they are boolean on/off switches.
+    /// Any --flag not in this set is treated as a key-value pair (consumes the next token).
+    private static let booleanFlagNames: Set<String> = [
+        "json", "verbose", "watch", "help", "force", "silent", "quiet", "dry-run", "async"
+    ]
+
     init(_ args: [String]) {
         var pos: [String] = []
         var flags: [String: String] = [:]
@@ -135,7 +141,8 @@ struct Args {
             let a = args[i]
             if a.hasPrefix("--") {
                 let key = String(a.dropFirst(2))
-                if i + 1 < args.count && !args[i+1].hasPrefix("--") {
+                let isBoolean = Args.booleanFlagNames.contains(key)
+                if !isBoolean && i + 1 < args.count && !args[i+1].hasPrefix("--") {
                     flags[key] = args[i+1]
                     i += 2
                 } else {
