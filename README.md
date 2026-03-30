@@ -82,6 +82,41 @@ Grant Screen Recording permission when prompted, then relaunch.
 
 ---
 
+## Troubleshooting
+
+Common failure modes and how to fix them:
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| All curl requests time out | Port 7823 already in use | `lsof -i :7823` to find the conflicting process, then kill it or set `SCREENMUSE_PORT` to a different port |
+| `/start` returns 403 | Screen Recording permission not granted | System Settings → Privacy & Security → Screen Recording → enable ScreenMuse → **relaunch the app** (required after granting permission) |
+| Output file is 0 bytes or has no video track | TCC timing race — permission granted but not yet active | Run `./scripts/reset-permissions.sh` then relaunch |
+| Permissions loop on every rebuild | Code signature changes with each `swift build` | Always use `./scripts/dev-run.sh` (not `swift build`) — see note in Quick Start |
+
+### Quick diagnostic checklist
+
+```bash
+# 1. Is the server running?
+curl http://localhost:7823/health
+
+# 2. Is port 7823 in use by something else?
+lsof -i :7823
+
+# 3. Reset stuck permissions
+./scripts/reset-permissions.sh
+
+# 4. Check server logs (if running via dev-run.sh)
+# Logs appear in the terminal where you ran dev-run.sh
+```
+
+### Screen Recording permission
+
+After granting Screen Recording permission in System Settings, you **must relaunch ScreenMuse**. The permission takes effect on next launch — `POST /start` will return `403` until you do this.
+
+If the app keeps asking for permission after each `swift build`, switch to `./scripts/dev-run.sh`. The build script uses a consistent code signature so macOS only needs to grant permission once.
+
+---
+
 ## Core Features
 
 ### 🎯 API First Design
