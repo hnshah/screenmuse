@@ -19,6 +19,13 @@ It accepts a JSON array of commands, each dispatched through a strict switch-cas
 
 Any action not in this list is rejected with an error. String inputs (`name`, `text`, `window_title`) are validated to reject strings exceeding 500 characters or containing null bytes / control characters.
 
+The `POST /script/batch` endpoint is identical in scope to `/script` — it accepts a named array of scripts, each of which follows the same command allowlist. It does not provide any additional execution surface.
+
+**Exposure risk:** If port 7823 is reachable by untrusted clients without authentication, they could trigger screen recordings or export operations. They cannot execute arbitrary code on the host. Mitigations:
+- Always run with `SCREENMUSE_API_KEY` set (enabled by default when a key is configured).
+- Keep the server bound to `127.0.0.1` (the default) unless you have a specific need for network access.
+- Never expose port 7823 directly to the internet.
+
 ## Authentication
 
 All HTTP endpoints require an API key unless explicitly disabled.

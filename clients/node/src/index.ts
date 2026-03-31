@@ -98,6 +98,134 @@ export interface HealthResult {
   warning?: string;
 }
 
+export interface OcrResult {
+  text: string;
+  words?: Array<{
+    text: string;
+    confidence: number;
+    bounds: { x: number; y: number; width: number; height: number };
+  }>;
+  source?: string;
+}
+
+export interface SpeedRampResult {
+  path: string;
+  duration: number;
+  size: number;
+  size_mb: number;
+  segments_applied: number;
+}
+
+export interface ConcatResult {
+  path: string;
+  duration: number;
+  size: number;
+  size_mb: number;
+  segments: number;
+}
+
+export interface CropResult {
+  path: string;
+  width: number;
+  height: number;
+  size: number;
+  size_mb: number;
+}
+
+export interface AnnotateResult {
+  path: string;
+  annotations_applied: number;
+  size: number;
+  size_mb: number;
+}
+
+export interface ThumbnailResult {
+  path: string;
+  width: number;
+  height: number;
+  size: number;
+  time: number;
+}
+
+export interface FramesResult {
+  paths: string[];
+  count: number;
+  fps: number;
+  duration: number;
+}
+
+export interface FrameResult {
+  path: string;
+  width: number;
+  height: number;
+  time: number;
+}
+
+export interface WindowInfo {
+  app: string;
+  title: string;
+  pid: number;
+  bounds?: { x: number; y: number; width: number; height: number };
+  isActive?: boolean;
+}
+
+export interface ActiveWindowResult {
+  app: string;
+  title: string;
+  pid: number;
+  bounds?: { x: number; y: number; width: number; height: number };
+}
+
+export interface ClipboardResult {
+  text: string;
+  type: string;
+}
+
+export interface RunningApp {
+  name: string;
+  pid: number;
+  bundleId?: string;
+  isActive?: boolean;
+}
+
+export interface TimelineResult {
+  elapsed: number;
+  chapters: Array<{ name: string; time: number }>;
+  notes: Array<{ text: string; time: number }>;
+  highlights: Array<{ time: number }>;
+}
+
+export interface RecordingInfo {
+  filename: string;
+  path: string;
+  size: number;
+  duration?: number;
+  created_at?: string;
+}
+
+export interface SessionInfo {
+  id: string;
+  name: string;
+  isRecording: boolean;
+  videoPath?: string;
+  chapters: Array<{ name: string; time: number }>;
+}
+
+export interface VersionResult {
+  version: string;
+  build?: string;
+}
+
+export interface ValidateResult {
+  ok: boolean;
+  path: string;
+  duration: number;
+  resolution?: { width: number; height: number };
+  fps?: number;
+  size: number;
+  size_mb: number;
+}
+
 // ── Client ────────────────────────────────────────────────────────────────────
 
 export interface ScreenMuseOptions {
@@ -248,6 +376,193 @@ export class ScreenMuse {
     if (options.output) body.output = options.output;
     if (options.fastCopy !== undefined) body.fast_copy = options.fastCopy;
     return this.request("POST", "/trim", body);
+  }
+
+  async ocr(options: { source?: string } = {}): Promise<OcrResult> {
+    const body: Record<string, unknown> = {};
+    if (options.source) body.source = options.source;
+    return this.request("POST", "/ocr", body);
+  }
+
+  async speedramp(options: {
+    segments: Array<{ start: number; end: number; speed: number }>;
+    source?: string;
+    output?: string;
+  }): Promise<SpeedRampResult> {
+    const body: Record<string, unknown> = { segments: options.segments };
+    if (options.source) body.source = options.source;
+    if (options.output) body.output = options.output;
+    return this.request("POST", "/speedramp", body);
+  }
+
+  async concat(options: {
+    sources: string[];
+    output?: string;
+    crossfade?: number;
+  }): Promise<ConcatResult> {
+    const body: Record<string, unknown> = { sources: options.sources };
+    if (options.output) body.output = options.output;
+    if (options.crossfade !== undefined) body.crossfade = options.crossfade;
+    return this.request("POST", "/concat", body);
+  }
+
+  async crop(options: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    source?: string;
+    output?: string;
+  }): Promise<CropResult> {
+    const body: Record<string, unknown> = {
+      x: options.x,
+      y: options.y,
+      width: options.width,
+      height: options.height,
+    };
+    if (options.source) body.source = options.source;
+    if (options.output) body.output = options.output;
+    return this.request("POST", "/crop", body);
+  }
+
+  async annotate(options: {
+    texts: Array<{
+      text: string;
+      time: number;
+      x?: number;
+      y?: number;
+      duration?: number;
+      color?: string;
+      fontSize?: number;
+    }>;
+    source?: string;
+    output?: string;
+  }): Promise<AnnotateResult> {
+    const body: Record<string, unknown> = { texts: options.texts };
+    if (options.source) body.source = options.source;
+    if (options.output) body.output = options.output;
+    return this.request("POST", "/annotate", body);
+  }
+
+  async thumbnail(options: {
+    time?: number;
+    source?: string;
+    output?: string;
+  } = {}): Promise<ThumbnailResult> {
+    const body: Record<string, unknown> = {};
+    if (options.time !== undefined) body.time = options.time;
+    if (options.source) body.source = options.source;
+    if (options.output) body.output = options.output;
+    return this.request("POST", "/thumbnail", body);
+  }
+
+  async frames(options: {
+    source?: string;
+    fps?: number;
+    output_dir?: string;
+    format?: "png" | "jpg";
+    max?: number;
+  } = {}): Promise<FramesResult> {
+    const body: Record<string, unknown> = {};
+    if (options.source) body.source = options.source;
+    if (options.fps !== undefined) body.fps = options.fps;
+    if (options.output_dir) body.output_dir = options.output_dir;
+    if (options.format) body.format = options.format;
+    if (options.max !== undefined) body.max = options.max;
+    return this.request("POST", "/frames", body);
+  }
+
+  async frame(options: { source?: string; output?: string } = {}): Promise<FrameResult> {
+    const body: Record<string, unknown> = {};
+    if (options.source) body.source = options.source;
+    if (options.output) body.output = options.output;
+    return this.request("POST", "/frame", body);
+  }
+
+  async validate(filePath: string): Promise<ValidateResult> {
+    return this.request("POST", "/validate", { path: filePath });
+  }
+
+  // ── System & windows ────────────────────────────────────────────────────────
+
+  async windows(): Promise<WindowInfo[]> {
+    return this.request("GET", "/windows");
+  }
+
+  async focusWindow(options: { app?: string; pid?: number; title?: string }): Promise<{ ok: boolean; app?: string }> {
+    const body: Record<string, unknown> = {};
+    if (options.app) body.app = options.app;
+    if (options.pid !== undefined) body.pid = options.pid;
+    if (options.title) body.title = options.title;
+    return this.request("POST", "/window/focus", body);
+  }
+
+  async positionWindow(options: {
+    app?: string;
+    pid?: number;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+  }): Promise<{ ok: boolean }> {
+    const body: Record<string, unknown> = {};
+    if (options.app) body.app = options.app;
+    if (options.pid !== undefined) body.pid = options.pid;
+    if (options.x !== undefined) body.x = options.x;
+    if (options.y !== undefined) body.y = options.y;
+    if (options.width !== undefined) body.width = options.width;
+    if (options.height !== undefined) body.height = options.height;
+    return this.request("POST", "/window/position", body);
+  }
+
+  async hideOthers(options: { app?: string; pid?: number }): Promise<{ ok: boolean; hidden: number }> {
+    const body: Record<string, unknown> = {};
+    if (options.app) body.app = options.app;
+    if (options.pid !== undefined) body.pid = options.pid;
+    return this.request("POST", "/window/hide-others", body);
+  }
+
+  async activeWindow(): Promise<ActiveWindowResult> {
+    return this.request("GET", "/system/active-window");
+  }
+
+  async clipboard(): Promise<ClipboardResult> {
+    return this.request("GET", "/system/clipboard");
+  }
+
+  async runningApps(): Promise<RunningApp[]> {
+    return this.request("GET", "/system/running-apps");
+  }
+
+  // ── Timeline & sessions ─────────────────────────────────────────────────────
+
+  async timeline(): Promise<TimelineResult> {
+    return this.request("GET", "/timeline");
+  }
+
+  async recordings(): Promise<RecordingInfo[]> {
+    return this.request("GET", "/recordings");
+  }
+
+  /** @param filename Basename only (e.g. "demo.mp4"), not a full path. */
+  async deleteRecording(filename: string): Promise<{ ok: boolean; filename: string }> {
+    return this.request("DELETE", "/recording", { filename });
+  }
+
+  async sessions(): Promise<SessionInfo[]> {
+    return this.request("GET", "/sessions");
+  }
+
+  async getSession(sessionId: string): Promise<SessionInfo> {
+    return this.request("GET", `/session/${sessionId}`);
+  }
+
+  async deleteSession(sessionId: string): Promise<{ ok: boolean }> {
+    return this.request("DELETE", `/session/${sessionId}`);
+  }
+
+  async version(): Promise<VersionResult> {
+    return this.request("GET", "/version");
   }
 
   // ── Convenience: record + export in one call ────────────────────────────────

@@ -21,8 +21,11 @@ ScreenMuse is the first screen recorder purpose-built for AI agents. When your A
 
 ## Demo
 
-<!-- Once generated, replace this section with: -->
-<!-- ![ScreenMuse Demo](docs/demo.gif) -->
+<!--
+To generate: run `vhs docs/demo.tape` with ScreenMuse running on macOS.
+See [docs/CONTRIBUTING-DEMO.md](docs/CONTRIBUTING-DEMO.md) for full instructions.
+-->
+![ScreenMuse Demo](docs/demo.gif)
 
 ```bash
 $ curl -X POST localhost:7823/start -d '{"name":"demo"}'
@@ -577,6 +580,12 @@ A: No. ScreenMuse is local-first by design. Your recordings never leave your mac
 
 **Q: Can I contribute?**  
 A: Yes! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## Security
+
+ScreenMuse's HTTP API is local-only by default (`127.0.0.1:7823`) and supports API key authentication via `X-ScreenMuse-Key`. The `/script` endpoint runs recording pipeline commands only — it does not execute shell commands or arbitrary code. See [SECURITY.md](SECURITY.md) for the full security model and recommendations.
 
 ---
 

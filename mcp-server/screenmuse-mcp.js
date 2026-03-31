@@ -415,6 +415,103 @@ const TOOLS = [
         source: { type: 'string', description: 'Video path, or "last" for the most recent recording' }
       }
     }
+  },
+  // ── Health & Info ──────────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_health',
+    description: 'Check if ScreenMuse server is running and healthy. Returns version, listener state, and permissions. No auth required.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'screenmuse_version',
+    description: 'Get the ScreenMuse server version string.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  // ── PiP recording ──────────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_start_pip',
+    description: 'Start a picture-in-picture dual-window recording (two windows recorded simultaneously).',
+    inputSchema: {
+      type: 'object',
+      required: ['primary_window'],
+      properties: {
+        primary_window: { type: 'string', description: 'Title of the primary (main) window to record' },
+        secondary_window: { type: 'string', description: 'Title of the secondary (overlay) window' },
+        name: { type: 'string', description: 'Recording name/label' }
+      }
+    }
+  },
+  // ── Sessions ───────────────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_sessions',
+    description: 'List all recording sessions (past and current).',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'screenmuse_get_session',
+    description: 'Get details for a specific recording session by ID.',
+    inputSchema: {
+      type: 'object',
+      required: ['session_id'],
+      properties: {
+        session_id: { type: 'string', description: 'Session ID (from /sessions or stop response)' }
+      }
+    }
+  },
+  {
+    name: 'screenmuse_delete_session',
+    description: 'Delete a recording session by ID.',
+    inputSchema: {
+      type: 'object',
+      required: ['session_id'],
+      properties: {
+        session_id: { type: 'string', description: 'Session ID to delete' }
+      }
+    }
+  },
+  // ── Jobs ───────────────────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_jobs',
+    description: 'List all async jobs (long-running export/processing operations).',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'screenmuse_get_job',
+    description: 'Get the status of a specific async job.',
+    inputSchema: {
+      type: 'object',
+      required: ['job_id'],
+      properties: {
+        job_id: { type: 'string', description: 'Job ID from a long-running operation' }
+      }
+    }
+  },
+  // ── Upload ─────────────────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_upload_icloud',
+    description: 'Upload a recording to iCloud Drive.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        source: { type: 'string', description: 'Path to video file (uses most recent recording if omitted)' }
+      }
+    }
+  },
+  // ── Debug & diagnostics ────────────────────────────────────────────────────
+  {
+    name: 'screenmuse_debug',
+    description: 'Get server debug info including internal state, memory, and configuration.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'screenmuse_logs',
+    description: 'Get the tail of the ScreenMuse server log.',
+    inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'screenmuse_report',
+    description: 'Get a structured report of the current or last recording session.',
+    inputSchema: { type: 'object', properties: {} }
   }
 ];
 
@@ -463,6 +560,29 @@ async function executeTool(name, args) {
       case 'screenmuse_frame':           result = await callScreenMuse('/frame', args || {}); break;
       // Validation
       case 'screenmuse_validate':        result = await callScreenMuse('/validate', args || {}); break;
+      // Health & Info
+      case 'screenmuse_health': {
+        const { default: fetch } = await import('node-fetch').catch(() => ({ default: globalThis.fetch }));
+        const res = await (fetch || globalThis.fetch)(`${BASE_URL}/health`);
+        result = await res.json();
+        break;
+      }
+      case 'screenmuse_version':         result = await callScreenMuse('/version', null); break;
+      // PiP recording
+      case 'screenmuse_start_pip':       result = await callScreenMuse('/start/pip', args || {}); break;
+      // Sessions
+      case 'screenmuse_sessions':        result = await callScreenMuse('/sessions', null); break;
+      case 'screenmuse_get_session':     result = await callScreenMuse(`/session/${args.session_id}`, null); break;
+      case 'screenmuse_delete_session':  result = await callScreenMuse(`/session/${args.session_id}`, null, 'DELETE'); break;
+      // Jobs
+      case 'screenmuse_jobs':            result = await callScreenMuse('/jobs', null); break;
+      case 'screenmuse_get_job':         result = await callScreenMuse(`/job/${args.job_id}`, null); break;
+      // Upload
+      case 'screenmuse_upload_icloud':   result = await callScreenMuse('/upload/icloud', args || {}); break;
+      // Debug & diagnostics
+      case 'screenmuse_debug':           result = await callScreenMuse('/debug', null); break;
+      case 'screenmuse_logs':            result = await callScreenMuse('/logs', null); break;
+      case 'screenmuse_report':          result = await callScreenMuse('/report', null); break;
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${name}` }], isError: true };
     }
