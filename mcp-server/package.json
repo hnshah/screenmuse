@@ -11,6 +11,9 @@
     "node": ">=18"
   },
   "keywords": ["mcp", "screenmuse", "screen-recording", "macos", "ai-agent"],
+  "scripts": {
+    "test": "node tests/test-mcp-server.js"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",

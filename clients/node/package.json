@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "test": "node tests/test-client.js"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

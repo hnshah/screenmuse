@@ -1,9 +1,9 @@
 # ScreenMuse Testing Guide
 
-**Test Suite Version:** 1.0  
-**Last Updated:** 2026-03-27  
-**Total Tests:** 201  
-**Test Code:** 3,605 lines
+**Test Suite Version:** 1.1  
+**Last Updated:** 2026-03-31  
+**Total Tests:** 596 (322 Swift + 67 Python + 148 MCP + 157 Node.js + 2 Shell)  
+**Test Code:** ~7,000 lines
 
 ---
 
@@ -23,10 +23,12 @@
 
 ScreenMuse has a comprehensive test suite covering all major systems:
 
+**Swift (ScreenMuseCoreTests)**
+
 | System | Tests | Lines | Coverage |
 |--------|-------|-------|----------|
 | Recording Lifecycle | 20 | 240 | Excellent ✅ |
-| HTTP API | 20 | 432 | Excellent ✅ |
+| HTTP API | 36 | 466 | Excellent ✅ |
 | Export | 15 | 447 | Excellent ✅ |
 | Window Management | 25 | 400 | Excellent ✅ |
 | Timeline Management | 26 | 421 | Excellent ✅ |
@@ -34,7 +36,32 @@ ScreenMuse has a comprehensive test suite covering all major systems:
 | OCR Integration | 20 | 399 | Excellent ✅ |
 | File Management | 29 | 399 | Excellent ✅ |
 | Streaming | 22 | 432 | Excellent ✅ |
-| **TOTAL** | **201** | **3,605** | **Outstanding** ⭐ |
+| Stream Status | 7 | ~100 | New ✅ |
+| Recording/Session Mgmt | 19 | ~200 | New ✅ |
+| Auth / ServerHelpers | 40+ | ~300 | Excellent ✅ |
+| **Swift TOTAL** | **322** | **~4,800** | **Outstanding** ⭐ |
+
+**Client libraries**
+
+| Client | Tests | Test file | Notes |
+|--------|-------|-----------|-------|
+| Python client | 67 | `clients/python/tests/test_client.py` | unittest, mocked HTTP |
+| Node.js TS client | 157 | `clients/node/tests/test-client.js` | Source analysis, no compile needed |
+| MCP server | 148 | `mcp-server/tests/test-mcp-server.js` | Source analysis + protocol checks |
+
+**Run client tests:**
+```bash
+# Python (no server required)
+python3 -m unittest discover clients/python/tests -v
+
+# MCP server
+node mcp-server/tests/test-mcp-server.js
+# or: cd mcp-server && npm test
+
+# Node.js client
+node clients/node/tests/test-client.js
+# or: cd clients/node && npm test
+```
 
 ---
 
