@@ -1,0 +1,89 @@
+{
+  "": {
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/master.swiftdeps"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/AppDelegate.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionManager.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ScreenMuseApp.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureViewModel.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel+Coordinator.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordViewModel.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/CaptureView.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/ContentView.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/HistoryView.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/PermissionView.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/RecordView.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseApp.build/TimelineView.dia"
+  }
+}

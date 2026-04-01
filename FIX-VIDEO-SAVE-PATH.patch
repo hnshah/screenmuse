@@ -1,0 +1,56 @@
+# Fix: Make video save to actual location and return correct path
+
+## Issue
+- RecordingManager saves to temp directory
+- API returns hardcoded ~/Movies/ScreenMuse/recording.mp4
+- Mismatch causes video to appear missing
+
+## Solution
+Change RecordingManager to save to ~/Movies/ScreenMuse/ instead of temp
+
+## Files to modify:
+
+### 1. Sources/ScreenMuseCore/Recording/RecordingManager.swift
+
+Line 69-71, change FROM:
+```swift
+let tempDir = FileManager.default.temporaryDirectory
+let fileName = "ScreenMuse_\(ISO8601DateFormatter().string(from: Date())).mp4"
+let url = tempDir.appendingPathComponent(fileName)
+```
+
+TO:
+```swift
+let outputDir = FileManager.default.homeDirectoryForCurrentUser
+    .appendingPathComponent("Movies")
+    .appendingPathComponent("ScreenMuse")
+
+// Create directory if it doesn't exist
+try? FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
+
+let fileName = "recording_\(ISO8601DateFormatter().string(from: Date())).mp4"
+let url = outputDir.appendingPathComponent(fileName)
+```
+
+### 2. Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift
+
+Line 106, change FROM:
+```swift
+"video_path": NSHomeDirectory() + "/Movies/ScreenMuse/recording.mp4",
+```
+
+TO:
+```swift
+"video_path": self.lastVideoPath ?? (NSHomeDirectory() + "/Movies/ScreenMuse/recording.mp4"),
+```
+
+And add property to class:
+```swift
+private var lastVideoPath: String?
+```
+
+And update when recording stops to capture actual path.
+
+## Quick Fix (Simpler)
+
+Just change RecordingManager line 69-71 to save to Movies folder.

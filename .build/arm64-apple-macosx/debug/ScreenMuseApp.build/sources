@@ -1,0 +1,12 @@
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift

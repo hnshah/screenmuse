@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>ScreenMuse</string>
+    <key>CFBundleIdentifier</key>
+    <string>ai.noats.screenmuse</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.3.0</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>ScreenMuse needs to record your screen to create videos with effects.</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>ScreenMuse needs to track keyboard and mouse events for keystroke overlays and click effects.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>ScreenMuse can optionally record microphone audio alongside your screen.</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>LSUIElement</key>
+    <false/>
+</dict>
+</plist>

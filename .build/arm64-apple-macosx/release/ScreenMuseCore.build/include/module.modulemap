@@ -1,0 +1,3 @@
+module ScreenMuseCore {
+    header "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/include/ScreenMuseCore-Swift.h"
+}

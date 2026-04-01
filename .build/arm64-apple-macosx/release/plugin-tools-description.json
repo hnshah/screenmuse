@@ -1,0 +1,1194 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.ScreenMuseApp-arm64-apple-macosx26.0-release.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/sources",
+      "importPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules/ScreenMuseCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "ScreenMuseApp",
+      "moduleOutputPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules/ScreenMuseApp.swiftmodule",
+      "objects" : [
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/AppDelegate.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/PermissionManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/ScreenMuseApp.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/CaptureViewModel.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordViewModel.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/CaptureView.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/ContentView.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/HistoryView.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/PermissionView.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordView.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/TimelineView.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "12",
+        "-serialize-diagnostics",
+        "-O",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "ScreenMuseApp_main",
+        "-swift-version",
+        "5",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/PermissionManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/ScreenMuseApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/CaptureViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/CaptureView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/HistoryView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/PermissionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/TimelineView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules/ScreenMuseApp.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift"
+      ],
+      "tempsPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.ScreenMuseCore-arm64-apple-macosx26.0-release.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/sources",
+      "importPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "ScreenMuseCore",
+      "moduleOutputPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules/ScreenMuseCore.swiftmodule",
+      "objects" : [
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/OpenAPISpec.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingCoordinating.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenMuseServer.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenshotManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/AutoZoomManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ClickEffectsManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CursorAnimationManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/EffectsCompositor.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/FullEffectsCompositor.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ActivityAnalyzer.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/GIFExporter.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SpeedRamper.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ThumbnailExtractor.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoAnnotator.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoConcatenator.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoCropper.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoTrimmer.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/iCloudUploader.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenMuseLogger.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/PermissionsManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CursorTracker.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/KeyboardMonitor.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/PiPRecordingManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingConfig.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SSEStreamManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenOCR.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SystemState.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/WindowManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/TimelineEvent.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/TimelineManager.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "12",
+        "-serialize-diagnostics",
+        "-O",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/include/ScreenMuseCore-Swift.h",
+        "-swift-version",
+        "5",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "screenmuse"
+      ],
+      "outputFileMapPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/OpenAPISpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingCoordinating.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenMuseServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenshotManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/AutoZoomManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ClickEffectsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CursorAnimationManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/EffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/FullEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ActivityAnalyzer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/GIFExporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SpeedRamper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ThumbnailExtractor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoAnnotator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoConcatenator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoCropper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoTrimmer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/iCloudUploader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenMuseLogger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CursorTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/KeyboardMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/PiPRecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SSEStreamManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenOCR.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SystemState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/WindowManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/TimelineEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/TimelineManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules/ScreenMuseCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift"
+      ],
+      "tempsPath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build",
+      "wholeModuleOptimization" : true
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "ScreenMuseApp" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMuseApp",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift",
+      "-I",
+      "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "12",
+      "-serialize-diagnostics",
+      "-O",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "ScreenMuseApp_main",
+      "-swift-version",
+      "5",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "ScreenMuseCore" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "ScreenMuseCore",
+      "-package-name",
+      "screenmuse",
+      "-c",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift",
+      "-I",
+      "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "12",
+      "-serialize-diagnostics",
+      "-O",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/include/ScreenMuseCore-Swift.h",
+      "-swift-version",
+      "5",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "screenmuse",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ScreenMuseApp" : [
+      "ScreenMuseCore"
+    ],
+    "ScreenMuseCore" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/AppDelegate.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/PermissionManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ScreenMuseApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/CaptureViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel+Coordinator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/ViewModels/RecordViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/CaptureView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/HistoryView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/PermissionView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/RecordView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseApp/Views/TimelineView.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/sources"
+    },
+    "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/AppDelegate.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/CaptureView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/CaptureViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/HistoryView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/PermissionManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/PermissionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordViewModel+Coordinator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/RecordViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/ScreenMuseApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.build/TimelineView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ActivityAnalyzer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/AutoZoomManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ClickEffectsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CursorAnimationManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/CursorTracker.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/EffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/FullEffectsCompositor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/GIFExporter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/KeyboardMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/KeystrokeOverlayManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/OpenAPISpec.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/PiPRecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingConfig.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingCoordinating.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/RecordingManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SSEStreamManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenMuseLogger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenMuseServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenOCR.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenshotManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SpeedRamper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/SystemState.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ThumbnailExtractor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/TimelineEvent.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/TimelineManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoAnnotator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoConcatenator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoCropper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/VideoTrimmer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/WindowManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/iCloudUploader.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseApp.product/Objects.LinkFileList"
+    },
+    "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/OpenAPISpec.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CursorAnimationManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/EffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/FullEffectsCompositor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/KeystrokeOverlayManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ActivityAnalyzer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/GIFExporter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/SpeedRamper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/ThumbnailExtractor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoAnnotator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoConcatenator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoCropper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/VideoTrimmer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Export/iCloudUploader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Logging/ScreenMuseLogger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Permissions/PermissionsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/CursorTracker.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingConfig.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Recording/RecordingManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Streaming/SSEStreamManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/ScreenOCR.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/SystemState.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/System/WindowManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineEvent.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Timeline/TimelineManager.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/sources"
+    },
+    "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

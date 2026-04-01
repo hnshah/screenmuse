@@ -1,0 +1,9 @@
+@@ -127,7 +127,7 @@
+                source = .window(window)
+            } else if let pid = windowPid,
+-                     let window = content.windows.first(where: { $0.owningApplication?.processID == pid }) {
++                     let window = content.windows.first(where: { $0.owningApplication?.processID == Int32(pid) }) {
+                source = .window(window)
+            } else {
+                let query = windowTitle ?? "PID \(windowPid ?? 0)"
+ 
