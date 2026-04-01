@@ -1,5 +1,6 @@
 import AVFoundation
 import AppKit
+import Darwin
 import Foundation
 import Network
 import ScreenCaptureKit
@@ -41,11 +42,13 @@ import Vision
 //   POST /frames       body: {"source":"last","timestamps":[1.0,2.5],"format":"png"} → {"frames":[...],"count":N}
 //
 //   GET  /status      → {"recording": bool, "elapsed": N, "chapters": [...]}
-//   GET  /windows     → {"windows": [...], "count": N}
-//   GET  /version     → {"version": "1.6.0", "build": "...", "api_endpoints": [...], "endpoint_count": 40}
-//   GET  /debug       → save dir, recent files, server state
-//   GET  /logs        → recent log entries from ScreenMuseLogger ring buffer
-//   GET  /report      → clean session report for bug reports
+//   GET  /windows        → {"windows": [...], "count": N}
+//   GET  /version        → {"version": "1.6.0", "build": "...", "api_endpoints": [...], "endpoint_count": 40}
+//   GET  /debug          → save dir, recent files, server state
+//   GET  /logs           → recent log entries from ScreenMuseLogger ring buffer
+//   GET  /logs/download  → download all logs as zip for bug reports
+//   GET  /performance    → real-time performance metrics (memory, CPU, disk)
+//   GET  /report         → clean session report for bug reports
 
 @MainActor
 public class ScreenMuseServer {
@@ -1869,6 +1872,24 @@ public class ScreenMuseServer {
                 "entries": entries
             ])
 
+        case ("GET", "/logs/download"):
+            // Download all logs as a zip file for bug reports
+            smLog.debug("[\(reqID)] /logs/download", category: .server)
+            
+            let zipURL = createLogsZip()
+            if let zipPath = zipURL?.path, FileManager.default.fileExists(atPath: zipPath) {
+                sendFileResponse(connection: connection, path: zipPath, contentType: "application/zip")
+            } else {
+                sendResponse(connection: connection, status: 500, body: ["error": "Failed to create logs zip"])
+            }
+
+        case ("GET", "/performance"):
+            // Real-time performance metrics
+            smLog.debug("[\(reqID)] /performance", category: .server)
+            
+            let metrics = getPerformanceMetrics()
+            sendResponse(connection: connection, status: 200, body: metrics)
+
         // MARK: - Timeline
 
         case ("GET", "/timeline"):
@@ -2332,6 +2353,135 @@ public class ScreenMuseServer {
         guard let responseData = response.data(using: .utf8) else { return }
         connection.send(content: responseData, completion: .contentProcessed { _ in
             connection.cancel()
+        })
+    }
+
+    // MARK: - Phase 1: Debugging Helpers
+
+    private func createLogsZip() -> URL? {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory
+        let zipURL = tempDir.appendingPathComponent("screenmuse-logs-\(Date().timeIntervalSince1970).zip")
+        
+        // Create temporary directory for logs
+        let logsDir = tempDir.appendingPathComponent("screenmuse-logs-temp")
+        try? fm.createDirectory(at: logsDir, withIntermediateDirectories: true)
+        
+        // Copy log files
+        let moviesURL = fm.urls(for: .moviesDirectory, in: .userDomainMask).first!
+        let sourceDir = moviesURL.appendingPathComponent("ScreenMuse/Logs")
+        
+        if let logFiles = try? fm.contentsOfDirectory(at: sourceDir, includingPropertiesForKeys: nil) {
+            for logFile in logFiles {
+                let dest = logsDir.appendingPathComponent(logFile.lastPathComponent)
+                try? fm.copyItem(at: logFile, to: dest)
+            }
+        }
+        
+        // Create system info snapshot
+        let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse")
+        
+        let sysInfo = [
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "macos_version": ProcessInfo.processInfo.operatingSystemVersionString,
+            "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
+            "save_directory": screenMuseDir.path
+        ] as [String: Any]
+        
+        if let sysInfoData = try? JSONSerialization.data(withJSONObject: sysInfo, options: .prettyPrinted) {
+            let sysInfoFile = logsDir.appendingPathComponent("system-info.json")
+            try? sysInfoData.write(to: sysInfoFile)
+        }
+        
+        // Zip it up using command line (macOS has zip built-in)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+        process.arguments = ["-r", "-q", zipURL.path, "."]
+        process.currentDirectoryURL = logsDir
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            
+            // Clean up temp directory
+            try? fm.removeItem(at: logsDir)
+            
+            return process.terminationStatus == 0 ? zipURL : nil
+        } catch {
+            smLog.error("Failed to create logs zip: \(error)", category: .server)
+            return nil
+        }
+    }
+
+    private func getPerformanceMetrics() -> [String: Any] {
+        // Get system performance metrics
+        var metrics: [String: Any] = [:]
+        
+        // Process info
+        let processInfo = ProcessInfo.processInfo
+        metrics["uptime_seconds"] = processInfo.systemUptime
+        metrics["physical_memory_gb"] = Double(processInfo.physicalMemory) / 1_000_000_000.0
+        
+        // App memory usage
+        var taskInfo = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+        let result = withUnsafeMutablePointer(to: &taskInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+        
+        if result == KERN_SUCCESS {
+            let memoryMB = Double(taskInfo.resident_size) / 1_048_576.0
+            metrics["app_memory_mb"] = String(format: "%.1f", memoryMB)
+        }
+        
+        // Recording state
+        metrics["recording"] = isRecording
+        if let start = startTime {
+            metrics["recording_duration_seconds"] = Date().timeIntervalSince(start)
+        }
+        
+        // Disk space
+        let moviesURL = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first!
+        if let values = try? moviesURL.resourceValues(forKeys: [.volumeAvailableCapacityKey]),
+           let available = values.volumeAvailableCapacity {
+            metrics["disk_available_gb"] = Double(available) / 1_000_000_000.0
+        }
+        
+        // CPU usage (simple estimate based on thread count)
+        var threadCount: mach_msg_type_number_t = 0
+        var threadList: thread_act_array_t?
+        if task_threads(mach_task_self_, &threadList, &threadCount) == KERN_SUCCESS {
+            metrics["thread_count"] = threadCount
+            if let list = threadList {
+                let size = Int(threadCount) * MemoryLayout<thread_t>.size
+                vm_deallocate(mach_task_self_, vm_address_t(bitPattern: list), vm_size_t(size))
+            }
+        }
+        
+        return metrics
+    }
+
+    private func sendFileResponse(connection: NWConnection, path: String, contentType: String) {
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else {
+            sendResponse(connection: connection, status: 404, body: ["error": "File not found"])
+            return
+        }
+        
+        let filename = (path as NSString).lastPathComponent
+        let response = "HTTP/1.1 200 OK\r\n" +
+                      "Content-Type: \(contentType)\r\n" +
+                      "Content-Length: \(data.count)\r\n" +
+                      "Content-Disposition: attachment; filename=\"\(filename)\"\r\n" +
+                      "\r\n"
+        
+        guard let headerData = response.data(using: .utf8) else { return }
+        
+        connection.send(content: headerData, completion: .contentProcessed { _ in
+            connection.send(content: data, completion: .contentProcessed { _ in
+                connection.cancel()
+            })
         })
     }
 }
