@@ -102,7 +102,34 @@ public final class DemoExecutor {
             
         case .click:
             await triggerHighlight() // Highlight before click
-            try await Task.sleep(nanoseconds: 500_000_000) // 0.5s delay
+            try await Task.sleep(nanoseconds: 200_000_000) // 0.2s delay
+            try await MouseSimulator.click()
+            
+        case .clickAt:
+            guard let x = action.x, let y = action.y else {
+                throw DemoError.missingParameter("x, y", for: "click_at")
+            }
+            await triggerHighlight()
+            try await Task.sleep(nanoseconds: 200_000_000)
+            try await MouseSimulator.click(at: CGPoint(x: x, y: y))
+            
+        case .moveMouse:
+            guard let x = action.x, let y = action.y else {
+                throw DemoError.missingParameter("x, y", for: "move_mouse")
+            }
+            try await MouseSimulator.moveTo(CGPoint(x: x, y: y))
+            
+        case .pressKey:
+            guard let key = action.key else {
+                throw DemoError.missingParameter("key", for: "press_key")
+            }
+            try await pressKey(key, modifiers: action.modifiers ?? [])
+            
+        case .paste:
+            guard let text = action.text else {
+                throw DemoError.missingParameter("text", for: "paste")
+            }
+            try await KeyboardSimulator.paste(text)
             
         case .navigate:
             guard let url = action.url else {
@@ -180,15 +207,16 @@ public final class DemoExecutor {
     }
     
     private func typeText(_ text: String) async throws {
-        // TODO: Implement keyboard simulation
-        // For now, just paste via clipboard
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-        
-        // Simulate Cmd+V
-        // This is a simplified version - real implementation would use CGEvent
-        smLog.warning("typeText not fully implemented - text copied to clipboard", category: .server)
+        // Use keyboard simulator
+        if text.count > 50 {
+            // For long text, paste is faster
+            try await KeyboardSimulator.paste(text)
+            smLog.debug("Pasted long text (\(text.count) chars)", category: .server)
+        } else {
+            // For short text, type it out
+            try await KeyboardSimulator.type(text)
+            smLog.debug("Typed text: \(text)", category: .server)
+        }
     }
     
     private func navigate(url: String) async throws {
@@ -199,6 +227,56 @@ public final class DemoExecutor {
         } else {
             throw DemoError.invalidURL(url)
         }
+    }
+    
+    private func pressKey(_ key: String, modifiers: [String]) async throws {
+        // Map key names to virtual key codes
+        let keyCode: CGKeyCode
+        switch key.lowercased() {
+        case "return", "enter": keyCode = 0x24
+        case "tab": keyCode = 0x30
+        case "space": keyCode = 0x31
+        case "delete", "backspace": keyCode = 0x33
+        case "escape", "esc": keyCode = 0x35
+        case "up": keyCode = 0x7E
+        case "down": keyCode = 0x7D
+        case "left": keyCode = 0x7B
+        case "right": keyCode = 0x7C
+        default:
+            // For single characters, try to map them
+            if key.count == 1, let char = key.lowercased().first {
+                keyCode = characterToKeyCode(char) ?? 0
+            } else {
+                throw DemoError.invalidKey(key)
+            }
+        }
+        
+        // Map modifier strings to enum
+        var mods: [KeyboardSimulator.Modifier] = []
+        for mod in modifiers {
+            switch mod.lowercased() {
+            case "command", "cmd": mods.append(.command)
+            case "shift": mods.append(.shift)
+            case "option", "alt": mods.append(.option)
+            case "control", "ctrl": mods.append(.control)
+            default: break
+            }
+        }
+        
+        try await KeyboardSimulator.pressKey(keyCode: keyCode, modifiers: mods)
+    }
+    
+    private func characterToKeyCode(_ char: Character) -> CGKeyCode? {
+        // Basic alphanumeric mapping
+        let keyMap: [Character: CGKeyCode] = [
+            "a": 0x00, "b": 0x0B, "c": 0x08, "d": 0x02, "e": 0x0E, "f": 0x03, "g": 0x05,
+            "h": 0x04, "i": 0x22, "j": 0x26, "k": 0x28, "l": 0x25, "m": 0x2E, "n": 0x2D,
+            "o": 0x1F, "p": 0x23, "q": 0x0C, "r": 0x0F, "s": 0x01, "t": 0x11, "u": 0x20,
+            "v": 0x09, "w": 0x0D, "x": 0x07, "y": 0x10, "z": 0x06,
+            "0": 0x1D, "1": 0x12, "2": 0x13, "3": 0x14, "4": 0x15, "5": 0x17,
+            "6": 0x16, "7": 0x1A, "8": 0x1C, "9": 0x19
+        ]
+        return keyMap[char]
     }
 }
 
@@ -211,6 +289,7 @@ public enum DemoError: Error, LocalizedError {
     case recordingFailed
     case appNotFound(String)
     case invalidURL(String)
+    case invalidKey(String)
     
     public var errorDescription: String? {
         switch self {
@@ -226,6 +305,8 @@ public enum DemoError: Error, LocalizedError {
             return "Application not found: \(app)"
         case .invalidURL(let url):
             return "Invalid URL: \(url)"
+        case .invalidKey(let key):
+            return "Invalid key name: \(key)"
         }
     }
 }

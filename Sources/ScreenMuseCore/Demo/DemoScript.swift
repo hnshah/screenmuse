@@ -20,6 +20,10 @@ public struct DemoScript: Codable, Sendable {
         public let seconds: Double?
         public let url: String?
         public let element: String?
+        public let x: Double?
+        public let y: Double?
+        public let key: String?
+        public let modifiers: [String]?
         
         public enum ActionType: String, Codable, Sendable {
             case focusWindow = "focus_window"
@@ -28,6 +32,10 @@ public struct DemoScript: Codable, Sendable {
             case highlight
             case typeText = "type_text"
             case click
+            case clickAt = "click_at"
+            case moveMouse = "move_mouse"
+            case pressKey = "press_key"
+            case paste
             case navigate
             case screenshot
         }
