@@ -52,6 +52,7 @@ import Vision
 //
 //   -- Phase 2: Demo Recording --
 //   POST /demo/record    body: {"script": {...}, "output_name": "my-demo"} → {"video_path": ..., "duration": N, "scenes_completed": N}
+//   POST /edit/auto      body: {"source": "last", "remove_pauses": true, "pause_threshold": 3.0} → {"original_duration": N, "edited_duration": N, "edited_path": ...}
 
 @MainActor
 public class ScreenMuseServer {
@@ -570,6 +571,52 @@ public class ScreenMuseServer {
                     sendResponse(connection: connection, status: 200, body: resultDict)
                 } catch {
                     smLog.error("Demo execution failed: \(error)", category: .server)
+                    sendResponse(connection: connection, status: 500, body: structuredError(error))
+                }
+            }
+
+        case ("POST", "/edit/auto"):
+            smLog.info("[\(reqID)] /edit/auto", category: .server)
+            
+            let source = body["source"] as? String ?? "last"
+            let removePauses = body["remove_pauses"] as? Bool ?? true
+            let pauseThreshold = body["pause_threshold"] as? Double ?? 3.0
+            let speedUpIdle = body["speed_up_idle"] as? Bool ?? false
+            let idleSpeed = body["idle_speed"] as? Double ?? 2.0
+            let addTransitions = body["add_transitions"] as? Bool ?? false
+            
+            Task {
+                do {
+                    // Get video URL
+                    let videoURL: URL
+                    if source == "last" {
+                        guard let lastVideo = currentVideoURL else {
+                            sendResponse(connection: connection, status: 400, body: ["error": "No video recorded yet"])
+                            return
+                        }
+                        videoURL = lastVideo
+                    } else {
+                        videoURL = URL(fileURLWithPath: source)
+                    }
+                    
+                    // Edit
+                    let options = AutoEditor.EditOptions(
+                        removePauses: removePauses,
+                        pauseThreshold: pauseThreshold,
+                        speedUpIdle: speedUpIdle,
+                        idleSpeed: idleSpeed,
+                        addTransitions: addTransitions
+                    )
+                    
+                    let result = try await AutoEditor.edit(videoURL: videoURL, options: options)
+                    
+                    // Encode result
+                    let resultData = try JSONEncoder().encode(result)
+                    let resultDict = try JSONSerialization.jsonObject(with: resultData) as! [String: Any]
+                    
+                    sendResponse(connection: connection, status: 200, body: resultDict)
+                } catch {
+                    smLog.error("Auto-edit failed: \(error)", category: .server)
                     sendResponse(connection: connection, status: 500, body: structuredError(error))
                 }
             }

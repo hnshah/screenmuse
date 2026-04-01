@@ -2,10 +2,12 @@
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/AutoEditor.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/KeyboardSimulator.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/MouseSimulator.swift
+/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/PauseDetector.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift
 /Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift
