@@ -49,6 +49,9 @@ import Vision
 //   GET  /logs/download  → download all logs as zip for bug reports
 //   GET  /performance    → real-time performance metrics (memory, CPU, disk)
 //   GET  /report         → clean session report for bug reports
+//
+//   -- Phase 2: Demo Recording --
+//   POST /demo/record    body: {"script": {...}, "output_name": "my-demo"} → {"video_path": ..., "duration": N, "scenes_completed": N}
 
 @MainActor
 public class ScreenMuseServer {
@@ -59,6 +62,7 @@ public class ScreenMuseServer {
     private let recordingManager = RecordingManager()
     private let pipManager = PiPRecordingManager()
     private let streamManager = SSEStreamManager()
+    private lazy var demoExecutor = DemoExecutor(server: self)
     /// Set this at app launch to route API calls through the full effects pipeline.
     /// When set, /start and /stop go through RecordViewModel (effects compositing included).
     /// When nil, falls back to raw RecordingManager (no effects).
@@ -535,6 +539,40 @@ public class ScreenMuseServer {
             smLog.info("[\(reqID)] Highlight flag set — next click will be highlighted", category: .server)
             smLog.usage("HIGHLIGHT  next click flagged for auto-zoom + enhanced effect")
             sendResponse(connection: connection, status: 200, body: ["ok": true, "timestamp": elapsed])
+
+        // MARK: - Demo Recording (Phase 2)
+
+        case ("POST", "/demo/record"):
+            smLog.info("[\(reqID)] /demo/record", category: .server)
+            
+            guard let scriptDict = body["script"] as? [String: Any] else {
+                sendResponse(connection: connection, status: 400, body: ["error": "Missing 'script' in request body"])
+                return
+            }
+            
+            let outputName = body["output_name"] as? String
+            
+            Task {
+                do {
+                    // Parse script
+                    let scriptData = try JSONSerialization.data(withJSONObject: scriptDict)
+                    let script = try JSONDecoder().decode(DemoScript.self, from: scriptData)
+                    
+                    smLog.info("Executing demo script: \(script.name) (\(script.scenes.count) scenes)", category: .server)
+                    
+                    // Execute
+                    let result = try await demoExecutor.execute(script: script, outputName: outputName)
+                    
+                    // Encode result
+                    let resultData = try JSONEncoder().encode(result)
+                    let resultDict = try JSONSerialization.jsonObject(with: resultData) as! [String: Any]
+                    
+                    sendResponse(connection: connection, status: 200, body: resultDict)
+                } catch {
+                    smLog.error("Demo execution failed: \(error)", category: .server)
+                    sendResponse(connection: connection, status: 500, body: structuredError(error))
+                }
+            }
 
         // MARK: - Recordings Management
 
@@ -2483,5 +2521,23 @@ public class ScreenMuseServer {
                 connection.cancel()
             })
         })
+    }
+
+    // MARK: - Demo Script Helpers
+    
+    /// Internal helper for DemoExecutor to add chapters
+    public func addChapterInternal(name: String) {
+        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+        chapters.append((name: name, time: elapsed))
+        smLog.info("Chapter: \(name) at \(String(format: "%.1f", elapsed))s", category: .server)
+        smLog.usage("CHAPTER", details: ["name": name, "at": String(format: "%.0fs", elapsed)])
+    }
+    
+    /// Internal helper for DemoExecutor to set highlight flag
+    public func setHighlightFlagInternal() {
+        highlightNextClick = true
+        let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+        sessionHighlights.append(elapsed)
+        smLog.info("Highlight flag set for next click", category: .server)
     }
 }

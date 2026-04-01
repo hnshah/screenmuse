@@ -28,6 +28,18 @@
     "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenshotManager.swiftdeps",
     "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/ScreenshotManager.dia"
   },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift": {
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoExecutor.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoExecutor~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoExecutor.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoExecutor.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift": {
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoScript.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoScript~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoScript.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/DemoScript.dia"
+  },
   "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift": {
     "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/AutoZoomManager.swift.o",
     "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/release/ScreenMuseCore.build/AutoZoomManager~partial.swiftmodule",

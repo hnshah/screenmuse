@@ -30,6 +30,20 @@
     "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swiftdeps",
     "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.dia"
   },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.dia"
+  },
+  "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift": {
+    "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.d",
+    "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.swift.o",
+    "swiftmodule": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript~partial.swiftmodule",
+    "swift-dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.swiftdeps",
+    "diagnostics": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.dia"
+  },
   "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift": {
     "dependencies": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.d",
     "object": "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o",

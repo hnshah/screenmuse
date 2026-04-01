@@ -239,6 +239,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift"
         },
         {
@@ -370,6 +378,8 @@
         "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/RecordingCoordinating.swift.o",
         "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenMuseServer.swift.o",
         "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.swift.o",
+        "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.swift.o",
         "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/AutoZoomManager.swift.o",
         "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ClickEffectsManager.swift.o",
         "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/CombinedEffectsCompositor.swift.o",
@@ -460,6 +470,14 @@
         {
           "kind" : "file",
           "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/ScreenshotManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.swift.o"
         },
         {
           "kind" : "file",
@@ -588,6 +606,8 @@
         "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift",
         "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift",
         "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift",
+        "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift",
         "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift",
         "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift",
         "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift",
@@ -702,6 +722,8 @@
       "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/RecordingCoordinating.swift",
       "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift",
       "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift",
+      "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift",
       "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/AutoZoomManager.swift",
       "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/ClickEffectsManager.swift",
       "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Effects/CombinedEffectsCompositor.swift",
@@ -951,6 +973,14 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoExecutor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/DemoScript.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/Vera/.openclaw/workspace/screenmuse/.build/arm64-apple-macosx/debug/ScreenMuseCore.build/EffectsCompositor.swift.o"
         },
         {
@@ -1082,6 +1112,14 @@
         {
           "kind" : "file",
           "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Capture/ScreenshotManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoExecutor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Vera/.openclaw/workspace/screenmuse/Sources/ScreenMuseCore/Demo/DemoScript.swift"
         },
         {
           "kind" : "file",
