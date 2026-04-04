@@ -461,6 +461,58 @@ final class HTTPIntegrationTests: XCTestCase {
         XCTAssertTrue(exposeHeaders.contains("X-ScreenMuse-Version"),
                       "Access-Control-Expose-Headers must include X-ScreenMuse-Version so browsers can read it")
     }
+
+    // MARK: - POST /record (one-shot convenience endpoint)
+
+    func testRecordMissingDurationReturns400() async throws {
+        // POST /record with no duration_seconds must return 400 INVALID_DURATION
+        let (status, json) = try await req("POST", "/record", body: #"{"name":"test"}"#)
+        XCTAssertEqual(status, 400, "POST /record with no duration_seconds must return 400")
+        XCTAssertEqual(json["code"] as? String, "INVALID_DURATION",
+                       "Error code must be INVALID_DURATION when duration is missing")
+        XCTAssertNotNil(json["error"], "Error response must include 'error' field")
+    }
+
+    func testRecordZeroDurationReturns400() async throws {
+        let (status, json) = try await req("POST", "/record", body: #"{"duration_seconds":0}"#)
+        XCTAssertEqual(status, 400, "POST /record with duration_seconds=0 must return 400")
+        XCTAssertEqual(json["code"] as? String, "INVALID_DURATION")
+    }
+
+    func testRecordNegativeDurationReturns400() async throws {
+        let (status, json) = try await req("POST", "/record", body: #"{"duration_seconds":-5}"#)
+        XCTAssertEqual(status, 400, "POST /record with negative duration must return 400")
+        XCTAssertEqual(json["code"] as? String, "INVALID_DURATION")
+    }
+
+    func testRecordExcessiveDurationReturns400() async throws {
+        let (status, json) = try await req("POST", "/record", body: #"{"duration_seconds":99999}"#)
+        XCTAssertEqual(status, 400, "POST /record with duration_seconds > 3600 must return 400")
+        XCTAssertEqual(json["code"] as? String, "INVALID_DURATION")
+    }
+
+    func testRecordRouteExistsInDispatchTable() async throws {
+        // Verify the route is registered: a well-formed request gets a non-404 response
+        // (400 INVALID_DURATION is fine — it means the route was found and handled)
+        let (status, _) = try await req("POST", "/record", body: #"{}"#)
+        XCTAssertNotEqual(status, 404, "POST /record must be registered in the route dispatch table")
+    }
+
+    // MARK: - POST /script/batch (dispatch table coverage)
+
+    func testScriptBatchRouteExistsInDispatchTable() async throws {
+        // Empty scripts array → 400, but the route must be found (not 404)
+        let (status, json) = try await req("POST", "/script/batch", body: #"{"scripts":[]}"#)
+        XCTAssertNotEqual(status, 404, "POST /script/batch must be registered in the route dispatch table")
+        XCTAssertEqual(status, 400, "Empty scripts array must return 400")
+        XCTAssertNotNil(json["error"], "Error response must include 'error' field")
+    }
+
+    func testScriptBatchMissingScriptsKeyReturns400() async throws {
+        let (status, json) = try await req("POST", "/script/batch", body: #"{"foo":"bar"}"#)
+        XCTAssertEqual(status, 400, "POST /script/batch with missing scripts key must return 400")
+        XCTAssertNotNil(json["error"])
+    }
 }
 #endif
 
