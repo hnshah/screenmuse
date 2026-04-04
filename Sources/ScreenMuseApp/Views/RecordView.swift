@@ -32,6 +32,21 @@ struct RecordView: View {
         .sheet(isPresented: $showEffectsSettings) {
             EffectsSettingsView(viewModel: viewModel)
         }
+        // QA Report modal — shown automatically after effects processing completes
+        .sheet(
+            isPresented: Binding(
+                get: { viewModel.pendingQAReport != nil },
+                set: { if !$0 { viewModel.pendingQAReport = nil; viewModel.pendingQAProcessedURL = nil } }
+            )
+        ) {
+            if let report = viewModel.pendingQAReport,
+               let url = viewModel.pendingQAProcessedURL {
+                QAReportView(report: report, processedURL: url) {
+                    viewModel.pendingQAReport = nil
+                    viewModel.pendingQAProcessedURL = nil
+                }
+            }
+        }
         .sheet(isPresented: $viewModel.showTimeline) {
             TimelineEditorView(
                 timeline: viewModel.timelineManager,
