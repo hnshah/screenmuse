@@ -33,7 +33,11 @@ public enum QAIntegration {
                 processed: processed
             )
             DispatchQueue.main.async {
-                NotificationCenter.default.postQAReport(report, processedURL: processed)
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("QAReportReady"),
+                    object: nil,
+                    userInfo: ["report": report, "processedURL": processed]
+                )
             }
         } catch {
             // QA failure should never block the user — just log and skip the modal

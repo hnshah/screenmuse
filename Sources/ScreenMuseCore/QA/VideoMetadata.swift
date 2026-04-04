@@ -21,12 +21,10 @@ public struct VideoMetadata: Codable, Sendable {
         case path
         case duration
         case fileSizeBytes = "file_size_bytes"
-        case fileSizeMB = "file_size_mb"
         case width
         case height
         case fps
         case bitrateBPS = "bitrate_bps"
-        case bitrateMBPS = "bitrate_mbps"
         case codec
         case hasAudio = "has_audio"
         case audioCodec = "audio_codec"

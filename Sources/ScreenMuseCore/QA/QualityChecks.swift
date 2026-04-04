@@ -96,7 +96,7 @@ public struct QualityCheckRunner: Sendable {
     }
 
     /// Returns PTS drift in seconds between audio and video streams, or nil if no audio.
-    internal func measureAVDrift(url: URL) -> Double?? {
+    internal func measureAVDrift(url: URL) -> Double? {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: FFProbeExtractor.ffprobePath)
         process.arguments = [
@@ -109,13 +109,13 @@ public struct QualityCheckRunner: Sendable {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = Pipe()
-        guard (try? process.run()) != nil else { return .some(nil) }
+        guard (try? process.run()) != nil else { return nil }
         process.waitUntilExit()
 
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let streams = json["streams"] as? [[String: Any]]
-        else { return .some(nil) }
+        else { return nil }
 
         let video = streams.first { $0["codec_type"] as? String == "video" }
         let audio = streams.first { $0["codec_type"] as? String == "audio" }
