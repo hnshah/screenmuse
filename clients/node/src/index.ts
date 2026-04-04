@@ -565,6 +565,102 @@ export class ScreenMuse {
     return this.request("GET", "/version");
   }
 
+  // ── Scripting ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Run a sequence of recording commands as a batch script.
+   * Valid actions: start, stop, chapter, highlight, note, screenshot, sleep.
+   * @example
+   * await sm.script([
+   *   { action: "start", name: "demo" },
+   *   { sleep: 3 },
+   *   { action: "chapter", name: "Key moment" },
+   *   { action: "stop" },
+   * ]);
+   */
+  async script(commands: Array<Record<string, unknown>>): Promise<{
+    ok: boolean;
+    steps_run: number;
+    steps: Array<{ action?: string; ok: boolean; error?: string }>;
+    error?: string;
+  }> {
+    return this.request("POST", "/script", { commands });
+  }
+
+  /**
+   * Run multiple named scripts in sequence.
+   * @param scripts Array of { name, commands[] } objects.
+   * @param continueOnError If true, continue past failures.
+   */
+  async scriptBatch(
+    scripts: Array<{ name?: string; commands: Array<Record<string, unknown>> }>,
+    continueOnError = false
+  ): Promise<{
+    ok: boolean;
+    scripts_run: number;
+    scripts: Array<{ name: string; ok: boolean; steps_run: number; steps: unknown[] }>;
+  }> {
+    const body: Record<string, unknown> = { scripts };
+    if (continueOnError) body.continue_on_error = true;
+    return this.request("POST", "/script/batch", body);
+  }
+
+  // ── System info ─────────────────────────────────────────────────────────────
+
+  /** Get a session report with summary statistics. */
+  async report(): Promise<Record<string, unknown>> {
+    return this.request("GET", "/report");
+  }
+
+  /** Get debug info about the server state (save_directory, active_connections, etc.). */
+  async debug(): Promise<Record<string, unknown>> {
+    return this.request("GET", "/debug");
+  }
+
+  /** Get recent server log entries. Returns { entries, count }. */
+  async logs(): Promise<{ entries: Array<{ level: string; message: string; timestamp: string }>; count: number }> {
+    return this.request("GET", "/logs");
+  }
+
+  // ── Jobs ────────────────────────────────────────────────────────────────────
+
+  /** List all background async jobs and their status. */
+  async jobs(): Promise<{ jobs: Array<{ id: string; status: string; progress?: number }>; count: number }> {
+    return this.request("GET", "/jobs");
+  }
+
+  /** Get status and result for a specific background job by ID. */
+  async getJob(jobId: string): Promise<{ id: string; status: string; progress?: number; result?: unknown; error?: string }> {
+    return this.request("GET", `/job/${jobId}`);
+  }
+
+  // ── Streaming ────────────────────────────────────────────────────────────────
+
+  /** Get SSE stream status (active_clients, total_frames_sent). */
+  async streamStatus(): Promise<{ active_clients: number; total_frames_sent: number }> {
+    return this.request("GET", "/stream/status");
+  }
+
+  // ── PiP ─────────────────────────────────────────────────────────────────────
+
+  /** Start Picture-in-Picture mode. @param source Video path or "last". */
+  async startPip(source?: string): Promise<{ ok: boolean; source?: string }> {
+    return this.request("POST", "/start/pip", source ? { source } : {});
+  }
+
+  // ── Upload ───────────────────────────────────────────────────────────────────
+
+  /**
+   * Upload a recording to iCloud Drive.
+   * @param source Video path or "last" for the most recent recording.
+   * @param folder iCloud folder name (default: "ScreenMuse").
+   */
+  async uploadIcloud(source = "last", folder?: string): Promise<{ ok: boolean; path?: string; icloud_path?: string }> {
+    const body: Record<string, unknown> = { source };
+    if (folder) body.folder = folder;
+    return this.request("POST", "/upload/icloud", body);
+  }
+
   // ── Convenience: record + export in one call ────────────────────────────────
 
   /** Start recording, call fn(), stop, optionally export GIF. Returns the stop result. */

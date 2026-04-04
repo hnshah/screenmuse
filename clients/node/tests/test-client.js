@@ -297,6 +297,29 @@ assert(source.includes('Promise<SessionInfo>'), 'getSession() returns Promise<Se
 assert(source.includes('Promise<VersionResult>'), 'version() returns Promise<VersionResult>');
 assert(source.includes('Promise<ValidateResult>'), 'validate() returns Promise<ValidateResult>');
 
+// ── Section 9: New API coverage — script/batch, jobs, stream, pip, upload ────
+
+assert(source.includes('async script('), 'script() method exists');
+assert(source.includes('/script', source.indexOf('async script(')), 'script() calls /script endpoint');
+assert(source.includes('async scriptBatch('), 'scriptBatch() method exists');
+assert(source.includes('/script/batch'), 'scriptBatch() calls /script/batch endpoint');
+assert(source.includes('async report('), 'report() method exists');
+assert(source.includes('/report'), 'report() calls /report endpoint');
+assert(source.includes('async debug('), 'debug() method exists');
+assert(source.includes('/debug'), 'debug() calls /debug endpoint');
+assert(source.includes('async logs('), 'logs() method exists');
+assert(source.includes('/logs'), 'logs() calls /logs endpoint');
+assert(source.includes('async jobs('), 'jobs() method exists');
+assert(source.includes('/jobs'), 'jobs() calls /jobs endpoint');
+assert(source.includes('async getJob('), 'getJob() method exists');
+assert(source.includes('/job/${'), 'getJob() uses parameterised /job/{id} path');
+assert(source.includes('async streamStatus('), 'streamStatus() method exists');
+assert(source.includes('/stream/status'), 'streamStatus() calls /stream/status endpoint');
+assert(source.includes('async startPip('), 'startPip() method exists');
+assert(source.includes('/start/pip'), 'startPip() calls /start/pip endpoint');
+assert(source.includes('async uploadIcloud('), 'uploadIcloud() method exists');
+assert(source.includes('/upload/icloud'), 'uploadIcloud() calls /upload/icloud endpoint');
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 
 console.log(`\n${'─'.repeat(60)}`);
