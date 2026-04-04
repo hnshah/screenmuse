@@ -50,6 +50,11 @@ final class RecordViewModel: ObservableObject {
     /// The final video URL after effects are applied — set by stopRecording() / processRecordingWithEffects()
     @Published public private(set) var lastVideoURL: URL?
 
+    // MARK: - QA Report State
+    /// Set to a `QAReport` after processing; observed by RecordView to show the modal.
+    @Published var pendingQAReport: QAReport? = nil
+    @Published var pendingQAProcessedURL: URL? = nil
+
     /// Set lastVideoURL from external sources (e.g. PiP recording manager)
     public func setLastVideoURL(_ url: URL) {
         lastVideoURL = url
@@ -273,6 +278,7 @@ final class RecordViewModel: ObservableObject {
             } else {
                 lastVideoURL = url
                 smLog.info("RecordViewModel: Recording saved (no effects) to \(url.path)", category: .recording)
+                // No effects = original is the final video; QA not applicable (nothing to compare)
                 notifyVideoReady(url: url)
                 revealInFinder(url: url)
                 return url
@@ -361,6 +367,17 @@ final class RecordViewModel: ObservableObject {
             isProcessing = false
             lastVideoURL = outputURL
             smLog.info("RecordViewModel: Processed video (with effects) saved to \(outputURL.path)", category: .effects)
+            // Run QA analysis in background — posts notification when done
+            let qaOriginal = rawVideoURL
+            let qaProcessed = outputURL
+            Task.detached(priority: .utility) { [weak self] in
+                if let report = QAIntegration.analyze(original: qaOriginal, processed: qaProcessed) {
+                    await MainActor.run {
+                        self?.pendingQAReport = report
+                        self?.pendingQAProcessedURL = qaProcessed
+                    }
+                }
+            }
             // Notification + Finder reveal are called from stopAndGetVideo() after this returns
             
         } catch {
