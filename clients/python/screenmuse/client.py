@@ -668,3 +668,140 @@ class ScreenMuse:
                 self.stop()
         except Exception:
             pass
+
+    # ── Scripting ─────────────────────────────────────────────────────────────
+
+    def script(self, commands: list) -> dict:
+        """Run a sequence of recording commands as a batch script.
+
+        Args:
+            commands: List of command dicts, e.g.:
+                [{"action": "start"}, {"sleep": 2}, {"action": "chapter", "name": "Section 1"}]
+                Valid actions: start, stop, chapter, highlight, note, screenshot, sleep.
+
+        Returns:
+            {ok, steps_run, steps: [{action, ok, error?}], error?}
+
+        Example::
+
+            sm.script([
+                {"action": "start", "name": "demo"},
+                {"sleep": 3},
+                {"action": "chapter", "name": "Key moment"},
+                {"action": "stop"},
+            ])
+        """
+        return self._post("/script", {"commands": commands})
+
+    def script_batch(self, scripts: list, continue_on_error: bool = False) -> dict:
+        """Run multiple named scripts in sequence.
+
+        Args:
+            scripts: List of script dicts, e.g.:
+                [{"name": "setup", "commands": [...]}, {"name": "demo", "commands": [...]}]
+            continue_on_error: If True, continue running remaining scripts after a failure.
+
+        Returns:
+            {ok, scripts_run, scripts: [{name, ok, steps_run, steps}]}
+
+        Example::
+
+            sm.script_batch([
+                {"name": "intro", "commands": [{"action": "highlight"}]},
+                {"name": "main", "commands": [{"action": "chapter", "name": "Main"}]},
+            ])
+        """
+        body: Dict[str, Any] = {"scripts": scripts}
+        if continue_on_error:
+            body["continue_on_error"] = True
+        return self._post("/script/batch", body)
+
+    # ── System info ───────────────────────────────────────────────────────────
+
+    def report(self) -> dict:
+        """Get a session report with summary statistics.
+
+        Returns:
+            {recording, session_id?, elapsed?, chapters_count, notes_count, ...}
+        """
+        return self._get("/report")
+
+    def debug(self) -> dict:
+        """Get debug info about the server state.
+
+        Returns:
+            {save_directory, server_recording, active_connections, ...}
+        """
+        return self._get("/debug")
+
+    def logs(self) -> dict:
+        """Get recent server log entries.
+
+        Returns:
+            {entries: [{level, message, timestamp}], count}
+        """
+        return self._get("/logs")
+
+    # ── Jobs ──────────────────────────────────────────────────────────────────
+
+    def jobs(self) -> dict:
+        """List all background async jobs and their status.
+
+        Returns:
+            {jobs: [{id, status, progress?, result?}], count}
+        """
+        return self._get("/jobs")
+
+    def get_job(self, job_id: str) -> dict:
+        """Get status and result for a specific background job.
+
+        Args:
+            job_id: Job ID returned by async operations (e.g. from /export with job_id).
+
+        Returns:
+            {id, status, progress?, result?, error?}
+        """
+        return self._get(f"/job/{job_id}")
+
+    # ── Streaming ─────────────────────────────────────────────────────────────
+
+    def stream_status(self) -> dict:
+        """Get SSE stream status.
+
+        Returns:
+            {active_clients, total_frames_sent}
+        """
+        return self._get("/stream/status")
+
+    # ── PiP ───────────────────────────────────────────────────────────────────
+
+    def start_pip(self, source: str = None) -> dict:
+        """Start Picture-in-Picture mode.
+
+        Args:
+            source: Video source path or 'last' for the most recent recording.
+
+        Returns:
+            {ok, source}
+        """
+        body: Dict[str, Any] = {}
+        if source:
+            body["source"] = source
+        return self._post("/start/pip", body)
+
+    # ── Upload ────────────────────────────────────────────────────────────────
+
+    def upload_icloud(self, source: str = "last", folder: str = None) -> dict:
+        """Upload a recording to iCloud Drive.
+
+        Args:
+            source: Video path or 'last' for the most recent recording.
+            folder: iCloud folder to upload to (default: 'ScreenMuse').
+
+        Returns:
+            {ok, path, icloud_path}
+        """
+        body: Dict[str, Any] = {"source": source}
+        if folder:
+            body["folder"] = folder
+        return self._post("/upload/icloud", body)

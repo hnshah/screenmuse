@@ -687,3 +687,167 @@ class TestHTTPHelpers(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ===========================================================================
+# Tests for newly added Python client methods (full API coverage)
+# ===========================================================================
+
+class TestScriptMethods(unittest.TestCase):
+    """Tests for /script and /script/batch methods."""
+
+    def setUp(self):
+        self.sm = ScreenMuse(api_key="test-key", base_url="http://127.0.0.1:7823")
+
+    @patch("screenmuse.client.requests.post")
+    def test_script_calls_correct_endpoint(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True, "steps_run": 1})
+        result = self.sm.script([{"action": "highlight"}])
+        self.assertEqual(result["ok"], True)
+        args, _ = mock_post.call_args
+        self.assertIn("/script", args[0])
+
+    @patch("screenmuse.client.requests.post")
+    def test_script_sends_commands(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True})
+        cmds = [{"action": "chapter", "name": "Intro"}]
+        self.sm.script(cmds)
+        _, kwargs = mock_post.call_args
+        body = json.loads(kwargs["data"])
+        self.assertEqual(body["commands"], cmds)
+
+    @patch("screenmuse.client.requests.post")
+    def test_script_batch_calls_correct_endpoint(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True, "scripts_run": 1})
+        result = self.sm.script_batch([{"name": "s1", "commands": [{"action": "highlight"}]}])
+        self.assertEqual(result["ok"], True)
+        args, _ = mock_post.call_args
+        self.assertIn("/script/batch", args[0])
+
+    @patch("screenmuse.client.requests.post")
+    def test_script_batch_continue_on_error_flag(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True})
+        self.sm.script_batch([{"name": "s1", "commands": []}], continue_on_error=True)
+        _, kwargs = mock_post.call_args
+        body = json.loads(kwargs["data"])
+        self.assertTrue(body.get("continue_on_error"))
+
+    @patch("screenmuse.client.requests.post")
+    def test_script_batch_default_no_continue_flag(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True})
+        self.sm.script_batch([{"name": "s1", "commands": []}])
+        _, kwargs = mock_post.call_args
+        body = json.loads(kwargs["data"])
+        self.assertNotIn("continue_on_error", body)
+
+
+class TestSystemInfoMethods(unittest.TestCase):
+    """Tests for /report, /debug, /logs methods."""
+
+    def setUp(self):
+        self.sm = ScreenMuse(api_key="test-key", base_url="http://127.0.0.1:7823")
+
+    @patch("screenmuse.client.requests.get")
+    def test_report_calls_report_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response({"recording": False})
+        result = self.sm.report()
+        self.assertIn("recording", result)
+        args, _ = mock_get.call_args
+        self.assertIn("/report", args[0])
+
+    @patch("screenmuse.client.requests.get")
+    def test_debug_calls_debug_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response({"save_directory": "/tmp"})
+        result = self.sm.debug()
+        self.assertIn("save_directory", result)
+        args, _ = mock_get.call_args
+        self.assertIn("/debug", args[0])
+
+    @patch("screenmuse.client.requests.get")
+    def test_logs_calls_logs_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response({"entries": [], "count": 0})
+        result = self.sm.logs()
+        self.assertIn("entries", result)
+        args, _ = mock_get.call_args
+        self.assertIn("/logs", args[0])
+
+
+class TestJobsMethods(unittest.TestCase):
+    """Tests for /jobs and /job/{id} methods."""
+
+    def setUp(self):
+        self.sm = ScreenMuse(api_key="test-key", base_url="http://127.0.0.1:7823")
+
+    @patch("screenmuse.client.requests.get")
+    def test_jobs_calls_jobs_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response({"jobs": [], "count": 0})
+        result = self.sm.jobs()
+        self.assertIn("jobs", result)
+        args, _ = mock_get.call_args
+        self.assertIn("/jobs", args[0])
+
+    @patch("screenmuse.client.requests.get")
+    def test_get_job_includes_job_id_in_path(self, mock_get):
+        mock_get.return_value = _mock_response({"id": "abc123", "status": "complete"})
+        result = self.sm.get_job("abc123")
+        self.assertEqual(result["id"], "abc123")
+        args, _ = mock_get.call_args
+        self.assertIn("/job/abc123", args[0])
+
+
+class TestStreamMethods(unittest.TestCase):
+    """Tests for /stream/status method."""
+
+    def setUp(self):
+        self.sm = ScreenMuse(api_key="test-key", base_url="http://127.0.0.1:7823")
+
+    @patch("screenmuse.client.requests.get")
+    def test_stream_status_calls_correct_endpoint(self, mock_get):
+        mock_get.return_value = _mock_response({"active_clients": 0, "total_frames_sent": 0})
+        result = self.sm.stream_status()
+        self.assertEqual(result["active_clients"], 0)
+        args, _ = mock_get.call_args
+        self.assertIn("/stream/status", args[0])
+
+
+class TestUploadAndPiPMethods(unittest.TestCase):
+    """Tests for /start/pip and /upload/icloud methods."""
+
+    def setUp(self):
+        self.sm = ScreenMuse(api_key="test-key", base_url="http://127.0.0.1:7823")
+
+    @patch("screenmuse.client.requests.post")
+    def test_start_pip_calls_correct_endpoint(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True})
+        result = self.sm.start_pip()
+        self.assertTrue(result["ok"])
+        args, _ = mock_post.call_args
+        self.assertIn("/start/pip", args[0])
+
+    @patch("screenmuse.client.requests.post")
+    def test_start_pip_with_source(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True})
+        self.sm.start_pip(source="/tmp/video.mp4")
+        _, kwargs = mock_post.call_args
+        body = json.loads(kwargs["data"])
+        self.assertEqual(body["source"], "/tmp/video.mp4")
+
+    @patch("screenmuse.client.requests.post")
+    def test_upload_icloud_default_source(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True, "path": "/tmp/video.mp4"})
+        result = self.sm.upload_icloud()
+        self.assertTrue(result["ok"])
+        _, kwargs = mock_post.call_args
+        body = json.loads(kwargs["data"])
+        self.assertEqual(body["source"], "last")
+        args, _ = mock_post.call_args
+        self.assertIn("/upload/icloud", args[0])
+
+    @patch("screenmuse.client.requests.post")
+    def test_upload_icloud_with_folder(self, mock_post):
+        mock_post.return_value = _mock_response({"ok": True})
+        self.sm.upload_icloud(source="/tmp/demo.mp4", folder="MyFolder")
+        _, kwargs = mock_post.call_args
+        body = json.loads(kwargs["data"])
+        self.assertEqual(body["folder"], "MyFolder")
+        self.assertEqual(body["source"], "/tmp/demo.mp4")
