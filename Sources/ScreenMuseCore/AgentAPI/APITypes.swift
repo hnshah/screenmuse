@@ -203,3 +203,67 @@ public struct PermissionsInfo: Codable, Sendable {
         case screenRecording = "screen_recording"
     }
 }
+
+// MARK: - POST /trim
+
+public struct TrimRequest: Codable, Sendable {
+    /// Video path or "last" to use the most recent recording.
+    public let source: String?
+    /// Trim start time in seconds (default: 0 = beginning of video).
+    public let start: Double?
+    /// Trim end time in seconds (default: nil = end of video).
+    public let end: Double?
+    /// Force re-encode instead of stream copy (slower but accurate).
+    public let reencode: Bool?
+    /// Custom output path. Defaults to auto-generated path in Exports/.
+    public let output: String?
+}
+
+// MARK: - POST /speedramp
+
+public struct SpeedRampRequest: Codable, Sendable {
+    /// Video path or "last" to use the most recent recording.
+    public let source: String?
+    /// Seconds of inactivity before a section is considered idle (default: 2.0).
+    public let idleThresholdSec: Double?
+    /// Playback speed for idle sections (default: 4.0, minimum: 1.0).
+    public let idleSpeed: Double?
+    /// Playback speed for active sections (default: 1.0, minimum: 0.1).
+    public let activeSpeed: Double?
+    /// Custom output path. Defaults to auto-generated path in Exports/.
+    public let output: String?
+
+    enum CodingKeys: String, CodingKey {
+        case source
+        case idleThresholdSec = "idle_threshold_sec"
+        case idleSpeed = "idle_speed"
+        case activeSpeed = "active_speed"
+        case output
+    }
+}
+
+// MARK: - POST /chapter
+
+public struct ChapterRequest: Codable, Sendable {
+    /// Chapter name/label (default: "Chapter").
+    public let name: String?
+}
+
+// MARK: - POST /highlight
+
+/// POST /highlight takes no required fields — no Codable request type needed.
+/// The handler flags the next click for enhanced visual effects.
+public struct HighlightResponse: Codable, Sendable {
+    public let ok: Bool
+    /// Recording elapsed time when the highlight flag was set.
+    public let timestamp: Double
+}
+
+// MARK: - POST /note
+
+public struct NoteRequest: Codable, Sendable {
+    /// The text to add as a session note. Required.
+    public let text: String?
+    /// Alias for text (backward compatibility).
+    public let note: String?
+}
