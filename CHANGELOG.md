@@ -2,6 +2,27 @@
 
 All notable changes to ScreenMuse are documented here.
 
+## [Unreleased] — 2026-04-04 Sprint
+
+### Added
+- `GET /recordings` now supports pagination: `?limit=N&offset=N&sort=asc|desc`. Response includes `total`, `count`, `limit`, `offset`, `has_more` fields. Backward-compatible (no params = return all).
+- **Python client**: 10 new methods for full API coverage — `script()`, `script_batch()`, `report()`, `debug()`, `logs()`, `jobs()`, `get_job()`, `stream_status()`, `start_pip()`, `upload_icloud()`. All with docstrings.
+- **TypeScript/Node.js client**: Same 10 new methods with full JSDoc type annotations.
+- **Codable types** in `APITypes.swift` for `TrimRequest`, `SpeedRampRequest`, `ChapterRequest`, `HighlightResponse`, `NoteRequest`.
+- **`ScreenMuseConfigTests`** — 18 new tests for config file round-trip, defaults, tilde expansion.
+- **HTTP route tests** for `POST /record` and `POST /script/batch` dispatch table coverage.
+
+### Verified (no changes needed)
+- 65KB body limit: already fixed via `accumulateBody()` + `receiveNextChunk()` streaming pattern with 4MB cap.
+- Port configurability: fully implemented via `SCREENMUSE_PORT` env, `~/.screenmuse/config.json`, and `--port` CLI flag.
+- Config file support: `ScreenMuseConfig` at `~/.screenmuse.json` supports all 6 fields.
+- OpenAPI spec audit: 47/47 paths in spec match router dispatch table — zero drift.
+- Demo tape: `docs/demo.tape` and `docs/CONTRIBUTING-DEMO.md` already exist.
+
+### Research
+- Landscape: Screenpipe (main competitor) runs as MCP server with passive capture. Mux (Jan 2026) added AI narration. Community building screenshot+narration MCP tools for monitoring diffs and auto-documentation.
+- New backlog items added: `POST /browser` (headless Playwright), `POST /narrate` (AI narration), `POST /diff` (change detection), `POST /publish` (multi-destination), continuous capture mode.
+
 ## [1.6.0] — 2026-03-25
 
 ### Added
