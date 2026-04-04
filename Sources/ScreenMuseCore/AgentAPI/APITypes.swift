@@ -267,3 +267,80 @@ public struct NoteRequest: Codable, Sendable {
     /// Alias for text (backward compatibility).
     public let note: String?
 }
+
+// MARK: - POST /qa
+
+public struct QARequest: Codable, Sendable {
+    /// Absolute path to the original (pre-processing) video.
+    public let original: String
+    /// Absolute path to the processed (output) video.
+    public let processed: String
+    /// Whether to save the qa-report.json beside the processed video. Default: true.
+    public let save: Bool?
+}
+
+// MARK: - POST /diff
+
+public struct DiffRequest: Codable, Sendable {
+    /// Absolute path to video A.
+    public let a: String
+    /// Absolute path to video B.
+    public let b: String
+}
+
+public struct DiffResponse: Codable, Sendable {
+    public struct VideoInfo: Codable, Sendable {
+        public let path: String
+        public let duration: Double
+        public let fileSizeBytes: Int64
+        public let fileSizeMB: Double
+        public let width: Int
+        public let height: Int
+        public let fps: Double
+        public let bitrateBPS: Int64
+        public let codec: String
+        public let hasAudio: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case path, duration
+            case fileSizeBytes = "file_size_bytes"
+            case fileSizeMB = "file_size_mb"
+            case width, height, fps
+            case bitrateBPS = "bitrate_bps"
+            case codec
+            case hasAudio = "has_audio"
+        }
+    }
+
+    public struct Delta: Codable, Sendable {
+        public let durationSeconds: Double
+        public let durationPercent: Double
+        public let fileSizeBytes: Int64
+        public let fileSizePercent: Double
+        public let bitrateBPS: Int64
+        public let resolutionChanged: Bool
+        public let fpsChanged: Bool
+        public let codecChanged: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case durationSeconds = "duration_seconds"
+            case durationPercent = "duration_percent"
+            case fileSizeBytes = "file_size_bytes"
+            case fileSizePercent = "file_size_percent"
+            case bitrateBPS = "bitrate_bps"
+            case resolutionChanged = "resolution_changed"
+            case fpsChanged = "fps_changed"
+            case codecChanged = "codec_changed"
+        }
+    }
+
+    public let a: VideoInfo
+    public let b: VideoInfo
+    public let delta: Delta
+    public let requestID: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case a, b, delta
+        case requestID = "request_id"
+    }
+}

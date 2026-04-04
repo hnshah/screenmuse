@@ -15,7 +15,7 @@ extension NWConnection: @retroactive @unchecked Sendable {}
 //
 //   RECORDING  Server+Recording.swift  — /record /start /stop /pause /resume /chapter /highlight /note /screenshot
 //              Server+PiP.swift        — /start/pip, PiP stop flow
-//   EXPORT     Server+Export.swift     — /export /trim /speedramp /concat /frames /frame /thumbnail /crop /ocr
+//   EXPORT     Server+Export.swift     — /export /trim /speedramp /concat /frames /frame /thumbnail /crop /ocr /qa /diff
 //   STREAM     Server+Stream.swift     — /stream /stream/status
 //   WINDOW     Server+Window.swift     — /windows /window/focus /window/position /window/hide-others
 //   SYSTEM     Server+System.swift     — /health /status /debug /logs /report /version /recordings /openapi /system/*
@@ -69,6 +69,9 @@ public class ScreenMuseServer {
     public var apiKey: String?
 
     var requestCount = 0
+    /// Tracks the reqID of the currently-dispatched request so sendResponse
+    /// can inject "request_id" into every JSON body automatically.
+    private var currentReqID: Int = 0
 
     /// Count of currently-open incoming connections.
     /// Incremented in handleConnection, decremented when the connection reaches
@@ -384,6 +387,7 @@ public class ScreenMuseServer {
     private func processHTTPRequest(data: Data, connection: NWConnection) async {
         requestCount += 1
         let reqID = requestCount
+        currentReqID = reqID
 
         guard let raw = String(data: data, encoding: .utf8) else {
             smLog.error("[\(reqID)] Bad request — could not decode UTF-8", category: .server)
@@ -493,6 +497,8 @@ public class ScreenMuseServer {
         case ("POST", "/thumbnail"):             await handleThumbnail(body: body, connection: connection, reqID: reqID)
         case ("POST", "/crop"):                  await handleCrop(body: body, connection: connection, reqID: reqID)
         case ("POST", "/ocr"):                   await handleOCR(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/qa"):                    await handleQA(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/diff"):                  await handleDiff(body: body, connection: connection, reqID: reqID)
 
         // MARK: Stream — Server+Stream.swift
         case ("GET", "/stream"):                 handleStream(body: body, connection: connection, reqID: reqID)
@@ -767,6 +773,12 @@ public class ScreenMuseServer {
     }
 
     func sendResponse(connection: NWConnection, status: Int, body: [String: Any]) {
+        // Inject request_id into every response body for distributed tracing.
+        var body = body
+        if body["request_id"] == nil {
+            body["request_id"] = currentReqID
+        }
+
         // If running inside an async job, route result to the JobQueue instead of the wire.
         let connID = ObjectIdentifier(connection)
         if let jobID = jobConnections.removeValue(forKey: connID) {
