@@ -280,10 +280,32 @@ extension ScreenMuseServer {
             }
         }
 
-        smLog.debug("[\(reqID)] /recordings found \(recordings.count) files", category: .server)
+        // Pagination parameters (parsed from query string by processHTTPRequest into body dict).
+        // Usage: GET /recordings?limit=20&offset=0&sort=desc
+        let requestedLimit = body["limit"] as? Int
+        let offset = max(0, body["offset"] as? Int ?? 0)
+        let sortAscending = (body["sort"] as? String) == "asc"
+        let limit = max(1, requestedLimit ?? max(recordings.count, 1))
+
+        // Apply sort: default descending (newest files first by filename)
+        if sortAscending {
+            recordings.sort { ($0["filename"] as? String ?? "") < ($1["filename"] as? String ?? "") }
+        } else {
+            recordings.sort { ($0["filename"] as? String ?? "") > ($1["filename"] as? String ?? "") }
+        }
+
+        let total = recordings.count
+        let sliced = Array(recordings.dropFirst(offset).prefix(limit))
+        let hasMore = offset + sliced.count < total
+
+        smLog.debug("[\(reqID)] /recordings found \(total) files, returning \(sliced.count) (offset=\(offset), limit=\(limit))", category: .server)
         sendResponse(connection: connection, status: 200, body: [
-            "recordings": recordings,
-            "count": recordings.count,
+            "recordings": sliced,
+            "total": total,
+            "count": sliced.count,
+            "limit": limit,
+            "offset": offset,
+            "has_more": hasMore,
             "directory": screenMuseDir.path
         ])
     }
