@@ -278,7 +278,19 @@ final class RecordViewModel: ObservableObject {
             } else {
                 lastVideoURL = url
                 smLog.info("RecordViewModel: Recording saved (no effects) to \(url.path)", category: .recording)
-                // No effects = original is the final video; QA not applicable (nothing to compare)
+                // No effects: run a baseline validity QA (file integrity only — no before/after)
+                let qaURL = url
+                Task.detached(priority: .utility) { [weak self] in
+                    let extractor = FFProbeExtractor()
+                    let valid = extractor.isValid(url: qaURL)
+                    if !valid {
+                        // Corrupt output — surface to user even without a full modal
+                        await MainActor.run {
+                            self?.notifyError("Recording may be corrupted",
+                                             detail: "ffprobe could not validate \(qaURL.lastPathComponent)")
+                        }
+                    }
+                }
                 notifyVideoReady(url: url)
                 revealInFinder(url: url)
                 return url

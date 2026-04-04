@@ -670,3 +670,167 @@ extension ScreenMuseServer {
         }
     }
 }
+
+    // MARK: - POST /qa
+
+    /// Run QA analysis on two video files (original + processed).
+    ///
+    /// Request body:
+    /// ```json
+    /// { "original": "/path/to/original.mp4", "processed": "/path/to/processed.mp4" }
+    /// ```
+    ///
+    /// Returns the full QAReport as JSON.
+    func handleQA(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/qa", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleQA(body: b, connection: c, reqID: r) }) { return }
+
+        guard let originalPath = body["original"] as? String,
+              let processedPath = body["processed"] as? String else {
+            sendResponse(connection: connection, status: 400, body: [
+                "error": "Missing required fields: 'original' and 'processed'",
+                "example": ["original": "/path/to/original.mp4", "processed": "/path/to/processed.mp4"]
+            ])
+            return
+        }
+
+        let originalURL = URL(fileURLWithPath: originalPath)
+        let processedURL = URL(fileURLWithPath: processedPath)
+
+        // Validate both files exist
+        guard FileManager.default.fileExists(atPath: originalPath) else {
+            sendResponse(connection: connection, status: 404, body: [
+                "error": "Original file not found: \(originalPath)"
+            ])
+            return
+        }
+        guard FileManager.default.fileExists(atPath: processedPath) else {
+            sendResponse(connection: connection, status: 404, body: [
+                "error": "Processed file not found: \(processedPath)"
+            ])
+            return
+        }
+
+        let save = body["save"] as? Bool ?? true
+
+        smLog.info("[\(reqID)] /qa original=\(originalPath) processed=\(processedPath)", category: .server)
+
+        do {
+            let analyzer = QAAnalyzer()
+            let report: QAReport
+            if save {
+                let (r, reportURL) = try analyzer.analyzeAndSave(original: originalURL, processed: processedURL)
+                report = r
+                smLog.info("[\(reqID)] /qa report saved to \(reportURL.path)", category: .server)
+            } else {
+                report = try analyzer.analyze(original: originalURL, processed: processedURL)
+            }
+
+            // Serialize report to dict for sendResponse
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            guard let data = try? encoder.encode(report),
+                  let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                sendResponse(connection: connection, status: 500, body: ["error": "Failed to serialize QA report"])
+                return
+            }
+            sendResponse(connection: connection, status: 200, body: dict)
+        } catch {
+            smLog.error("[\(reqID)] /qa failed: \(error.localizedDescription)", category: .server)
+            sendResponse(connection: connection, status: 500, body: [
+                "error": error.localizedDescription,
+                "code": "QA_ANALYSIS_FAILED"
+            ])
+        }
+    }
+
+    // MARK: - POST /diff
+
+    /// Structural diff between two video files.
+    ///
+    /// Request body:
+    /// ```json
+    /// { "a": "/path/to/video_a.mp4", "b": "/path/to/video_b.mp4" }
+    /// ```
+    ///
+    /// Returns metadata for both videos + computed deltas. Lighter than /qa —
+    /// no quality checks, just metadata extraction and comparison.
+    func handleDiff(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        if await dispatchAsync(endpoint: "/diff", body: body, connection: connection, reqID: reqID,
+                               handler: { b, c, r in await self.handleDiff(body: b, connection: c, reqID: r) }) { return }
+
+        guard let pathA = body["a"] as? String,
+              let pathB = body["b"] as? String else {
+            sendResponse(connection: connection, status: 400, body: [
+                "error": "Missing required fields: 'a' and 'b'",
+                "example": ["a": "/path/to/video_a.mp4", "b": "/path/to/video_b.mp4"]
+            ])
+            return
+        }
+
+        guard FileManager.default.fileExists(atPath: pathA) else {
+            sendResponse(connection: connection, status: 404, body: ["error": "File 'a' not found: \(pathA)"])
+            return
+        }
+        guard FileManager.default.fileExists(atPath: pathB) else {
+            sendResponse(connection: connection, status: 404, body: ["error": "File 'b' not found: \(pathB)"])
+            return
+        }
+
+        smLog.info("[\(reqID)] /diff a=\(pathA) b=\(pathB)", category: .server)
+
+        do {
+            let extractor = FFProbeExtractor()
+            let metaA = try extractor.extract(from: URL(fileURLWithPath: pathA))
+            let metaB = try extractor.extract(from: URL(fileURLWithPath: pathB))
+
+            let durDelta = metaB.duration - metaA.duration
+            let sizeDelta = metaB.fileSizeBytes - metaA.fileSizeBytes
+            let bitrateDelta = metaB.bitrateBPS - metaA.bitrateBPS
+
+            let diff: [String: Any] = [
+                "a": [
+                    "path": metaA.path,
+                    "duration": metaA.duration,
+                    "file_size_bytes": metaA.fileSizeBytes,
+                    "file_size_mb": round(metaA.fileSizeMB * 10) / 10,
+                    "width": metaA.width,
+                    "height": metaA.height,
+                    "fps": metaA.fps,
+                    "bitrate_bps": metaA.bitrateBPS,
+                    "codec": metaA.codec,
+                    "has_audio": metaA.hasAudio
+                ],
+                "b": [
+                    "path": metaB.path,
+                    "duration": metaB.duration,
+                    "file_size_bytes": metaB.fileSizeBytes,
+                    "file_size_mb": round(metaB.fileSizeMB * 10) / 10,
+                    "width": metaB.width,
+                    "height": metaB.height,
+                    "fps": metaB.fps,
+                    "bitrate_bps": metaB.bitrateBPS,
+                    "codec": metaB.codec,
+                    "has_audio": metaB.hasAudio
+                ],
+                "delta": [
+                    "duration_seconds": durDelta,
+                    "duration_percent": metaA.duration > 0 ? round((durDelta / metaA.duration) * 1000) / 10 : 0,
+                    "file_size_bytes": sizeDelta,
+                    "file_size_percent": metaA.fileSizeBytes > 0 ? round((Double(sizeDelta) / Double(metaA.fileSizeBytes)) * 1000) / 10 : 0,
+                    "bitrate_bps": bitrateDelta,
+                    "resolution_changed": metaA.width != metaB.width || metaA.height != metaB.height,
+                    "fps_changed": abs(metaA.fps - metaB.fps) >= 0.01,
+                    "codec_changed": metaA.codec != metaB.codec
+                ]
+            ]
+            sendResponse(connection: connection, status: 200, body: diff)
+        } catch {
+            smLog.error("[\(reqID)] /diff failed: \(error.localizedDescription)", category: .server)
+            sendResponse(connection: connection, status: 500, body: [
+                "error": error.localizedDescription,
+                "code": "DIFF_FAILED"
+            ])
+        }
+    }

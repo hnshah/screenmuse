@@ -94,6 +94,29 @@ enum OpenAPISpec {
             } } } } }
           }
         },
+        "/qa": {
+          "post": {
+            "summary": "QA analysis: compare original vs processed video",
+            "description": "Runs ffprobe-based quality checks on two video files. Returns full QAReport with 5 checks (validity, resolution, A/V sync, frame rate, file size) plus before/after metrics and confidence score.",
+            "requestBody": { "content": { "application/json": { "schema": { "properties": {
+              "original":  { "type": "string", "description": "Absolute path to the original (pre-processing) video" },
+              "processed": { "type": "string", "description": "Absolute path to the processed (output) video" },
+              "save":      { "type": "boolean", "default": true, "description": "Save qa-report.json beside processed video" }
+            }, "required": ["original", "processed"] } } } },
+            "responses": { "200": { "description": "QAReport JSON" }, "404": { "description": "File not found" }, "500": { "description": "Analysis failed" } }
+          }
+        },
+        "/diff": {
+          "post": {
+            "summary": "Structural diff between two video files",
+            "description": "Extracts metadata from both videos and returns computed deltas (duration, file size, bitrate, resolution, fps). Lighter than /qa — no quality checks.",
+            "requestBody": { "content": { "application/json": { "schema": { "properties": {
+              "a": { "type": "string", "description": "Absolute path to video A" },
+              "b": { "type": "string", "description": "Absolute path to video B" }
+            }, "required": ["a", "b"] } } } },
+            "responses": { "200": { "description": "Diff result with metadata for a, b, and delta" }, "404": { "description": "File not found" } }
+          }
+        },
         "/export": {
           "post": {
             "summary": "Export recording as animated GIF or WebP",

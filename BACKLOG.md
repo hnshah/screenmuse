@@ -1,6 +1,6 @@
 # ScreenMuse — Backlog
 
-Last updated: 2026-04-04 (post 6h sprint with Oatis)
+Last updated: 2026-04-04 (post Sprint 3 with Oatis)
 
 ---
 
@@ -22,7 +22,7 @@ Last updated: 2026-04-04 (post 6h sprint with Oatis)
 | 5 | **POST /diff** — recording comparison | Compare two recordings, return structured diff: which regions changed, when, how much. For visual regression and monitoring use cases. |
 | 6 | **POST /publish** — multi-destination export | Publish to S3, Cloudflare R2, Notion, GitHub gist, Slack. Start with Slack (iCloud already done). |
 | 7 | **SCContentSharingPicker integration** | Permission-free recording for specific windows using macOS 15 system picker. Eliminates first-run friction. |
-| 8 | **Pagination tests for /recordings** | Pagination added in 2026-04-04 sprint. Add dedicated test coverage with mock filesystem. |
+| 8 | ~~**Pagination tests for /recordings**~~ | ✅ Done (Sprint 3) — 22 tests in RecordingsPaginationTests.swift |
 
 ### 🟢 Low / Long-term
 

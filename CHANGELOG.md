@@ -2,7 +2,18 @@
 
 All notable changes to ScreenMuse are documented here.
 
-## [Unreleased] — 2026-04-04 Sprint
+## [Unreleased] — 2026-04-04 Sprint 3
+
+### Added
+- **Request ID in every response** — `sendResponse()` now automatically injects `"request_id"` into every JSON response body. No callsite changes — threaded through the single choke point. Enables distributed tracing for agent workflows.
+- **`POST /qa`** — HTTP API for QA analysis. Pass `original` + `processed` video paths, get back the full `QAReport` JSON (5 quality checks, confidence score, before/after metrics). Optional `save` param (default true) saves `qa-report.json` beside processed video.
+- **`POST /diff`** — Structural diff between any two video files. Returns metadata for both + delta (duration, file size, bitrate, resolution changed, fps changed, codec changed).
+- **Baseline QA for no-effects recordings** — When recording without effects (no before/after to compare), ffprobe validity check runs in background; surfaces error if output is corrupted.
+- **`RecordingsPaginationTests`** — 22 tests covering limit/offset/sort/hasMore logic, edge cases, and full-pagination consistency (paging through all 23 items in 5-item pages).
+- **Codable types** for `/qa` (`QARequest`) and `/diff` (`DiffRequest`, `DiffResponse`).
+- **OpenAPI spec** updated with `/qa` and `/diff` endpoint definitions.
+
+## [Unreleased] — 2026-04-04 Sprint 2 (QA Engine)
 
 ### Added
 - `GET /recordings` now supports pagination: `?limit=N&offset=N&sort=asc|desc`. Response includes `total`, `count`, `limit`, `offset`, `has_more` fields. Backward-compatible (no params = return all).
