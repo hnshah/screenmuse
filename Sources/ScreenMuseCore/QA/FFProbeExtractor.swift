@@ -7,6 +7,8 @@ import Foundation
 /// Uses the JSON output format for reliable parsing.
 public struct FFProbeExtractor: Sendable {
 
+    public init() {}
+
     // Prefer bundled binary; fall back to Homebrew path
     public static let ffprobePath: String = {
         let candidates = [

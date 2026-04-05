@@ -394,9 +394,11 @@ struct QAReportView: View {
 // MARK: - QA Report Window Presenter
 
 /// Posts a notification to show the QA report modal from anywhere in the app.
-public extension NotificationCenter {
+public extension Notification.Name {
     static let showQAReport = Notification.Name("ScreenMuse.ShowQAReport")
+}
 
+public extension NotificationCenter {
     func postQAReport(_ report: QAReport, processedURL: URL) {
         post(name: .showQAReport, object: nil, userInfo: [
             "report": report,
@@ -407,18 +409,19 @@ public extension NotificationCenter {
 
 // MARK: - Preview
 
-#Preview("QA Passed") {
-    QAReportView(
-        report: QAReport.samplePassed,
-        processedURL: URL(fileURLWithPath: "/tmp/recording.processed.mp4"),
-        onDismiss: {}
-    )
-}
-
-#Preview("QA Failed") {
-    QAReportView(
-        report: QAReport.sampleFailed,
-        processedURL: URL(fileURLWithPath: "/tmp/recording.processed.mp4"),
-        onDismiss: {}
-    )
-}
+// FIXME: Preview macro not available in this build configuration
+// #Preview("QA Passed") {
+//     QAReportView(
+//         report: QAReport.samplePassed,
+//         processedURL: URL(fileURLWithPath: "/tmp/recording.processed.mp4"),
+//         onDismiss: {}
+//     )
+// }
+//
+// #Preview("QA Failed") {
+//     QAReportView(
+//         report: QAReport.sampleFailed,
+//         processedURL: URL(fileURLWithPath: "/tmp/recording.processed.mp4"),
+//         onDismiss: {}
+//     )
+// }

@@ -669,7 +669,6 @@ extension ScreenMuseServer {
             ])
         }
     }
-}
 
     // MARK: - POST /qa
 
@@ -834,3 +833,4 @@ extension ScreenMuseServer {
             ])
         }
     }
+}
