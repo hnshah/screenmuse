@@ -119,10 +119,106 @@ final class MetricsRegistryTests: XCTestCase {
     func testResetClearsCounters() async {
         let registry = MetricsRegistry()
         await registry.recordRequest(method: "GET", route: "/status", status: 200)
+        await registry.recordRequestDuration(route: "/status", seconds: 0.05)
         await registry.reset()
         let snap = await registry.snapshot()
         XCTAssertEqual(snap.totalRequests, 0)
         XCTAssertTrue(snap.requestCounts.isEmpty)
+        XCTAssertTrue(snap.histograms.isEmpty,
+                      "reset must clear histogram state as well as counters")
+    }
+
+    // MARK: - Histograms
+
+    func testHistogramIncrementsCumulativeBuckets() async {
+        let registry = MetricsRegistry()
+        // 3 fast requests: should land in every bucket >= 0.025
+        await registry.recordRequestDuration(route: "/status", seconds: 0.02)
+        await registry.recordRequestDuration(route: "/status", seconds: 0.03)
+        await registry.recordRequestDuration(route: "/status", seconds: 0.04)
+        let snap = await registry.snapshot()
+        let h = snap.histograms["/status"]
+        XCTAssertNotNil(h)
+        XCTAssertEqual(h?.count, 3)
+        // Bucket 0 (0.005) shouldn't have anything (all observations > 5ms)
+        XCTAssertEqual(h?.bucketCounts[0], 0)
+        // Bucket 1 (0.01) also empty
+        XCTAssertEqual(h?.bucketCounts[1], 0)
+        // Bucket 2 (0.025) catches the 0.02 observation only
+        XCTAssertEqual(h?.bucketCounts[2], 1)
+        // Bucket 3 (0.05) catches all three
+        XCTAssertEqual(h?.bucketCounts[3], 3)
+        // Bucket 4 (0.1) cumulative = still 3
+        XCTAssertEqual(h?.bucketCounts[4], 3)
+        // Sum should equal 0.02 + 0.03 + 0.04 = 0.09 (floating-point tolerant)
+        XCTAssertEqual(h?.sum ?? 0, 0.09, accuracy: 0.001)
+    }
+
+    func testHistogramClampsNegativeDurations() async {
+        let registry = MetricsRegistry()
+        await registry.recordRequestDuration(route: "/status", seconds: -0.1)
+        let snap = await registry.snapshot()
+        let h = snap.histograms["/status"]
+        XCTAssertEqual(h?.count, 1)
+        // Negative clamps to 0 → lands in every bucket
+        XCTAssertEqual(h?.bucketCounts[0], 1)
+        XCTAssertEqual(h?.sum ?? -1, 0, accuracy: 0.0001)
+    }
+
+    func testHistogramCanonicalizesJobIDs() async {
+        let registry = MetricsRegistry()
+        await registry.recordRequestDuration(route: "/job/abc", seconds: 0.05)
+        await registry.recordRequestDuration(route: "/job/xyz", seconds: 0.05)
+        let snap = await registry.snapshot()
+        XCTAssertEqual(snap.histograms.count, 1, "job histograms must collapse into /job/:id")
+        XCTAssertEqual(snap.histograms["/job/:id"]?.count, 2)
+    }
+
+    func testPrometheusHistogramRendersBucketSumCount() async {
+        let registry = MetricsRegistry()
+        await registry.recordRequestDuration(route: "/status", seconds: 0.03)
+        let text = await registry.prometheusText(gauges: [:], version: "dev")
+        XCTAssertTrue(text.contains("# TYPE screenmuse_http_request_duration_seconds histogram"))
+        XCTAssertTrue(text.contains(#"screenmuse_http_request_duration_seconds_bucket{route="/status",le="0.05"}"#))
+        XCTAssertTrue(text.contains(#"screenmuse_http_request_duration_seconds_bucket{route="/status",le="+Inf"} 1"#))
+        XCTAssertTrue(text.contains(#"screenmuse_http_request_duration_seconds_sum{route="/status"}"#))
+        XCTAssertTrue(text.contains(#"screenmuse_http_request_duration_seconds_count{route="/status"} 1"#))
+    }
+
+    func testPrometheusHistogramSortedRouteOrder() async {
+        let registry = MetricsRegistry()
+        await registry.recordRequestDuration(route: "/zulu", seconds: 0.05)
+        await registry.recordRequestDuration(route: "/alpha", seconds: 0.05)
+        let text = await registry.prometheusText(gauges: [:], version: "dev")
+        let alphaIdx = text.range(of: "route=\"/alpha\"")?.lowerBound
+        let zuluIdx = text.range(of: "route=\"/zulu\"")?.lowerBound
+        XCTAssertNotNil(alphaIdx)
+        XCTAssertNotNil(zuluIdx)
+        if let a = alphaIdx, let z = zuluIdx {
+            XCTAssertLessThan(a, z)
+        }
+    }
+
+    func testFormatBucketIntegerNoDecimals() {
+        XCTAssertEqual(MetricsRegistry.formatBucket(1), "1")
+        XCTAssertEqual(MetricsRegistry.formatBucket(10), "10")
+    }
+
+    func testFormatBucketTrimsTrailingZeros() {
+        XCTAssertEqual(MetricsRegistry.formatBucket(0.5), "0.5")
+        XCTAssertEqual(MetricsRegistry.formatBucket(0.025), "0.025")
+        XCTAssertEqual(MetricsRegistry.formatBucket(0.1), "0.1")
+    }
+
+    func testDefaultBucketsCoverExpectedRange() {
+        // Sanity check the declared shape so a future edit doesn't
+        // silently drop buckets or introduce duplicates.
+        XCTAssertEqual(MetricsRegistry.defaultBuckets.first, 0.005)
+        XCTAssertEqual(MetricsRegistry.defaultBuckets.last, 30)
+        XCTAssertEqual(MetricsRegistry.defaultBuckets.count, 12)
+        // Must be strictly ascending
+        let sorted = MetricsRegistry.defaultBuckets.sorted()
+        XCTAssertEqual(sorted, MetricsRegistry.defaultBuckets)
     }
 
     func testPrometheusOutputIsSortedAndStable() async {

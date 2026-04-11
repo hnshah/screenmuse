@@ -4,6 +4,13 @@ All notable changes to ScreenMuse are documented here.
 
 ## [Unreleased] — 2026-04-11 Sprint 5
 
+### Added — `/metrics` histograms
+- **`screenmuse_http_request_duration_seconds`** — Prometheus histogram with 12 cumulative buckets (5ms → 30s, exponential). Emits `_bucket{route,le}`, `_sum{route}`, `_count{route}`, and the mandatory `+Inf` bucket line per route. Prometheus `histogram_quantile()` can now derive p50/p95/p99 per endpoint at query time.
+- **`MetricsRegistry.recordRequestDuration(route:seconds:)`** — keyed by canonicalized route only (not method or status), so p95 latency stays stable across 4xx/5xx spikes. Negative durations clamp to zero (clock skew / test noise guard). Job and session IDs collapse to `/job/:id` and `/session/:id` to bound cardinality.
+- **`ScreenMuseServer.currentRequestStartTime`** — set at the top of `processHTTPRequest` and read in `sendResponse` so every response automatically contributes a latency observation. Fires as a non-awaited Task alongside the existing counter record so the hot path stays non-blocking.
+- `Snapshot` now includes a `histograms: [String: PublicHistogramState]` field for test assertions.
+- **10 new histogram tests** in `MetricsRegistryTests`: cumulative bucket aggregation, negative-duration clamp, job-ID canonicalization, Prometheus rendering (bucket + sum + count lines, sort order, `+Inf` bucket), `formatBucket` helper (integer vs fractional with trailing-zero trim), and a sanity check on the declared `defaultBuckets` shape.
+
 ### Added — `POST /narrate` v2
 - **`subtitles: ["srt", "vtt"]`** — writes sidecar subtitle files beside the video. Accepts either an array or a single string. Each listed format gets a `{stem}.srt` / `{stem}.vtt` file next to the recording, and the paths come back in `response.subtitle_files`.
 - **`apply_chapters: true`** — appends the LLM's `suggested_chapters` into the server's current session chapter list (shows up in `/timeline`, `/stop`, and the embedded MP4 metadata). Respects the same time bounds `/chapter` enforces — chapters outside `[0, currentElapsed]` during an active recording are skipped.

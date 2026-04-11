@@ -81,6 +81,10 @@ public class ScreenMuseServer {
     /// assumption behind `currentReqID`.
     private var currentRequestMethod: String = ""
     private var currentRequestRoute: String = ""
+    /// Monotonic start timestamp of the current request, used to populate
+    /// the request-duration histogram in sendResponse.  Reset on each
+    /// processHTTPRequest invocation.
+    private var currentRequestStartTime: Date?
 
     /// Count of currently-open incoming connections.
     /// Incremented in handleConnection, decremented when the connection reaches
@@ -399,6 +403,7 @@ public class ScreenMuseServer {
         currentReqID = reqID
         currentRequestMethod = ""
         currentRequestRoute = ""
+        currentRequestStartTime = Date()
 
         guard let raw = String(data: data, encoding: .utf8) else {
             smLog.error("[\(reqID)] Bad request — could not decode UTF-8", category: .server)
@@ -822,14 +827,22 @@ public class ScreenMuseServer {
             body["request_id"] = currentReqID
         }
 
-        // Record this response against the Prometheus-style counter. We
-        // fire-and-forget a Task into the MetricsRegistry actor so the
-        // hot path in sendResponse stays non-blocking.
+        // Record this response against the Prometheus-style counter +
+        // request-duration histogram. We fire-and-forget a Task into
+        // the MetricsRegistry actor so the hot path in sendResponse
+        // stays non-blocking.
         if !currentRequestMethod.isEmpty && !currentRequestRoute.isEmpty {
             let method = currentRequestMethod
             let route = currentRequestRoute
             let status = status
-            Task { await MetricsRegistry.shared.recordRequest(method: method, route: route, status: status) }
+            let duration: Double? = currentRequestStartTime
+                .map { Date().timeIntervalSince($0) }
+            Task {
+                await MetricsRegistry.shared.recordRequest(method: method, route: route, status: status)
+                if let d = duration {
+                    await MetricsRegistry.shared.recordRequestDuration(route: route, seconds: d)
+                }
+            }
         }
 
         // If running inside an async job, route result to the JobQueue instead of the wire.
