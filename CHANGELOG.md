@@ -4,6 +4,14 @@ All notable changes to ScreenMuse are documented here.
 
 ## [Unreleased] — 2026-04-11 Sprint 5
 
+### Added — `POST /narrate` v2
+- **`subtitles: ["srt", "vtt"]`** — writes sidecar subtitle files beside the video. Accepts either an array or a single string. Each listed format gets a `{stem}.srt` / `{stem}.vtt` file next to the recording, and the paths come back in `response.subtitle_files`.
+- **`apply_chapters: true`** — appends the LLM's `suggested_chapters` into the server's current session chapter list (shows up in `/timeline`, `/stop`, and the embedded MP4 metadata). Respects the same time bounds `/chapter` enforces — chapters outside `[0, currentElapsed]` during an active recording are skipped.
+- **`SubtitleFormatter`** in `Sources/ScreenMuseCore/Narration/` — pure-logic SRT + WebVTT encoder with correct timecode rounding (`HH:MM:SS,mmm` / `HH:MM:SS.mmm`), end-time derivation (each cue ends when the next one starts; last cue defaults to +4s), video-duration clamping so the last cue doesn't run past the end of the video, defensive sort-by-start so out-of-order LLM output still produces coherent SRT, empty-text filtering, and CRLF/LF/null-byte escaping for robust cue text.
+- **`SubtitleFormatterTests`** — 25 tests covering every timecode branch (zero, minute/hour boundaries, ms rounding, negative clamp), cue derivation (chain from next / last-cue fallback / video-duration clamp / minimum 0.1s duration / empty filtering / out-of-order sort), SRT rendering (cue numbering, trailing blank line, empty input), VTT rendering (WEBVTT header, period timecode, no cue numbers), and escapeCueText.
+- Python client: `client.narrate(..., subtitles, apply_chapters)` kwargs.
+- Node/TS client: `client.narrate({..., subtitles, applyChapters})` plus `subtitle_files` and `chapters_applied` fields on `NarrationResult`.
+
 ### Added — `POST /browser` v2
 - **`wait_for`** — navigation gate the runner waits for before emitting `SM:READY` and starting the recording. One of `load` (default), `domcontentloaded`, `networkidle`, `commit`. Maps 1:1 onto Playwright's `page.goto({waitUntil})`.
 - **`storage_state_path`** — absolute path to a Playwright storage state JSON (cookies + localStorage). Used for authenticated flows. Pre-validated to fail fast before Node even spawns (`STORAGE_STATE_NOT_FOUND` 400).

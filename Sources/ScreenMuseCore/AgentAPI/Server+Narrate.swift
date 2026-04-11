@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Network
 
@@ -46,6 +47,19 @@ extension ScreenMuseServer {
         let endpoint: URL? = endpointString.flatMap { URL(string: $0) }
         let save = body["save"] as? Bool ?? true
 
+        // v2 subtitle + chapter options ----------------------------------
+        let subtitleFormats: [String] = {
+            if let arr = body["subtitles"] as? [String] {
+                return arr.map { $0.lowercased() }.filter { $0 == "srt" || $0 == "vtt" }
+            }
+            if let single = body["subtitles"] as? String {
+                let lower = single.lowercased()
+                return (lower == "srt" || lower == "vtt") ? [lower] : []
+            }
+            return []
+        }()
+        let applyChapters = body["apply_chapters"] as? Bool ?? false
+
         let config = NarrationConfig(
             model: model,
             style: style,
@@ -88,6 +102,40 @@ extension ScreenMuseServer {
                 }
             }
 
+            // Write subtitle sidecars (SRT + VTT) beside the video.
+            // Subtitles are always written when requested, regardless of
+            // `save` — a caller who wants the JSON file suppressed may
+            // still want captions for upload.
+            if !subtitleFormats.isEmpty {
+                let videoDuration = videoDurationSeconds(of: src)
+                let formatter = SubtitleFormatter(
+                    defaultLastCueDuration: 4.0,
+                    videoDuration: videoDuration
+                )
+                var subtitleFiles: [String: String] = [:]
+                for format in subtitleFormats {
+                    let ext = format
+                    let text = (format == "srt")
+                        ? formatter.srt(from: result)
+                        : formatter.vtt(from: result)
+                    if let path = writeSubtitleFile(text: text, ext: ext, beside: src) {
+                        subtitleFiles[format] = path
+                    }
+                }
+                if !subtitleFiles.isEmpty {
+                    responseBody["subtitle_files"] = subtitleFiles
+                }
+            }
+
+            // Apply the suggested chapters into the current session's
+            // chapter list if the caller opted in. Only populates when
+            // recording is active OR when we have a current session —
+            // otherwise the chapters would land nowhere visible to /stop.
+            if applyChapters {
+                let appliedCount = applyNarratedChapters(result.suggestedChapters)
+                responseBody["chapters_applied"] = appliedCount
+            }
+
             smLog.info("[\(reqID)] ✅ /narrate done — \(result.narration.count) entries, \(result.suggestedChapters.count) chapters", category: .server)
             smLog.usage("NARRATE DONE", details: [
                 "entries": "\(result.narration.count)",
@@ -125,6 +173,53 @@ extension ScreenMuseServer {
     }
 
     // MARK: - Helpers
+
+    /// Write `{stem}.{ext}` beside the source video. Extracted from the
+    /// narration writer so subtitles can reuse the layout.
+    /// Returns the written path, or nil on failure.
+    private func writeSubtitleFile(text: String, ext: String, beside src: URL) -> String? {
+        let outputDir = src.deletingLastPathComponent()
+        let stem = src.deletingPathExtension().lastPathComponent
+        let outputFile = outputDir.appendingPathComponent("\(stem).\(ext)")
+        do {
+            try text.write(to: outputFile, atomically: true, encoding: .utf8)
+            return outputFile.path
+        } catch {
+            smLog.warning("Could not write \(ext.uppercased()) subtitle at \(outputFile.path): \(error.localizedDescription)", category: .server)
+            return nil
+        }
+    }
+
+    /// Read the source video's duration so subtitle end times can be
+    /// clamped to it. Returns nil if the asset can't be probed —
+    /// the formatter will then fall back to an open-ended last cue.
+    private func videoDurationSeconds(of url: URL) -> Double? {
+        let asset = AVURLAsset(url: url)
+        let cmDuration = asset.duration
+        let seconds = CMTimeGetSeconds(cmDuration)
+        return seconds.isFinite && seconds > 0 ? seconds : nil
+    }
+
+    /// Apply the LLM's chapter suggestions as real chapters on the
+    /// current session. Returns the number of chapters added. Skips
+    /// chapters whose time is outside [0, currentElapsed] when a
+    /// recording is active, because /chapter only accepts monotonic
+    /// timestamps within the active session.
+    private func applyNarratedChapters(_ suggestions: [ChapterSuggestion]) -> Int {
+        guard !suggestions.isEmpty else { return 0 }
+        var added = 0
+        for suggestion in suggestions {
+            // Respect the same bounds /chapter enforces — time must be
+            // in the current session window.
+            if isRecording {
+                let elapsed = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                guard suggestion.time >= 0 && suggestion.time <= elapsed else { continue }
+            }
+            chapters.append((name: suggestion.name, time: suggestion.time))
+            added += 1
+        }
+        return added
+    }
 
     /// Serialize a `NarrationResult` to `narration.json` beside the source
     /// video so the file becomes part of the recording's artifacts folder.

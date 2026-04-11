@@ -396,6 +396,8 @@ enum OpenAPISpec {
               "api_key":      { "type": "string", "description": "Per-request override; otherwise ANTHROPIC_API_KEY env var" },
               "endpoint":     { "type": "string", "description": "Override LLM endpoint (e.g. custom Ollama host)" },
               "save":         { "type": "boolean", "default": true, "description": "Save `{stem}.narration.json` beside the video" },
+              "subtitles":    { "type": "array", "description": "Write sidecar subtitle files beside the video. Cues derive end times from the next narration entry or fall back to +4s on the last cue.", "items": { "type": "string", "enum": ["srt", "vtt"] } },
+              "apply_chapters": { "type": "boolean", "default": false, "description": "Append suggested_chapters to the current session's chapter list" },
               "async":        { "type": "boolean", "default": false }
             } } } } },
             "responses": {

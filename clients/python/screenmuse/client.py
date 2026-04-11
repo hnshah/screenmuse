@@ -854,6 +854,8 @@ class ScreenMuse:
         api_key: Optional[str] = None,
         endpoint: Optional[str] = None,
         save: bool = True,
+        subtitles: Optional[List[str]] = None,
+        apply_chapters: bool = False,
         async_: bool = False,
     ) -> dict:
         """Generate AI narration + chapter suggestions for a recording.
@@ -875,6 +877,14 @@ class ScreenMuse:
             api_key: Override for ANTHROPIC_API_KEY env var.
             endpoint: Override LLM endpoint (custom Ollama host, etc.).
             save: Write `{stem}.narration.json` beside the video.
+            subtitles: List of subtitle sidecar formats to write, e.g.
+                `["srt", "vtt"]`. Files are written beside the source
+                video as `{stem}.srt` / `{stem}.vtt`. Cue end times
+                derive from the next narration entry's start; the last
+                cue defaults to +4s.
+            apply_chapters: Append `suggested_chapters` to the current
+                session's chapter list (they show up in /timeline, /stop,
+                and embedded mp4 chapter metadata).
             async_: Return a job ID and poll GET /job/{id}.
 
         Returns:
@@ -902,6 +912,8 @@ class ScreenMuse:
         if model is not None: body["model"] = model
         if api_key is not None: body["api_key"] = api_key
         if endpoint is not None: body["endpoint"] = endpoint
+        if subtitles is not None: body["subtitles"] = subtitles
+        if apply_chapters: body["apply_chapters"] = True
         if async_: body["async"] = True
         return self._post("/narrate", body)
 

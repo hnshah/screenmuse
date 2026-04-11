@@ -744,6 +744,8 @@ export class ScreenMuse {
     apiKey?: string;
     endpoint?: string;
     save?: boolean;
+    subtitles?: Array<"srt" | "vtt">;
+    applyChapters?: boolean;
     async?: boolean;
   } = {}): Promise<NarrationResult> {
     const body: Record<string, unknown> = {};
@@ -758,6 +760,8 @@ export class ScreenMuse {
     if (options.apiKey !== undefined) body.api_key = options.apiKey;
     if (options.endpoint !== undefined) body.endpoint = options.endpoint;
     if (options.save !== undefined) body.save = options.save;
+    if (options.subtitles !== undefined) body.subtitles = options.subtitles;
+    if (options.applyChapters !== undefined) body.apply_chapters = options.applyChapters;
     if (options.async) body.async = true;
     return this.request("POST", "/narrate", body);
   }
@@ -908,6 +912,8 @@ export interface NarrationResult {
   frames_used: number;
   source: string;
   narration_file?: string;
+  subtitle_files?: Partial<Record<"srt" | "vtt", string>>;
+  chapters_applied?: number;
   request_id?: number;
 }
 
