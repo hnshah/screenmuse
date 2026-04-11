@@ -90,6 +90,8 @@ final class OpenAPISpecDriftTests: XCTestCase {
         "/browser",
         "/browser/install",
         "/browser/status",
+        // AI narration
+        "/narrate",
     ]
 
     // MARK: - Helpers

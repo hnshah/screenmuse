@@ -338,6 +338,33 @@ enum OpenAPISpec {
             }
           }
         },
+        "/narrate": {
+          "post": {
+            "summary": "AI narration + chapter suggestions for a recording",
+            "description": "Extracts N frames from a video, sends them to a vision LLM (Ollama locally, or Anthropic Claude), and returns timestamped narration + chapter suggestions. Defaults to Ollama + llava:7b so it works fully offline. Long-running — pass `async: true` to dispatch via the job queue.",
+            "requestBody": { "content": { "application/json": { "schema": { "properties": {
+              "source":       { "type": "string", "default": "last", "description": "Video path or 'last' for the most recent recording" },
+              "provider":     { "type": "string", "enum": ["ollama", "anthropic"], "default": "ollama" },
+              "model":        { "type": "string", "description": "Provider-specific model id (e.g. llava:7b, claude-sonnet-4-6)" },
+              "frame_count":  { "type": "integer", "default": 6, "minimum": 1, "maximum": 24 },
+              "max_chapters": { "type": "integer", "default": 5, "minimum": 0, "maximum": 12 },
+              "style":        { "type": "string", "description": "Narration voice: technical / casual / tutorial", "default": "technical" },
+              "language":     { "type": "string", "default": "en", "description": "ISO 639-1 language code" },
+              "temperature":  { "type": "number", "default": 0.3 },
+              "api_key":      { "type": "string", "description": "Per-request override; otherwise ANTHROPIC_API_KEY env var" },
+              "endpoint":     { "type": "string", "description": "Override LLM endpoint (e.g. custom Ollama host)" },
+              "save":         { "type": "boolean", "default": true, "description": "Save `{stem}.narration.json` beside the video" },
+              "async":        { "type": "boolean", "default": false }
+            } } } } },
+            "responses": {
+              "200": { "description": "Narration + chapter suggestions" },
+              "400": { "description": "Invalid request or missing API key" },
+              "404": { "description": "Video not found" },
+              "502": { "description": "Provider returned a malformed response" },
+              "503": { "description": "Provider unreachable (Ollama not running, etc.)" }
+            }
+          }
+        },
         "/browser": {
           "post": {
             "summary": "Headless Playwright recording: launch Chromium, run a script, record the window",

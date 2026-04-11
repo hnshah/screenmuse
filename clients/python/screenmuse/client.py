@@ -789,6 +789,72 @@ class ScreenMuse:
             body["source"] = source
         return self._post("/start/pip", body)
 
+    # ── AI Narration ──────────────────────────────────────────────────────────
+
+    def narrate(
+        self,
+        source: str = "last",
+        provider: str = "ollama",
+        model: Optional[str] = None,
+        frame_count: int = 6,
+        max_chapters: int = 5,
+        style: str = "technical",
+        language: str = "en",
+        temperature: float = 0.3,
+        api_key: Optional[str] = None,
+        endpoint: Optional[str] = None,
+        save: bool = True,
+        async_: bool = False,
+    ) -> dict:
+        """Generate AI narration + chapter suggestions for a recording.
+
+        Extracts N frames from the video and sends them to a vision LLM.
+        Defaults to local Ollama (requires `ollama serve` running) so
+        agent loops cost zero and leak nothing off-machine.
+
+        Args:
+            source: Video path or 'last' for the most recent recording.
+            provider: 'ollama' (default, local) or 'anthropic' (Claude).
+            model: Provider-specific model id. Defaults to provider default
+                (`llava:7b` for Ollama, `claude-sonnet-4-6` for Anthropic).
+            frame_count: How many frames to sample across the video (1-24).
+            max_chapters: Maximum chapter suggestions to return (0-12).
+            style: Narration voice — 'technical', 'casual', or 'tutorial'.
+            language: ISO 639-1 code. Default 'en'.
+            temperature: Sampling temperature (0.0-1.0).
+            api_key: Override for ANTHROPIC_API_KEY env var.
+            endpoint: Override LLM endpoint (custom Ollama host, etc.).
+            save: Write `{stem}.narration.json` beside the video.
+            async_: Return a job ID and poll GET /job/{id}.
+
+        Returns:
+            {
+                "narration": [{"time": 0.0, "text": "..."}, ...],
+                "suggested_chapters": [{"time": 0.0, "name": "..."}, ...],
+                "provider": "ollama",
+                "model": "llava:7b",
+                "frames_used": 6,
+                "narration_file": "/path/to/narration.json",
+                "source": "/path/to/video.mp4",
+                "request_id": 42
+            }
+        """
+        body: Dict[str, Any] = {
+            "source": source,
+            "provider": provider,
+            "frame_count": frame_count,
+            "max_chapters": max_chapters,
+            "style": style,
+            "language": language,
+            "temperature": temperature,
+            "save": save,
+        }
+        if model is not None: body["model"] = model
+        if api_key is not None: body["api_key"] = api_key
+        if endpoint is not None: body["endpoint"] = endpoint
+        if async_: body["async"] = True
+        return self._post("/narrate", body)
+
     # ── Browser (Playwright) ──────────────────────────────────────────────────
 
     def browser(

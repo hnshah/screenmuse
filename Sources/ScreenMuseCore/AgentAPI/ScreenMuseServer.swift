@@ -21,6 +21,7 @@ extension NWConnection: @retroactive @unchecked Sendable {}
 //   SYSTEM     Server+System.swift     — /health /status /debug /logs /report /version /recordings /openapi /system/* /metrics
 //   MEDIA      Server+Media.swift      — /timeline /validate /annotate /script /script/batch /upload/icloud
 //   BROWSER    Server+Browser.swift    — /browser /browser/install /browser/status
+//   NARRATE    Server+Narrate.swift    — /narrate (vision LLM narration of a recording)
 
 @MainActor
 public class ScreenMuseServer {
@@ -535,6 +536,9 @@ public class ScreenMuseServer {
         case ("POST", "/browser"):               await handleBrowser(body: body, connection: connection, reqID: reqID)
         case ("POST", "/browser/install"):       await handleBrowserInstall(body: body, connection: connection, reqID: reqID)
         case ("GET", "/browser/status"):         handleBrowserStatus(body: body, connection: connection, reqID: reqID)
+
+        // MARK: Narration — Server+Narrate.swift
+        case ("POST", "/narrate"):               await handleNarrate(body: body, connection: connection, reqID: reqID)
 
         // MARK: Media & Batch — Server+Media.swift
         case ("GET", "/timeline"):               handleTimeline(body: body, connection: connection, reqID: reqID)

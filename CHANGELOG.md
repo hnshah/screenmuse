@@ -5,6 +5,18 @@ All notable changes to ScreenMuse are documented here.
 ## [Unreleased] — 2026-04-11 Sprint 4
 
 ### Added
+- **`POST /narrate`** — AI narration + chapter suggestions for an existing recording. Extracts N frames evenly across the video (skipping first/last 1% to avoid fades), JPEG-encodes them, and calls a vision LLM. Two built-in providers:
+  - **Ollama** (default) — local, zero-cost, zero-config. Uses `llava:7b` by default. Resolves `$OLLAMA_HOST` or `http://localhost:11434`. Works offline; nothing leaves the machine.
+  - **Claude** (Anthropic) — `claude-sonnet-4-6` default. Reads `ANTHROPIC_API_KEY` env var or per-request `api_key` field.
+  - Pluggable via `NarrationProvider` protocol — custom providers can be registered.
+- **Strict JSON schema prompt** with fence-stripping + embedded-JSON extraction so providers that wrap their reply in prose still parse cleanly.
+- Writes `{stem}.narration.json` beside the source video by default, so the artifact becomes part of the recording's folder.
+- **Narration result is part of the JobQueue**: pass `async: true` to run via `/job/{id}` and poll for completion.
+- **`NarrationTests`** — 22 tests covering provider factory, prompt parsing (raw + fenced + embedded), URL resolution (default/env/override), error propagation, and Codable round-trip.
+- **Python client**: `client.narrate(source, provider, model, frame_count, …)` on `ScreenMuseClient`.
+- **Node/TS client**: `client.narrate({source, provider, model, frameCount, …})` plus `NarrationResult`, `NarrationEntry`, and `ChapterSuggestion` types.
+- OpenAPI spec entry for `/narrate`. `OpenAPISpecDriftTests` updated.
+
 - **`POST /browser`** — headless Playwright recording. Spawns a Node subprocess that launches a headful Chromium window at the requested URL, optionally runs a user script in page context (`page`, `context`, `browser` in scope), and records the window through the standard ScreenMuse capture pipeline. Returns the enriched stop response plus a `browser` block with `url_requested`, `url_final`, `title`, `pid`, `exit_code`, and any `script_error`/`nav_error`. Honors `duration_seconds` (1–600), `width`, `height`, `name`, `quality`, and `async`.
 - **`POST /browser/install`** — idempotent installer that writes `~/.screenmuse/playwright-runner/` and runs `npm install` + `npx playwright install chromium`. First install downloads ~130MB. Supports `async=true` for job-queue execution.
 - **`GET /browser/status`** — inspects the runner install without triggering anything: `runner_directory`, `runner_script_exists`, `runner_script_version`, `playwright_installed`, `node_path`, `npm_path`, `ready`.

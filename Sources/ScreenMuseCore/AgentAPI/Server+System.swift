@@ -230,7 +230,9 @@ extension ScreenMuseServer {
             // Async job queue
             "GET /job/:id", "GET /jobs",
             // Browser (Playwright) recording
-            "POST /browser", "POST /browser/install", "GET /browser/status"
+            "POST /browser", "POST /browser/install", "GET /browser/status",
+            // AI narration
+            "POST /narrate"
         ]
         sendResponse(connection: connection, status: 200, body: [
             "version": Self.currentVersion,

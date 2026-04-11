@@ -687,6 +687,45 @@ export class ScreenMuse {
     return result;
   }
 
+  // ── AI Narration ───────────────────────────────────────────────────────────
+
+  /**
+   * Generate AI narration + chapter suggestions for an existing recording.
+   *
+   * Defaults to local Ollama (requires `ollama serve` running at
+   * http://localhost:11434) so agent loops are zero-cost and fully offline.
+   * Switch `provider: "anthropic"` to use Claude instead.
+   */
+  async narrate(options: {
+    source?: string;
+    provider?: "ollama" | "anthropic";
+    model?: string;
+    frameCount?: number;
+    maxChapters?: number;
+    style?: "technical" | "casual" | "tutorial";
+    language?: string;
+    temperature?: number;
+    apiKey?: string;
+    endpoint?: string;
+    save?: boolean;
+    async?: boolean;
+  } = {}): Promise<NarrationResult> {
+    const body: Record<string, unknown> = {};
+    if (options.source !== undefined) body.source = options.source;
+    if (options.provider !== undefined) body.provider = options.provider;
+    if (options.model !== undefined) body.model = options.model;
+    if (options.frameCount !== undefined) body.frame_count = options.frameCount;
+    if (options.maxChapters !== undefined) body.max_chapters = options.maxChapters;
+    if (options.style !== undefined) body.style = options.style;
+    if (options.language !== undefined) body.language = options.language;
+    if (options.temperature !== undefined) body.temperature = options.temperature;
+    if (options.apiKey !== undefined) body.api_key = options.apiKey;
+    if (options.endpoint !== undefined) body.endpoint = options.endpoint;
+    if (options.save !== undefined) body.save = options.save;
+    if (options.async) body.async = true;
+    return this.request("POST", "/narrate", body);
+  }
+
   // ── Browser (Playwright) ───────────────────────────────────────────────────
 
   /**
@@ -773,6 +812,29 @@ export interface JobResult {
   job_id: string;
   status: "pending" | "running" | "completed" | "failed";
   poll: string;
+}
+
+// ── Narration result types ──────────────────────────────────────────────────
+
+export interface NarrationEntry {
+  time: number;
+  text: string;
+}
+
+export interface ChapterSuggestion {
+  time: number;
+  name: string;
+}
+
+export interface NarrationResult {
+  narration: NarrationEntry[];
+  suggested_chapters: ChapterSuggestion[];
+  provider: "ollama" | "anthropic" | string;
+  model: string;
+  frames_used: number;
+  source: string;
+  narration_file?: string;
+  request_id?: number;
 }
 
 // ── API key loader ─────────────────────────────────────────────────────────────
