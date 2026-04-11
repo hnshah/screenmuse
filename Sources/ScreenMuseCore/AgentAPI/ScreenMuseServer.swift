@@ -543,6 +543,8 @@ public class ScreenMuseServer {
         case ("GET", "/system/clipboard"):       handleSystemClipboard(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/active-window"):   handleSystemActiveWindow(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/running-apps"):    handleSystemRunningApps(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/system/picker/availability"):
+            handleSystemPickerAvailability(body: body, connection: connection, reqID: reqID)
 
         // MARK: Browser — Server+Browser.swift
         case ("POST", "/browser"):               await handleBrowser(body: body, connection: connection, reqID: reqID)

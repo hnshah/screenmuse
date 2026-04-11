@@ -78,6 +78,7 @@ final class OpenAPISpecDriftTests: XCTestCase {
         "/system/clipboard",
         "/system/active-window",
         "/system/running-apps",
+        "/system/picker/availability",
         // Streaming
         "/stream",
         "/stream/status",

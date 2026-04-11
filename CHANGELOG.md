@@ -5,6 +5,11 @@ All notable changes to ScreenMuse are documented here.
 ## [Unreleased] — 2026-04-11 Sprint 4
 
 ### Added
+- **`GET /system/picker/availability`** — probes for SCContentSharingPicker support on the host OS. Returns `{supported, macos_version, reason?}`. Agents call this before recommending the picker-based flow, which skips the Screen Recording TCC prompt entirely on macOS 15+ (the user selects a window from a system sheet and ScreenCaptureKit silently grants access to just that window for the session).
+- **`ContentSharingPicker`** wrapper in `Sources/ScreenMuseCore/Capture/`: `Availability` struct with snake_case Codable, `Configuration` struct with source-type toggles + validation, `PickerError` LocalizedError, and a pure runtime-support probe that's safe to call from any thread. Deliberately thin — presenting the picker is a UI operation gated behind `@available(macOS 15, *)` and lives in the App target where the SwiftUI coordinator can host the sheet.
+- **`ContentSharingPickerTests`** — 10 tests covering availability shape, configuration validation, Codable round-trip with snake_case preservation, and error messages.
+
+### Added
 - **`POST /publish`** — route a recording to an external destination. Three built-in publishers selected via `destination` field:
   - **`slack`** — POSTs a Block Kit notification message with file metadata (name, size, duration, custom metadata fields, optional video button) to a Slack incoming webhook URL.
   - **`http_put`** (aliases `s3`, `r2`, `gcs`) — streams the file bytes via HTTP PUT to a caller-supplied URL. Works with any S3-compatible presigned URL; keeps AWS SigV4 signing out of the Swift binary entirely (caller signs, we upload).

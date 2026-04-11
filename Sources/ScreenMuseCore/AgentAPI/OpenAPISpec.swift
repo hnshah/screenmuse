@@ -251,6 +251,13 @@ enum OpenAPISpec {
         "/system/clipboard":       { "get": { "summary": "Get current clipboard contents" } },
         "/system/active-window":   { "get": { "summary": "Get frontmost window info (app, title, bounds)" } },
         "/system/running-apps":    { "get": { "summary": "List all running applications with names and bundle IDs" } },
+        "/system/picker/availability": {
+          "get": {
+            "summary": "Probe for SCContentSharingPicker support",
+            "description": "Returns {supported, macos_version, reason?}. When supported is true (macOS 15+), agents can recommend the picker-based flow that skips the Screen Recording TCC permission prompt entirely.",
+            "responses": { "200": { "description": "{supported, macos_version, reason?}" } }
+          }
+        },
         "/status":    { "get": { "summary": "Current recording state, elapsed time, chapters" } },
         "/windows":   { "get": { "summary": "List all on-screen windows" } },
         "/logs":      { "get": { "summary": "Query recent log entries from the ring buffer", "parameters": [

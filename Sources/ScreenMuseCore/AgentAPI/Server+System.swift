@@ -211,6 +211,7 @@ extension ScreenMuseServer {
             "POST /window/focus", "POST /window/position", "POST /window/hide-others",
             // System state
             "GET /system/clipboard", "GET /system/active-window", "GET /system/running-apps",
+            "GET /system/picker/availability",
             // Info / debug
             "GET /status", "GET /health", "GET /windows", "GET /debug", "GET /logs", "GET /report", "GET /version",
             // Live stream
@@ -465,6 +466,16 @@ extension ScreenMuseServer {
         smLog.debug("[\(reqID)] /system/running-apps", category: .server)
         let apps = SystemState.runningApps()
         sendResponse(connection: connection, status: 200, body: ["apps": apps, "count": apps.count])
+    }
+
+    /// GET /system/picker/availability — probe for SCContentSharingPicker support.
+    ///
+    /// Agents call this before recommending the picker-based flow to a
+    /// user so they can skip the "you need to grant Screen Recording
+    /// permission" preamble on macOS 15+ where the picker sidesteps TCC.
+    func handleSystemPickerAvailability(body: [String: Any], connection: NWConnection, reqID: Int) {
+        smLog.debug("[\(reqID)] /system/picker/availability", category: .server)
+        sendResponse(connection: connection, status: 200, body: ContentSharingPicker.availabilityResponse())
     }
 
     // MARK: - Session Management (GET /sessions, GET /session/:id, DELETE /session/:id)
