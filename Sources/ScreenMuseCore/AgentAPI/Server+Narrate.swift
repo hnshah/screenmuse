@@ -24,8 +24,14 @@ extension ScreenMuseServer {
             return
         }
 
-        // ── Resolve provider ───────────────────────────────────────────
-        let providerName = (body["provider"] as? String ?? "ollama").lowercased()
+        // ── Resolve provider (request > config > default) ──────────────
+        // Precedence: request body > ~/.screenmuse.json narration block > hardcoded default.
+        let narrationDefaults = loadedConfig.narration
+        let providerName = (
+            body["provider"] as? String
+            ?? narrationDefaults?.provider
+            ?? "ollama"
+        ).lowercased()
         guard let provider = Narrator.provider(named: providerName) else {
             sendResponse(connection: connection, status: 400, body: [
                 "error": "unsupported provider '\(providerName)'",
@@ -36,14 +42,26 @@ extension ScreenMuseServer {
         }
 
         // ── Build config ────────────────────────────────────────────────
-        let model = body["model"] as? String ?? provider.defaultModel
-        let frameCount = max(1, min(24, body["frame_count"] as? Int ?? 6))
-        let maxChapters = max(0, min(12, body["max_chapters"] as? Int ?? 5))
-        let style = body["style"] as? String ?? "technical"
-        let language = body["language"] as? String ?? "en"
+        let model = body["model"] as? String
+            ?? narrationDefaults?.model
+            ?? provider.defaultModel
+        let frameCount = max(1, min(24,
+            body["frame_count"] as? Int
+            ?? narrationDefaults?.frameCount
+            ?? 6))
+        let maxChapters = max(0, min(12,
+            body["max_chapters"] as? Int
+            ?? narrationDefaults?.maxChapters
+            ?? 5))
+        let style = body["style"] as? String
+            ?? narrationDefaults?.style
+            ?? "technical"
+        let language = body["language"] as? String
+            ?? narrationDefaults?.language
+            ?? "en"
         let temperature = body["temperature"] as? Double ?? 0.3
-        let apiKey = body["api_key"] as? String
-        let endpointString = body["endpoint"] as? String
+        let apiKey = body["api_key"] as? String ?? narrationDefaults?.apiKey
+        let endpointString = body["endpoint"] as? String ?? narrationDefaults?.endpoint
         let endpoint: URL? = endpointString.flatMap { URL(string: $0) }
         let save = body["save"] as? Bool ?? true
 

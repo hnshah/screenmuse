@@ -100,6 +100,16 @@ public class ScreenMuseServer {
         loadOrGenerateAPIKey()
         port = resolvePort(override: overridePort)
 
+        // Apply disk-space guard threshold from ~/.screenmuse.json if present.
+        // Falls back to DiskSpaceGuard.defaultMinFreeBytes (2 GB) otherwise.
+        let loadedConfig = ScreenMuseConfig.load()
+        if let diskBlock = loadedConfig.disk, let minBytes = diskBlock.minFreeBytes {
+            self.diskSpaceGuard = DiskSpaceGuard(minFreeBytes: minBytes)
+            smLog.info("disk-space guard configured: min_free_bytes=\(minBytes) (from ~/.screenmuse.json disk.min_free_gb)", category: .server)
+        }
+        // Expose the loaded config to handlers that want per-feature defaults.
+        self.loadedConfig = loadedConfig
+
         let params = NWParameters.tcp
         listener = try NWListener(using: params, on: NWEndpoint.Port(rawValue: port)!)
         listener?.newConnectionHandler = { @Sendable [weak self] conn in
@@ -764,8 +774,14 @@ public class ScreenMuseServer {
 
     /// Optional disk-space guard — refuses new recordings when free
     /// space falls below the configured minimum. Set to `nil` to skip
-    /// the check entirely (primarily for tests).
+    /// the check entirely (primarily for tests). Overridden at `start()`
+    /// from `~/.screenmuse.json` `disk.min_free_gb` if present.
     public var diskSpaceGuard: DiskSpaceGuard? = DiskSpaceGuard()
+
+    /// Snapshot of `~/.screenmuse.json` loaded at server start. Handlers
+    /// use this for per-feature defaults (narration provider, browser
+    /// viewport, publish Slack URL, etc.). Nil until `start()` runs.
+    public private(set) var loadedConfig: ScreenMuseConfig = ScreenMuseConfig()
 
     /// Returns a structured error body if the disk-space guard would
     /// refuse a new recording, or nil if the operation can proceed.

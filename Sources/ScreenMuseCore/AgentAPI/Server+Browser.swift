@@ -315,7 +315,10 @@ extension ScreenMuseServer {
     }
 
     /// Build the `BrowserRecorder.Config` from a validated request body.
+    /// Merges per-feature defaults from `~/.screenmuse.json` (`browser`
+    /// block) into any fields the caller omits.
     func makeBrowserConfig(body: [String: Any]) -> BrowserRecorder.Config {
+        let browserDefaults = loadedConfig.browser
         let url = body["url"] as? String ?? ""
         let script = body["script"] as? String
         let durationSec = (body["duration_seconds"] as? Double)
@@ -323,15 +326,20 @@ extension ScreenMuseServer {
             ?? (body["duration"] as? Double)
             ?? (body["duration"] as? Int).map(Double.init)
             ?? 5
-        let width = body["width"] as? Int ?? 1280
-        let height = body["height"] as? Int ?? 720
+        let width = body["width"] as? Int
+            ?? browserDefaults?.width
+            ?? 1280
+        let height = body["height"] as? Int
+            ?? browserDefaults?.height
+            ?? 720
 
-        // v2 fields ------------------------------------------------------
-        let waitFor = Self.parseWaitFor(body["wait_for"] as? String)
+        // v2 fields (request > config > hardcoded) -----------------------
+        let waitForRaw = body["wait_for"] as? String ?? browserDefaults?.waitFor
+        let waitFor = Self.parseWaitFor(waitForRaw)
         let storageStatePath = body["storage_state_path"] as? String
-        let userAgent = body["user_agent"] as? String
-        let localeHint = body["locale"] as? String
-        let timezoneHint = body["timezone_id"] as? String
+        let userAgent = body["user_agent"] as? String ?? browserDefaults?.userAgent
+        let localeHint = body["locale"] as? String ?? browserDefaults?.locale
+        let timezoneHint = body["timezone_id"] as? String ?? browserDefaults?.timezoneId
         let extraArgs = body["extra_args"] as? [String] ?? []
         let cookies: [BrowserRecorder.Config.Cookie] = (body["cookies"] as? [[String: Any]] ?? [])
             .compactMap { Self.parseCookie($0) }

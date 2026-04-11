@@ -4,6 +4,18 @@ All notable changes to ScreenMuse are documented here.
 
 ## [Unreleased] — 2026-04-11 Sprint 5
 
+### Added — Config schema v2 (`~/.screenmuse.json`)
+- **Nested per-feature defaults** alongside the existing v1 flat fields. Every v2 block is optional, so existing v1 files continue to load unchanged (explicit test: `testV1FlatFileStillDecodes`).
+- **`narration:`** — `provider`, `model`, `api_key`, `endpoint`, `style`, `max_chapters`, `frame_count`, `language`. Merged into `POST /narrate` in precedence order: request body > config > hardcoded default. Lets agents set `ANTHROPIC_API_KEY` once in the config instead of on every request.
+- **`browser:`** — `width`, `height`, `quality`, `wait_for`, `user_agent`, `locale`, `timezone_id`. Merged into `makeBrowserConfig()` so agents can set their standard viewport + navigation gate once.
+- **`publish:`** — `default_destination`, `slack_webhook_url`, `webhook_url`, `s3_bucket_url`. Groundwork for per-destination shortcut flows in a later phase.
+- **`metrics:`** — `enabled`. Toggle for future scrape-interval / custom-label controls.
+- **`disk:`** — `min_free_gb`. Overrides `DiskSpaceGuard.defaultMinFreeBytes` (2 GB) at server `start()`. Plumbed through `ScreenMuseConfig.DiskDefaults.minFreeBytes` computed property so the guard doesn't have to know about the GB unit.
+- **`ScreenMuseServer.loadedConfig`** — snapshot of the config at start time, accessible from every handler so per-feature blocks can merge into requests without re-reading the file.
+- **Explicit `CodingKeys`** on `PublishDefaults` and `DiskDefaults` because `convertFromSnakeCase` turns `slack_webhook_url` into `slackWebhookUrl` (lowercase), which wouldn't match the Swift property name `slackWebhookURL`. The tests assert both directions.
+- **`ScreenMuseConfig.encode()` / `decode(from:)`** — extracted from `load()` / `save()` so tests can exercise the v1/v2 compat matrix without touching the filesystem.
+- **+13 tests** in `ScreenMuseConfigTests`: v1 flat-file decode, v1 init leaves v2 blocks nil, narration / browser / publish / disk / metrics round-trips, snake_case JSON assertions (including acronym survival for `slack_webhook_url` / `s3_bucket_url` / `min_free_gb`), `DiskDefaults.minFreeBytes` computation, and a mixed v1/v2 round-trip.
+
 ### Added — `/metrics` histograms
 - **`screenmuse_http_request_duration_seconds`** — Prometheus histogram with 12 cumulative buckets (5ms → 30s, exponential). Emits `_bucket{route,le}`, `_sum{route}`, `_count{route}`, and the mandatory `+Inf` bucket line per route. Prometheus `histogram_quantile()` can now derive p50/p95/p99 per endpoint at query time.
 - **`MetricsRegistry.recordRequestDuration(route:seconds:)`** — keyed by canonicalized route only (not method or status), so p95 latency stays stable across 4xx/5xx spikes. Negative durations clamp to zero (clock skew / test noise guard). Job and session IDs collapse to `/job/:id` and `/session/:id` to bound cardinality.
