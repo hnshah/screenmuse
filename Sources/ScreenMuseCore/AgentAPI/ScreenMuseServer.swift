@@ -18,8 +18,9 @@ extension NWConnection: @retroactive @unchecked Sendable {}
 //   EXPORT     Server+Export.swift     — /export /trim /speedramp /concat /frames /frame /thumbnail /crop /ocr /qa /diff
 //   STREAM     Server+Stream.swift     — /stream /stream/status
 //   WINDOW     Server+Window.swift     — /windows /window/focus /window/position /window/hide-others
-//   SYSTEM     Server+System.swift     — /health /status /debug /logs /report /version /recordings /openapi /system/*
+//   SYSTEM     Server+System.swift     — /health /status /debug /logs /report /version /recordings /openapi /system/* /metrics
 //   MEDIA      Server+Media.swift      — /timeline /validate /annotate /script /script/batch /upload/icloud
+//   BROWSER    Server+Browser.swift    — /browser /browser/install /browser/status
 
 @MainActor
 public class ScreenMuseServer {
@@ -529,6 +530,11 @@ public class ScreenMuseServer {
         case ("GET", "/system/clipboard"):       handleSystemClipboard(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/active-window"):   handleSystemActiveWindow(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/running-apps"):    handleSystemRunningApps(body: body, connection: connection, reqID: reqID)
+
+        // MARK: Browser — Server+Browser.swift
+        case ("POST", "/browser"):               await handleBrowser(body: body, connection: connection, reqID: reqID)
+        case ("POST", "/browser/install"):       await handleBrowserInstall(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/browser/status"):         handleBrowserStatus(body: body, connection: connection, reqID: reqID)
 
         // MARK: Media & Batch — Server+Media.swift
         case ("GET", "/timeline"):               handleTimeline(body: body, connection: connection, reqID: reqID)

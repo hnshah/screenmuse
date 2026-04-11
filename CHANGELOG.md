@@ -2,6 +2,23 @@
 
 All notable changes to ScreenMuse are documented here.
 
+## [Unreleased] — 2026-04-11 Sprint 4
+
+### Added
+- **`POST /browser`** — headless Playwright recording. Spawns a Node subprocess that launches a headful Chromium window at the requested URL, optionally runs a user script in page context (`page`, `context`, `browser` in scope), and records the window through the standard ScreenMuse capture pipeline. Returns the enriched stop response plus a `browser` block with `url_requested`, `url_final`, `title`, `pid`, `exit_code`, and any `script_error`/`nav_error`. Honors `duration_seconds` (1–600), `width`, `height`, `name`, `quality`, and `async`.
+- **`POST /browser/install`** — idempotent installer that writes `~/.screenmuse/playwright-runner/` and runs `npm install` + `npx playwright install chromium`. First install downloads ~130MB. Supports `async=true` for job-queue execution.
+- **`GET /browser/status`** — inspects the runner install without triggering anything: `runner_directory`, `runner_script_exists`, `runner_script_version`, `playwright_installed`, `node_path`, `npm_path`, `ready`.
+- **`Browser/`** subdirectory in `ScreenMuseCore`: `RunnerScript.swift` (embedded Node source), `NodeRunnerInstaller.swift` (filesystem + npm orchestration), `BrowserRecorder.swift` (subprocess lifecycle + SM: line-protocol parser + `EventBox` primitive).
+- **`BrowserHandlerTests`** — 27 tests covering request validation, config JSON encoding, installer status, PATH lookup, runner script integrity, and the `EventBox` async primitive.
+- **Python client**: `browser()`, `browser_install()`, `browser_status()` methods on `ScreenMuseClient`.
+- **Node/TS client**: `browser()`, `browserInstall()`, `browserStatus()` plus `BrowserResult`, `BrowserInstallResult`, `JobResult` types.
+- OpenAPI spec entries for `/browser`, `/browser/install`, `/browser/status`. `OpenAPISpecDriftTests` updated with the three new paths.
+
+### Design notes
+- The Swift binary remains **zero external dependencies**. Node + Playwright live entirely under `~/.screenmuse/playwright-runner/`, installed on-demand, so users who don't use `/browser` never download anything.
+- Headless mode is explicitly rejected (`HEADLESS_NOT_SUPPORTED`) — browser recording requires a visible Chromium window for macOS-level screen capture to see it. Playwright's internal video recording would defeat the purpose of using ScreenMuse.
+- The Node runner speaks a minimal line-based protocol on stdout (`SM:READY`, `SM:SCRIPT_OK`, `SM:DONE`, etc.) so Swift can coordinate the recording lifecycle with the browser lifecycle. Swift writes `GO\n` to the runner's stdin after starting the recording, so the user script never runs against an unrecorded frame.
+
 ## [Unreleased] — 2026-04-04 Sprint 3
 
 ### Added

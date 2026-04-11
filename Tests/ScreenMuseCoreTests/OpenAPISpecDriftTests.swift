@@ -86,6 +86,10 @@ final class OpenAPISpecDriftTests: XCTestCase {
         "/sessions",
         // Upload
         "/upload/icloud",
+        // Browser (Playwright) recording
+        "/browser",
+        "/browser/install",
+        "/browser/status",
     ]
 
     // MARK: - Helpers

@@ -338,6 +338,48 @@ enum OpenAPISpec {
             }
           }
         },
+        "/browser": {
+          "post": {
+            "summary": "Headless Playwright recording: launch Chromium, run a script, record the window",
+            "description": "Spawns a Node.js subprocess that launches a headful Chromium window at the given URL, runs an optional user script in page context, and records the window via the standard ScreenMuse capture pipeline. Returns the enriched stop-response plus a 'browser' block with URL/title/pid and any script or navigation errors. Requires POST /browser/install on first use.",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "required": ["url", "duration_seconds"],
+              "properties": {
+                "url":              { "type": "string", "description": "Page to open (http/https/file)" },
+                "duration_seconds": { "type": "number", "description": "Max recording time; 1-600" },
+                "script":           { "type": "string", "description": "Optional async JS run in page context. `page`, `context`, `browser` in scope." },
+                "width":            { "type": "integer", "default": 1280, "minimum": 320, "maximum": 3840 },
+                "height":           { "type": "integer", "default": 720,  "minimum": 240, "maximum": 2160 },
+                "name":             { "type": "string", "description": "Recording name/label" },
+                "quality":          { "type": "string", "enum": ["low","medium","high","max"], "default": "medium" },
+                "async":            { "type": "boolean", "description": "Return job ID and poll via /job/{id}" }
+              }
+            } } } },
+            "responses": {
+              "200": { "description": "Recording complete — returns stop metadata + browser info" },
+              "207": { "description": "Recording complete but script or nav error occurred" },
+              "400": { "description": "Invalid request (missing url, duration, or unsupported params)" },
+              "409": { "description": "Already recording" },
+              "503": { "description": "Node runner not installed — call POST /browser/install" }
+            }
+          }
+        },
+        "/browser/install": {
+          "post": {
+            "summary": "Install the Playwright runner (Node + Chromium) under ~/.screenmuse/playwright-runner/",
+            "description": "Idempotent first-time install that downloads Playwright and Chromium. Can take several minutes on a cold cache. Pass {\\"async\\": true} to run as a background job.",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "properties": { "async": { "type": "boolean", "description": "Run as a background job" } }
+            } } } },
+            "responses": { "200": { "description": "Installer status" }, "500": { "description": "Install failed (Node/npm missing, network error, etc.)" } }
+          }
+        },
+        "/browser/status": {
+          "get": {
+            "summary": "Inspect the Playwright runner install without triggering an install",
+            "responses": { "200": { "description": "runner_directory, runner_script_exists, playwright_installed, node_path, npm_path, ready" } }
+          }
+        },
         "/sessions": { "get": { "summary": "List all named recording sessions with metadata" } },
         "/jobs": { "get": { "summary": "List all background async jobs and their status" } },
         "/job/{id}": {

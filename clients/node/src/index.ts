@@ -686,6 +686,93 @@ export class ScreenMuse {
     }
     return result;
   }
+
+  // ── Browser (Playwright) ───────────────────────────────────────────────────
+
+  /**
+   * Record a Chromium window driven by Playwright.
+   *
+   * Spawns a Node subprocess (installed via `browserInstall()`) that launches
+   * a headful Chromium window at the given URL, optionally runs a user
+   * script in page context, and records the window with the standard
+   * ScreenMuse capture pipeline.
+   *
+   * Returns the enriched stop response plus a `browser` block with the
+   * final URL, window title, PID, exit code, and any script/nav errors.
+   *
+   * Throws if POST /browser/install has not been called yet.
+   */
+  async browser(options: {
+    url: string;
+    durationSeconds: number;
+    script?: string;
+    width?: number;
+    height?: number;
+    name?: string;
+    quality?: "low" | "medium" | "high" | "max";
+    async?: boolean;
+  }): Promise<RecordingResult & { browser: BrowserResult }> {
+    const body: Record<string, unknown> = {
+      url: options.url,
+      duration_seconds: options.durationSeconds,
+    };
+    if (options.script !== undefined) body.script = options.script;
+    if (options.width !== undefined) body.width = options.width;
+    if (options.height !== undefined) body.height = options.height;
+    if (options.name !== undefined) body.name = options.name;
+    if (options.quality !== undefined) body.quality = options.quality;
+    if (options.async) body.async = true;
+    return this.request("POST", "/browser", body);
+  }
+
+  /**
+   * Install the Playwright runner (Node + Chromium) on first use.
+   * Idempotent. The first call downloads ~130MB and can take a couple
+   * of minutes on a cold cache — defaults to async so you can poll
+   * GET /job/{id} while it runs.
+   */
+  async browserInstall(options: { async?: boolean } = { async: true }): Promise<BrowserInstallResult | JobResult> {
+    const body: Record<string, unknown> = {};
+    if (options.async !== false) body.async = true;
+    return this.request("POST", "/browser/install", body);
+  }
+
+  /**
+   * Inspect the Playwright runner install without triggering one.
+   */
+  async browserStatus(): Promise<BrowserInstallResult> {
+    return this.request("GET", "/browser/status");
+  }
+}
+
+// ── Browser result types ─────────────────────────────────────────────────────
+
+export interface BrowserResult {
+  url_requested: string;
+  url_final: string;
+  title: string;
+  pid: number;
+  duration_ms: number;
+  exit_code: number;
+  elapsed_ms: number;
+  nav_error?: string;
+  script_error?: string;
+}
+
+export interface BrowserInstallResult {
+  runner_directory: string;
+  runner_script_exists: boolean;
+  runner_script_version: string;
+  playwright_installed: boolean;
+  node_path: string;
+  npm_path: string;
+  ready: boolean;
+}
+
+export interface JobResult {
+  job_id: string;
+  status: "pending" | "running" | "completed" | "failed";
+  poll: string;
 }
 
 // ── API key loader ─────────────────────────────────────────────────────────────

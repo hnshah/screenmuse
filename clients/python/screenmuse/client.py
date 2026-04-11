@@ -789,6 +789,87 @@ class ScreenMuse:
             body["source"] = source
         return self._post("/start/pip", body)
 
+    # ── Browser (Playwright) ──────────────────────────────────────────────────
+
+    def browser(
+        self,
+        url: str,
+        duration_seconds: float,
+        script: Optional[str] = None,
+        width: int = 1280,
+        height: int = 720,
+        name: Optional[str] = None,
+        quality: Optional[str] = None,
+        async_: bool = False,
+    ) -> dict:
+        """Record a Chromium window driven by Playwright.
+
+        Spawns a Node subprocess (installed at ~/.screenmuse/playwright-runner
+        via browser_install) that launches a headful Chromium window at the
+        given URL, optionally runs a user script in page context, and records
+        the window with the standard ScreenMuse pipeline.
+
+        Args:
+            url: Page to open (http/https/file).
+            duration_seconds: Maximum recording time (1-600).
+            script: Optional async JS to run in page context. `page`,
+                `context`, and `browser` are in scope. Awaited before the
+                recording ends.
+            width: Viewport width (320-3840). Default 1280.
+            height: Viewport height (240-2160). Default 720.
+            name: Optional recording name.
+            quality: low / medium / high / max.
+            async_: Return a job ID immediately; poll GET /job/{id}.
+
+        Returns:
+            The enriched stop response (path, duration, size, resolution…)
+            plus a `browser` block with `url_requested`, `url_final`, `title`,
+            `pid`, `exit_code`, and any `script_error`/`nav_error`.
+
+        Raises:
+            RuntimeError: If POST /browser/install has not been called yet.
+        """
+        body: Dict[str, Any] = {
+            "url": url,
+            "duration_seconds": duration_seconds,
+            "width": width,
+            "height": height,
+        }
+        if script is not None:
+            body["script"] = script
+        if name is not None:
+            body["name"] = name
+        if quality is not None:
+            body["quality"] = quality
+        if async_:
+            body["async"] = True
+        return self._post("/browser", body)
+
+    def browser_install(self, async_: bool = True) -> dict:
+        """Install the Playwright runner (Node + Chromium) on first use.
+
+        Idempotent. The first call downloads Playwright and Chromium
+        (~130MB) and can take a couple of minutes on a cold cache.
+        Defaults to async_=True so the HTTP request returns a job ID;
+        poll GET /job/{id} for completion.
+
+        Returns:
+            Either the install status dict or a job dict.
+        """
+        body: Dict[str, Any] = {}
+        if async_:
+            body["async"] = True
+        return self._post("/browser/install", body)
+
+    def browser_status(self) -> dict:
+        """Inspect the Playwright runner install without triggering an install.
+
+        Returns:
+            {runner_directory, runner_script_exists, playwright_installed,
+             node_path, npm_path, ready}
+        """
+        return self._get("/browser/status")
+
     # ── Upload ────────────────────────────────────────────────────────────────
 
     def upload_icloud(self, source: str = "last", folder: str = None) -> dict:
