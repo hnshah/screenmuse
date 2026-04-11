@@ -74,6 +74,12 @@ public class ScreenMuseServer {
     /// Tracks the reqID of the currently-dispatched request so sendResponse
     /// can inject "request_id" into every JSON body automatically.
     private var currentReqID: Int = 0
+    /// Tracks the current request's method and path so sendResponse can
+    /// record a `screenmuse_http_requests_total` sample against the right
+    /// labels.  Best-effort — matches the existing single-threaded
+    /// assumption behind `currentReqID`.
+    private var currentRequestMethod: String = ""
+    private var currentRequestRoute: String = ""
 
     /// Count of currently-open incoming connections.
     /// Incremented in handleConnection, decremented when the connection reaches
@@ -390,6 +396,8 @@ public class ScreenMuseServer {
         requestCount += 1
         let reqID = requestCount
         currentReqID = reqID
+        currentRequestMethod = ""
+        currentRequestRoute = ""
 
         guard let raw = String(data: data, encoding: .utf8) else {
             smLog.error("[\(reqID)] Bad request — could not decode UTF-8", category: .server)
@@ -455,6 +463,8 @@ public class ScreenMuseServer {
             cleanPath = path
         }
 
+        currentRequestMethod = method
+        currentRequestRoute = cleanPath
         smLog.info("[\(reqID)] → \(method) \(cleanPath) body=\(body.isEmpty ? "{}" : "\(body)")", category: .server)
 
         // CORS preflight
@@ -528,6 +538,7 @@ public class ScreenMuseServer {
         case ("GET", "/recordings"):             handleRecordings(body: body, connection: connection, reqID: reqID)
         case ("DELETE", "/recording"):           handleDeleteRecording(body: body, connection: connection, reqID: reqID)
         case ("GET", "/openapi"):                handleOpenAPI(body: body, connection: connection, reqID: reqID)
+        case ("GET", "/metrics"):                await handleMetrics(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/clipboard"):       handleSystemClipboard(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/active-window"):   handleSystemActiveWindow(body: body, connection: connection, reqID: reqID)
         case ("GET", "/system/running-apps"):    handleSystemRunningApps(body: body, connection: connection, reqID: reqID)
@@ -740,6 +751,22 @@ public class ScreenMuseServer {
         return resp
     }
 
+    /// Optional disk-space guard — refuses new recordings when free
+    /// space falls below the configured minimum. Set to `nil` to skip
+    /// the check entirely (primarily for tests).
+    public var diskSpaceGuard: DiskSpaceGuard? = DiskSpaceGuard()
+
+    /// Returns a structured error body if the disk-space guard would
+    /// refuse a new recording, or nil if the operation can proceed.
+    /// Used by /start, /record, and /browser.
+    func diskSpaceGuardCheck() -> [String: Any]? {
+        guard let guardInstance = diskSpaceGuard else { return nil }
+        let moviesURL = FileManager.default
+            .urls(for: .moviesDirectory, in: .userDomainMask).first!
+        let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse", isDirectory: true)
+        return guardInstance.checkOrErrorBody(forDirectory: screenMuseDir)
+    }
+
     func structuredError(_ error: Error) -> [String: Any] {
         if let re = error as? RecordingError {
             switch re {
@@ -787,6 +814,16 @@ public class ScreenMuseServer {
         var body = body
         if body["request_id"] == nil {
             body["request_id"] = currentReqID
+        }
+
+        // Record this response against the Prometheus-style counter. We
+        // fire-and-forget a Task into the MetricsRegistry actor so the
+        // hot path in sendResponse stays non-blocking.
+        if !currentRequestMethod.isEmpty && !currentRequestRoute.isEmpty {
+            let method = currentRequestMethod
+            let route = currentRequestRoute
+            let status = status
+            Task { await MetricsRegistry.shared.recordRequest(method: method, route: route, status: status) }
         }
 
         // If running inside an async job, route result to the JobQueue instead of the wire.

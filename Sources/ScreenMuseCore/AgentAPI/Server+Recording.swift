@@ -54,6 +54,16 @@ extension ScreenMuseServer {
 
         let webhookURL: URL? = (req?.webhook ?? body["webhook"] as? String).flatMap { URL(string: $0) }
         if let wh = webhookURL { self.pendingWebhookURL = wh }
+
+        // Pre-flight disk-space guard — refuse if the recording volume
+        // is below the configured minimum (default 2 GB). Avoids
+        // producing truncated MP4s that crash the writer mid-stream.
+        if let diskError = diskSpaceGuardCheck() {
+            smLog.warning("[\(reqID)] /start refused — disk space low", category: .server)
+            sendResponse(connection: connection, status: 507, body: diskError)
+            return
+        }
+
         smLog.info("[\(reqID)] Starting recording name='\(name)' quality=\(quality ?? "medium") windowTitle=\(windowTitle ?? "nil") region=\(regionRect.map { "\(Int($0.width))x\(Int($0.height))" } ?? "full")", category: .server)
         do {
             if let coord = coordinator {
@@ -400,6 +410,12 @@ extension ScreenMuseServer {
                 "code": "ALREADY_RECORDING",
                 "suggestion": "Call POST /stop first to stop the current recording"
             ])
+            return
+        }
+
+        // Pre-flight disk-space guard (shared with /start).
+        if let diskError = diskSpaceGuardCheck() {
+            sendResponse(connection: connection, status: 507, body: diskError)
             return
         }
 

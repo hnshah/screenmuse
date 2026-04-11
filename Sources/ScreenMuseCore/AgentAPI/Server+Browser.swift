@@ -84,6 +84,13 @@ extension ScreenMuseServer {
             return
         }
 
+        // Pre-flight disk-space guard (shared with /start and /record).
+        if let diskError = diskSpaceGuardCheck() {
+            smLog.warning("[\(reqID)] /browser refused — disk space low", category: .server)
+            sendResponse(connection: connection, status: 507, body: diskError)
+            return
+        }
+
         // Refuse if we're already recording — browser runs take exclusive
         // ownership of the capture pipeline, same as /start and /record.
         guard !isRecording else {

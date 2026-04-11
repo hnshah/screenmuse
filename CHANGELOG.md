@@ -5,6 +5,19 @@ All notable changes to ScreenMuse are documented here.
 ## [Unreleased] — 2026-04-11 Sprint 4
 
 ### Added
+- **`GET /metrics`** — Prometheus-format exposition endpoint. Counts HTTP requests by `(method, route, status)`, emits gauges for `screenmuse_active_recordings`, `screenmuse_active_connections`, `screenmuse_jobs_{pending,running,completed,failed}`, `screenmuse_disk_free_bytes`, `screenmuse_uptime_seconds`, and a constant `screenmuse_info{version="…"} 1` gauge. Paths with ephemeral IDs (`/job/abc123`, `/session/xyz`) are canonicalized to `/job/:id` and `/session/:id` to bound label cardinality.
+- **`MetricsRegistry` actor** — thread-safe counter store with Prometheus text rendering, stable sort order, and label escaping per exposition-format spec.
+- **`DiskSpaceGuard`** — pre-flight check that refuses `/start`, `/record`, and `/browser` when free disk space falls below `defaultMinFreeBytes` (2 GB). Returns a structured 507 Insufficient Storage response with `code: DISK_SPACE_LOW`, `free_bytes`, `required_bytes`, and a `suggestion`. Uses `.volumeAvailableCapacityForImportantUsage` (the number Finder shows) so reclaimable/purgeable storage counts. Can be swapped out per test via `ScreenMuseServer.diskSpaceGuard`.
+- **`DiskSpaceGuardTests`** — 12 tests covering the pure decision machine, error body shape, `freeBytes` filesystem integration, and the `formatBytes` pretty-printer.
+- **`MetricsRegistryTests`** — 14 tests for canonicalization, label escaping, gauge formatting, counter aggregation, and Prometheus rendering (including stable sort order).
+- **`ResilienceTests`** — 8 integration tests on a dedicated port 7826: `/metrics` exposition shape, `Content-Type: text/plain` header, disk-space-guard refusal on `/start` / `/record` / `/browser`, 50× concurrent unknown-route flood returns all 404s, and 20× concurrent `/status` requests produce an accurate total counter.
+- OpenAPI `/metrics` entry + drift test.
+
+### Changed
+- `ScreenMuseServer.sendResponse()` now records `(method, route, status)` into `MetricsRegistry` as a fire-and-forget Task, so the hot path stays non-blocking but every response increments a counter.
+- `handleStart`, `handleRecord`, and `handleBrowser` each call `diskSpaceGuardCheck()` before mutating state, returning 507 cleanly on low disk.
+
+### Added
 - **`POST /narrate`** — AI narration + chapter suggestions for an existing recording. Extracts N frames evenly across the video (skipping first/last 1% to avoid fades), JPEG-encodes them, and calls a vision LLM. Two built-in providers:
   - **Ollama** (default) — local, zero-cost, zero-config. Uses `llava:7b` by default. Resolves `$OLLAMA_HOST` or `http://localhost:11434`. Works offline; nothing leaves the machine.
   - **Claude** (Anthropic) — `claude-sonnet-4-6` default. Reads `ANTHROPIC_API_KEY` env var or per-request `api_key` field.

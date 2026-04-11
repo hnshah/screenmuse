@@ -65,6 +65,7 @@ final class OpenAPISpecDriftTests: XCTestCase {
         "/report",
         "/version",
         "/openapi",
+        "/metrics",
         "/recordings",
         "/recording",       // DELETE /recording
         // Window management

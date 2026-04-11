@@ -261,6 +261,13 @@ enum OpenAPISpec {
         "/report":  { "get": { "summary": "Human-readable session report with usage timeline and warnings" } },
         "/version": { "get": { "summary": "Server version, build info, and full endpoint list" } },
         "/openapi": { "get": { "summary": "This OpenAPI 3.0 specification" } },
+        "/metrics": {
+          "get": {
+            "summary": "Prometheus-format metrics",
+            "description": "Counts HTTP requests by (method, route, status), emits gauges for active recordings, job queue depth, disk free bytes, and a constant screenmuse_info gauge labeled with the build version.  Text format v0.0.4.",
+            "responses": { "200": { "description": "Prometheus exposition text", "content": { "text/plain": {} } } }
+          }
+        },
         "/health":  { "get": { "summary": "Liveness probe — listener state, version, permissions. No auth required. Returns {ok, listener, port, permissions, warning?}.", "security": [] } },
         "/debug":   { "get": { "summary": "Internal debug snapshot — request count, session state, job queue, log buffer size" } },
         "/record":  {

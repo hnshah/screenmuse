@@ -225,8 +225,8 @@ extension ScreenMuseServer {
             "POST /annotate",
             // Batch runner
             "POST /script", "POST /script/batch",
-            // OpenAPI spec
-            "GET /openapi",
+            // OpenAPI spec + metrics
+            "GET /openapi", "GET /metrics",
             // Async job queue
             "GET /job/:id", "GET /jobs",
             // Browser (Playwright) recording
@@ -373,6 +373,65 @@ extension ScreenMuseServer {
         } catch {
             smLog.error("[\(reqID)] Delete failed: \(error.localizedDescription)", category: .server)
             sendResponse(connection: connection, status: 500, body: ["error": error.localizedDescription])
+        }
+    }
+
+    // MARK: - GET /metrics (Prometheus exposition)
+
+    /// Prometheus-format metrics endpoint. Emits HTTP request counters,
+    /// uptime, active recordings, job queue depth, disk-free gauge,
+    /// and a constant `screenmuse_info{version="..."} 1` gauge.
+    ///
+    /// Intended to be polled by any Prometheus-compatible scraper
+    /// (Prometheus, VictoriaMetrics, Alloy, OTel Collector, etc.).
+    func handleMetrics(body: [String: Any], connection: NWConnection, reqID: Int) async {
+        smLog.debug("[\(reqID)] /metrics", category: .server)
+
+        // Gather live gauges that don't live inside the registry.
+        let moviesURL = FileManager.default
+            .urls(for: .moviesDirectory, in: .userDomainMask).first!
+        let screenMuseDir = moviesURL.appendingPathComponent("ScreenMuse", isDirectory: true)
+        let diskFree = DiskSpaceGuard.freeBytes(atDirectory: screenMuseDir) ?? -1
+
+        let allJobs = await JobQueue.shared.list()
+        var jobsByStatus: [String: Int] = [
+            "pending": 0, "running": 0, "completed": 0, "failed": 0
+        ]
+        for j in allJobs {
+            jobsByStatus[j.status.rawValue, default: 0] += 1
+        }
+
+        let gauges: [String: Double] = [
+            "screenmuse_active_recordings": isRecording ? 1 : 0,
+            "screenmuse_active_connections": Double(activeConnectionCount),
+            "screenmuse_jobs_pending": Double(jobsByStatus["pending"] ?? 0),
+            "screenmuse_jobs_running": Double(jobsByStatus["running"] ?? 0),
+            "screenmuse_jobs_completed": Double(jobsByStatus["completed"] ?? 0),
+            "screenmuse_jobs_failed": Double(jobsByStatus["failed"] ?? 0),
+            "screenmuse_disk_free_bytes": Double(diskFree),
+            "screenmuse_request_count_total": Double(requestCount)
+        ]
+
+        let text = await MetricsRegistry.shared.prometheusText(
+            gauges: gauges,
+            version: Self.currentVersion
+        )
+
+        // Emit raw text/plain — Prometheus expects `text/plain; version=0.0.4`.
+        // We build the HTTP response by hand to avoid the JSON wrapper that
+        // the default sendResponse pipeline would add.
+        guard let bodyData = text.data(using: .utf8) else {
+            sendResponse(connection: connection, status: 500, body: ["error": "metrics encoding failed"])
+            return
+        }
+        let headers = "HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\nContent-Length: \(bodyData.count)\r\nAccess-Control-Allow-Origin: *\r\nX-ScreenMuse-Version: \(Self.currentVersion)\r\n\r\n"
+        if let headerData = headers.data(using: .utf8) {
+            var response = Data()
+            response.append(headerData)
+            response.append(bodyData)
+            connection.send(content: response, completion: .contentProcessed { @Sendable _ in connection.cancel() })
+        } else {
+            connection.cancel()
         }
     }
 
