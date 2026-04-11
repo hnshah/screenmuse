@@ -916,6 +916,14 @@ class ScreenMuse:
         height: int = 720,
         name: Optional[str] = None,
         quality: Optional[str] = None,
+        # v2 fields -------------------------------------------------------
+        wait_for: Optional[str] = None,
+        storage_state_path: Optional[str] = None,
+        cookies: Optional[List[Dict[str, Any]]] = None,
+        user_agent: Optional[str] = None,
+        locale: Optional[str] = None,
+        timezone_id: Optional[str] = None,
+        extra_args: Optional[List[str]] = None,
         async_: bool = False,
     ) -> dict:
         """Record a Chromium window driven by Playwright.
@@ -935,6 +943,16 @@ class ScreenMuse:
             height: Viewport height (240-2160). Default 720.
             name: Optional recording name.
             quality: low / medium / high / max.
+            wait_for: Navigation gate before READY: 'load' (default),
+                'domcontentloaded', 'networkidle', 'commit'.
+            storage_state_path: Absolute path to a Playwright storage state
+                JSON (cookies + localStorage). Used for authenticated flows.
+            cookies: List of {name, value, domain?, path?, httpOnly?,
+                secure?, sameSite?} dicts seeded before navigation.
+            user_agent: Override the browser User-Agent.
+            locale: e.g. 'en-US', 'ja-JP'.
+            timezone_id: IANA timezone e.g. 'America/Los_Angeles'.
+            extra_args: Extra Chromium CLI args.
             async_: Return a job ID immediately; poll GET /job/{id}.
 
         Returns:
@@ -957,6 +975,20 @@ class ScreenMuse:
             body["name"] = name
         if quality is not None:
             body["quality"] = quality
+        if wait_for is not None:
+            body["wait_for"] = wait_for
+        if storage_state_path is not None:
+            body["storage_state_path"] = storage_state_path
+        if cookies is not None:
+            body["cookies"] = cookies
+        if user_agent is not None:
+            body["user_agent"] = user_agent
+        if locale is not None:
+            body["locale"] = locale
+        if timezone_id is not None:
+            body["timezone_id"] = timezone_id
+        if extra_args is not None:
+            body["extra_args"] = extra_args
         if async_:
             body["async"] = True
         return self._post("/browser", body)

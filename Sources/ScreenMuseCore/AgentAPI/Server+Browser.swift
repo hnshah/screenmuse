@@ -255,6 +255,62 @@ extension ScreenMuseServer {
         if let h = body["height"] as? Int, (h < 240 || h > 2160) {
             return ["error": "'height' must be 240-2160", "code": "INVALID_HEIGHT"]
         }
+
+        // v2 validation ---------------------------------------------------
+        if let waitFor = body["wait_for"] as? String {
+            let valid = ["load", "domcontentloaded", "networkidle", "commit"]
+            if !valid.contains(waitFor) {
+                return [
+                    "error": "'wait_for' must be one of load, domcontentloaded, networkidle, commit",
+                    "code": "INVALID_WAIT_FOR",
+                    "received": waitFor
+                ]
+            }
+        }
+        if let storagePath = body["storage_state_path"] as? String, !storagePath.isEmpty {
+            // Fail fast — cheaper than spawning Node only to have the
+            // runner emit SM:FATAL two seconds later.
+            if !FileManager.default.fileExists(atPath: storagePath) {
+                return [
+                    "error": "'storage_state_path' does not exist: \(storagePath)",
+                    "code": "STORAGE_STATE_NOT_FOUND"
+                ]
+            }
+        }
+        if let cookies = body["cookies"] {
+            if !(cookies is [Any]) {
+                return [
+                    "error": "'cookies' must be an array of {name, value, domain?, path?, ...} objects",
+                    "code": "INVALID_COOKIES"
+                ]
+            }
+            // Validate each entry has at least name + value — the two
+            // fields Playwright requires.
+            if let cookieArray = cookies as? [[String: Any]] {
+                for (i, cookie) in cookieArray.enumerated() {
+                    let name = cookie["name"] as? String ?? ""
+                    let value = cookie["value"]
+                    if name.isEmpty {
+                        return [
+                            "error": "cookies[\(i)].name must be a non-empty string",
+                            "code": "INVALID_COOKIE"
+                        ]
+                    }
+                    if value == nil {
+                        return [
+                            "error": "cookies[\(i)].value is required",
+                            "code": "INVALID_COOKIE"
+                        ]
+                    }
+                }
+            }
+        }
+        if let extraArgs = body["extra_args"], !(extraArgs is [String]) {
+            return [
+                "error": "'extra_args' must be an array of strings",
+                "code": "INVALID_EXTRA_ARGS"
+            ]
+        }
         return nil
     }
 
@@ -269,12 +325,63 @@ extension ScreenMuseServer {
             ?? 5
         let width = body["width"] as? Int ?? 1280
         let height = body["height"] as? Int ?? 720
+
+        // v2 fields ------------------------------------------------------
+        let waitFor = Self.parseWaitFor(body["wait_for"] as? String)
+        let storageStatePath = body["storage_state_path"] as? String
+        let userAgent = body["user_agent"] as? String
+        let localeHint = body["locale"] as? String
+        let timezoneHint = body["timezone_id"] as? String
+        let extraArgs = body["extra_args"] as? [String] ?? []
+        let cookies: [BrowserRecorder.Config.Cookie] = (body["cookies"] as? [[String: Any]] ?? [])
+            .compactMap { Self.parseCookie($0) }
+
         return BrowserRecorder.Config(
             url: url,
             script: script,
             durationMs: Int(durationSec * 1000),
             width: width,
-            height: height
+            height: height,
+            cookies: cookies,
+            storageStatePath: storageStatePath,
+            userAgent: userAgent,
+            waitFor: waitFor,
+            extraArgs: extraArgs,
+            localeHint: localeHint,
+            timezoneHint: timezoneHint
+        )
+    }
+
+    /// Map a raw wait_for string into the Swift enum, defaulting to .load
+    /// for unknown or absent values.  Pure so it can be tested directly.
+    static func parseWaitFor(_ raw: String?) -> BrowserRecorder.Config.WaitCondition {
+        switch raw?.lowercased() {
+        case "domcontentloaded": return .domcontentloaded
+        case "networkidle":      return .networkidle
+        case "commit":           return .commit
+        case "load", nil, "":    return .load
+        default:                 return .load
+        }
+    }
+
+    /// Parse a JSON cookie object into the Swift struct. Returns nil if
+    /// the required fields are missing — validation happens upstream, so
+    /// this is a defence-in-depth filter.
+    static func parseCookie(_ dict: [String: Any]) -> BrowserRecorder.Config.Cookie? {
+        guard let name = dict["name"] as? String, !name.isEmpty else { return nil }
+        let value: String
+        if let s = dict["value"] as? String { value = s }
+        else if let n = dict["value"] as? NSNumber { value = n.stringValue }
+        else { return nil }
+        return BrowserRecorder.Config.Cookie(
+            name: name,
+            value: value,
+            domain: dict["domain"] as? String,
+            path: dict["path"] as? String,
+            expires: dict["expires"] as? Double,
+            httpOnly: dict["httpOnly"] as? Bool,
+            secure: dict["secure"] as? Bool,
+            sameSite: dict["sameSite"] as? String
         )
     }
 

@@ -785,6 +785,14 @@ export class ScreenMuse {
     height?: number;
     name?: string;
     quality?: "low" | "medium" | "high" | "max";
+    // v2 ---------------------------------------------------------------
+    waitFor?: "load" | "domcontentloaded" | "networkidle" | "commit";
+    storageStatePath?: string;
+    cookies?: BrowserCookie[];
+    userAgent?: string;
+    locale?: string;
+    timezoneId?: string;
+    extraArgs?: string[];
     async?: boolean;
   }): Promise<RecordingResult & { browser: BrowserResult }> {
     const body: Record<string, unknown> = {
@@ -796,6 +804,13 @@ export class ScreenMuse {
     if (options.height !== undefined) body.height = options.height;
     if (options.name !== undefined) body.name = options.name;
     if (options.quality !== undefined) body.quality = options.quality;
+    if (options.waitFor !== undefined) body.wait_for = options.waitFor;
+    if (options.storageStatePath !== undefined) body.storage_state_path = options.storageStatePath;
+    if (options.cookies !== undefined) body.cookies = options.cookies;
+    if (options.userAgent !== undefined) body.user_agent = options.userAgent;
+    if (options.locale !== undefined) body.locale = options.locale;
+    if (options.timezoneId !== undefined) body.timezone_id = options.timezoneId;
+    if (options.extraArgs !== undefined) body.extra_args = options.extraArgs;
     if (options.async) body.async = true;
     return this.request("POST", "/browser", body);
   }
@@ -832,6 +847,17 @@ export interface BrowserResult {
   elapsed_ms: number;
   nav_error?: string;
   script_error?: string;
+}
+
+export interface BrowserCookie {
+  name: string;
+  value: string;
+  domain?: string;
+  path?: string;
+  expires?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "Strict" | "Lax" | "None";
 }
 
 export interface BrowserInstallResult {

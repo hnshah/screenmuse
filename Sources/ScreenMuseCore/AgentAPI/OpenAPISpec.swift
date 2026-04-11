@@ -410,7 +410,7 @@ enum OpenAPISpec {
         "/browser": {
           "post": {
             "summary": "Headless Playwright recording: launch Chromium, run a script, record the window",
-            "description": "Spawns a Node.js subprocess that launches a headful Chromium window at the given URL, runs an optional user script in page context, and records the window via the standard ScreenMuse capture pipeline. Returns the enriched stop-response plus a 'browser' block with URL/title/pid and any script or navigation errors. Requires POST /browser/install on first use.",
+            "description": "Spawns a Node.js subprocess that launches a headful Chromium window at the given URL, runs an optional user script in page context, and records the window via the standard ScreenMuse capture pipeline. Returns the enriched stop-response plus a 'browser' block with URL/title/pid and any script or navigation errors. Requires POST /browser/install on first use. v2 adds cookies, storage_state_path, user_agent, locale, timezone_id, wait_for, and extra_args for parity with Playwright's newContext options.",
             "requestBody": { "content": { "application/json": { "schema": {
               "required": ["url", "duration_seconds"],
               "properties": {
@@ -421,6 +421,22 @@ enum OpenAPISpec {
                 "height":           { "type": "integer", "default": 720,  "minimum": 240, "maximum": 2160 },
                 "name":             { "type": "string", "description": "Recording name/label" },
                 "quality":          { "type": "string", "enum": ["low","medium","high","max"], "default": "medium" },
+                "wait_for":         { "type": "string", "enum": ["load","domcontentloaded","networkidle","commit"], "default": "load", "description": "Navigation gate before READY is emitted" },
+                "storage_state_path": { "type": "string", "description": "Absolute path to a Playwright storage state JSON (cookies + localStorage). Must exist." },
+                "cookies":          { "type": "array", "description": "Cookies seeded into the browser context before navigation", "items": { "type": "object", "required": ["name","value"], "properties": {
+                  "name":     { "type": "string" },
+                  "value":    { "type": "string" },
+                  "domain":   { "type": "string" },
+                  "path":     { "type": "string" },
+                  "expires":  { "type": "number" },
+                  "httpOnly": { "type": "boolean" },
+                  "secure":   { "type": "boolean" },
+                  "sameSite": { "type": "string", "enum": ["Strict","Lax","None"] }
+                } } },
+                "user_agent":       { "type": "string", "description": "Override the browser's User-Agent header" },
+                "locale":           { "type": "string", "description": "e.g. en-US, ja-JP" },
+                "timezone_id":      { "type": "string", "description": "IANA timezone id e.g. America/Los_Angeles" },
+                "extra_args":       { "type": "array", "items": { "type": "string" }, "description": "Extra command-line args appended to the Chromium launch" },
                 "async":            { "type": "boolean", "description": "Return job ID and poll via /job/{id}" }
               }
             } } } },

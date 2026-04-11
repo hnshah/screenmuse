@@ -2,6 +2,19 @@
 
 All notable changes to ScreenMuse are documented here.
 
+## [Unreleased] — 2026-04-11 Sprint 5
+
+### Added — `POST /browser` v2
+- **`wait_for`** — navigation gate the runner waits for before emitting `SM:READY` and starting the recording. One of `load` (default), `domcontentloaded`, `networkidle`, `commit`. Maps 1:1 onto Playwright's `page.goto({waitUntil})`.
+- **`storage_state_path`** — absolute path to a Playwright storage state JSON (cookies + localStorage). Used for authenticated flows. Pre-validated to fail fast before Node even spawns (`STORAGE_STATE_NOT_FOUND` 400).
+- **`cookies`** — array of `{name, value, domain?, path?, expires?, httpOnly?, secure?, sameSite?}` objects seeded into the browser context before navigation. Each entry is validated (`INVALID_COOKIE` 400 on missing name/value). Numeric values are auto-stringified for Playwright compatibility. Cookies without `url` or `domain` default to the navigation URL so `addCookies` doesn't reject the batch.
+- **`user_agent`**, **`locale`**, **`timezone_id`** — passthrough overrides for `context.newContext()` options.
+- **`extra_args`** — extra Chromium CLI args appended to the launch command. Validated as `[String]`.
+- **Runner version bumped to 2** — `RunnerScript.version = "2"`. Existing v1 installs are automatically refreshed on the next `POST /browser/install` because `NodeRunnerInstaller.status().isReady` compares the embedded stamp to the current constant.
+- **Python client**: `browser(..., wait_for, storage_state_path, cookies, user_agent, locale, timezone_id, extra_args)` kwargs.
+- **Node/TS client**: `browser({..., waitFor, storageStatePath, cookies, userAgent, locale, timezoneId, extraArgs})` plus new `BrowserCookie` type export.
+- **`BrowserHandlerTests`**: +20 tests covering wait_for validation (unknown/case-insensitive/all valid values), storage_state existence check (missing/present), cookie array validation (not-an-array/missing-name/missing-value/valid batch), `parseWaitFor` and `parseCookie` pure-logic branches, `makeBrowserConfig` v2 passthrough, and `Config.asJSON()` emission/omission of v2 fields.
+
 ## [Unreleased] — 2026-04-11 Sprint 4
 
 ### Docs

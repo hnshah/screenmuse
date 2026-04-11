@@ -181,6 +181,181 @@ final class BrowserHandlerTests: XCTestCase {
         XCTAssertEqual(cfg.durationMs, 10_000)
     }
 
+    // MARK: - v2 validation (cookies, storage_state, wait_for, extra_args)
+
+    @MainActor
+    func testValidateRejectsUnknownWaitFor() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "wait_for": "eventually"
+        ])
+        XCTAssertEqual(result?["code"] as? String, "INVALID_WAIT_FOR")
+    }
+
+    @MainActor
+    func testValidateAcceptsAllValidWaitFor() {
+        for condition in ["load", "domcontentloaded", "networkidle", "commit"] {
+            let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+                "url": "https://example.com",
+                "duration_seconds": 5,
+                "wait_for": condition
+            ])
+            XCTAssertNil(result, "wait_for=\(condition) should validate")
+        }
+    }
+
+    @MainActor
+    func testValidateRejectsMissingStorageStatePath() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "storage_state_path": "/tmp/does-not-exist-\(UUID().uuidString).json"
+        ])
+        XCTAssertEqual(result?["code"] as? String, "STORAGE_STATE_NOT_FOUND")
+    }
+
+    @MainActor
+    func testValidateAcceptsExistingStorageState() throws {
+        let tempFile = FileManager.default
+            .temporaryDirectory
+            .appendingPathComponent("sm-test-storage-\(UUID().uuidString).json")
+        try #"{"cookies":[],"origins":[]}"#.write(to: tempFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: tempFile) }
+
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "storage_state_path": tempFile.path
+        ])
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testValidateRejectsCookiesNotArray() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "cookies": "not-an-array"
+        ])
+        XCTAssertEqual(result?["code"] as? String, "INVALID_COOKIES")
+    }
+
+    @MainActor
+    func testValidateRejectsCookieWithoutName() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "cookies": [["value": "v"]]
+        ])
+        XCTAssertEqual(result?["code"] as? String, "INVALID_COOKIE")
+    }
+
+    @MainActor
+    func testValidateRejectsCookieWithoutValue() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "cookies": [["name": "session"]]
+        ])
+        XCTAssertEqual(result?["code"] as? String, "INVALID_COOKIE")
+    }
+
+    @MainActor
+    func testValidateAcceptsWellFormedCookies() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "cookies": [
+                ["name": "session", "value": "abc", "domain": ".example.com"],
+                ["name": "csrf", "value": "xyz"]
+            ]
+        ])
+        XCTAssertNil(result)
+    }
+
+    @MainActor
+    func testValidateRejectsExtraArgsNotStringArray() {
+        let result = ScreenMuseServer.shared.validateBrowserRequest(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "extra_args": "single-string"
+        ])
+        XCTAssertEqual(result?["code"] as? String, "INVALID_EXTRA_ARGS")
+    }
+
+    // MARK: - parseWaitFor
+
+    func testParseWaitForDefaultsToLoad() {
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor(nil), .load)
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor(""), .load)
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor("load"), .load)
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor("not-a-real-condition"), .load)
+    }
+
+    func testParseWaitForMapsAllKnownValues() {
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor("domcontentloaded"), .domcontentloaded)
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor("NetworkIdle"), .networkidle,
+                       "wait_for parsing must be case-insensitive")
+        XCTAssertEqual(ScreenMuseServer.parseWaitFor("commit"), .commit)
+    }
+
+    // MARK: - parseCookie
+
+    func testParseCookieRejectsEmptyName() {
+        XCTAssertNil(ScreenMuseServer.parseCookie(["name": "", "value": "x"]))
+    }
+
+    func testParseCookieRejectsMissingValue() {
+        XCTAssertNil(ScreenMuseServer.parseCookie(["name": "session"]))
+    }
+
+    func testParseCookieAcceptsNumericValue() {
+        let cookie = ScreenMuseServer.parseCookie(["name": "count", "value": 42])
+        XCTAssertEqual(cookie?.value, "42",
+                       "numeric cookie values must be stringified for Playwright compatibility")
+    }
+
+    func testParseCookiePassesThroughOptionalFields() {
+        let cookie = ScreenMuseServer.parseCookie([
+            "name": "session",
+            "value": "abc",
+            "domain": ".example.com",
+            "path": "/",
+            "httpOnly": true,
+            "secure": true,
+            "sameSite": "Lax"
+        ])
+        XCTAssertEqual(cookie?.domain, ".example.com")
+        XCTAssertEqual(cookie?.path, "/")
+        XCTAssertEqual(cookie?.httpOnly, true)
+        XCTAssertEqual(cookie?.secure, true)
+        XCTAssertEqual(cookie?.sameSite, "Lax")
+    }
+
+    // MARK: - makeBrowserConfig v2 fields
+
+    @MainActor
+    func testMakeBrowserConfigPassesThroughV2Fields() {
+        let cfg = ScreenMuseServer.shared.makeBrowserConfig(body: [
+            "url": "https://example.com",
+            "duration_seconds": 5,
+            "user_agent": "ScreenMuse/1.1",
+            "locale": "en-US",
+            "timezone_id": "America/Los_Angeles",
+            "wait_for": "networkidle",
+            "extra_args": ["--disable-web-security"],
+            "cookies": [["name": "s", "value": "x"]]
+        ])
+        XCTAssertEqual(cfg.userAgent, "ScreenMuse/1.1")
+        XCTAssertEqual(cfg.localeHint, "en-US")
+        XCTAssertEqual(cfg.timezoneHint, "America/Los_Angeles")
+        XCTAssertEqual(cfg.waitFor, .networkidle)
+        XCTAssertEqual(cfg.extraArgs, ["--disable-web-security"])
+        XCTAssertEqual(cfg.cookies.count, 1)
+        XCTAssertEqual(cfg.cookies.first?.name, "s")
+    }
+
     // MARK: - BrowserRecorder.Config JSON encoding
 
     func testConfigAsJSONIncludesRequiredFields() throws {
@@ -207,6 +382,53 @@ final class BrowserHandlerTests: XCTestCase {
         let json = try cfg.asJSON()
         XCTAssertFalse(json.contains("\"script\""),
                        "script key must be omitted when nil to keep the runner JSON minimal")
+    }
+
+    func testConfigAsJSONEmitsWaitForEvenWhenDefault() throws {
+        // wait_for is always emitted so the runner can tell it came from
+        // a v2 caller (explicit load) vs a v1 caller (absent).
+        let cfg = BrowserRecorder.Config(url: "https://x", durationMs: 1000)
+        let json = try cfg.asJSON()
+        XCTAssertTrue(json.contains("\"wait_for\":\"load\""))
+    }
+
+    func testConfigAsJSONOmitsEmptyV2Fields() throws {
+        let cfg = BrowserRecorder.Config(url: "https://x", durationMs: 1000)
+        let json = try cfg.asJSON()
+        XCTAssertFalse(json.contains("\"cookies\""))
+        XCTAssertFalse(json.contains("\"storage_state_path\""))
+        XCTAssertFalse(json.contains("\"user_agent\""))
+        XCTAssertFalse(json.contains("\"extra_args\""))
+        XCTAssertFalse(json.contains("\"locale\""))
+        XCTAssertFalse(json.contains("\"timezone_id\""))
+    }
+
+    func testConfigAsJSONEmitsV2Fields() throws {
+        let cfg = BrowserRecorder.Config(
+            url: "https://x",
+            durationMs: 1000,
+            cookies: [BrowserRecorder.Config.Cookie(name: "s", value: "v", domain: ".x")],
+            storageStatePath: "/tmp/auth.json",
+            userAgent: "ua",
+            waitFor: .networkidle,
+            extraArgs: ["--foo"],
+            localeHint: "en-US",
+            timezoneHint: "UTC"
+        )
+        let json = try cfg.asJSON()
+        let obj = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any]
+        )
+        XCTAssertEqual(obj["storage_state_path"] as? String, "/tmp/auth.json")
+        XCTAssertEqual(obj["user_agent"] as? String, "ua")
+        XCTAssertEqual(obj["wait_for"] as? String, "networkidle")
+        XCTAssertEqual(obj["locale"] as? String, "en-US")
+        XCTAssertEqual(obj["timezone_id"] as? String, "UTC")
+        let cookies = obj["cookies"] as? [[String: Any]]
+        XCTAssertEqual(cookies?.count, 1)
+        XCTAssertEqual(cookies?.first?["name"] as? String, "s")
+        let args = obj["extra_args"] as? [String]
+        XCTAssertEqual(args, ["--foo"])
     }
 
     // MARK: - NodeRunnerInstaller

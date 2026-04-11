@@ -74,6 +74,11 @@ public final class BrowserRecorder: @unchecked Sendable {
     }
 
     /// Request config passed to the runner as a JSON string on argv[2].
+    ///
+    /// v2 fields (cookies, storageState, userAgent, waitFor, extraArgs,
+    /// localeHint, timezoneHint) are all optional and backward-compatible
+    /// with the v1 runner. The Node runner checks the embedded version
+    /// stamp so a stale install won't silently drop new fields.
     public struct Config: Sendable {
         public let url: String
         public let script: String?
@@ -82,13 +87,82 @@ public final class BrowserRecorder: @unchecked Sendable {
         public let height: Int
         public let navTimeoutMs: Int
 
+        // v2
+        public let cookies: [Cookie]
+        public let storageStatePath: String?
+        public let userAgent: String?
+        public let waitFor: WaitCondition
+        public let extraArgs: [String]
+        public let localeHint: String?
+        public let timezoneHint: String?
+
+        /// Page-load gate that the runner must reach before signaling READY.
+        /// Maps 1:1 onto Playwright's page.goto waitUntil options.
+        public enum WaitCondition: String, Sendable, Codable {
+            case load
+            case domcontentloaded
+            case networkidle
+            case commit
+        }
+
+        /// A single cookie entry seeded into the Playwright context
+        /// before navigation. Mirrors the shape Playwright expects.
+        public struct Cookie: Sendable, Codable {
+            public let name: String
+            public let value: String
+            public let domain: String?
+            public let path: String?
+            public let expires: Double?
+            public let httpOnly: Bool?
+            public let secure: Bool?
+            public let sameSite: String?
+
+            public init(
+                name: String,
+                value: String,
+                domain: String? = nil,
+                path: String? = nil,
+                expires: Double? = nil,
+                httpOnly: Bool? = nil,
+                secure: Bool? = nil,
+                sameSite: String? = nil
+            ) {
+                self.name = name
+                self.value = value
+                self.domain = domain
+                self.path = path
+                self.expires = expires
+                self.httpOnly = httpOnly
+                self.secure = secure
+                self.sameSite = sameSite
+            }
+
+            func asDictionary() -> [String: Any] {
+                var dict: [String: Any] = ["name": name, "value": value]
+                if let domain { dict["domain"] = domain }
+                if let path { dict["path"] = path }
+                if let expires { dict["expires"] = expires }
+                if let httpOnly { dict["httpOnly"] = httpOnly }
+                if let secure { dict["secure"] = secure }
+                if let sameSite { dict["sameSite"] = sameSite }
+                return dict
+            }
+        }
+
         public init(
             url: String,
             script: String? = nil,
             durationMs: Int,
             width: Int = 1280,
             height: Int = 720,
-            navTimeoutMs: Int = 30_000
+            navTimeoutMs: Int = 30_000,
+            cookies: [Cookie] = [],
+            storageStatePath: String? = nil,
+            userAgent: String? = nil,
+            waitFor: WaitCondition = .load,
+            extraArgs: [String] = [],
+            localeHint: String? = nil,
+            timezoneHint: String? = nil
         ) {
             self.url = url
             self.script = script
@@ -96,6 +170,13 @@ public final class BrowserRecorder: @unchecked Sendable {
             self.width = width
             self.height = height
             self.navTimeoutMs = navTimeoutMs
+            self.cookies = cookies
+            self.storageStatePath = storageStatePath
+            self.userAgent = userAgent
+            self.waitFor = waitFor
+            self.extraArgs = extraArgs
+            self.localeHint = localeHint
+            self.timezoneHint = timezoneHint
         }
 
         func asJSON() throws -> String {
@@ -104,9 +185,18 @@ public final class BrowserRecorder: @unchecked Sendable {
                 "duration_ms": durationMs,
                 "width": width,
                 "height": height,
-                "nav_timeout_ms": navTimeoutMs
+                "nav_timeout_ms": navTimeoutMs,
+                "wait_for": waitFor.rawValue
             ]
             if let s = script { dict["script"] = s }
+            if !cookies.isEmpty {
+                dict["cookies"] = cookies.map { $0.asDictionary() }
+            }
+            if let path = storageStatePath { dict["storage_state_path"] = path }
+            if let ua = userAgent { dict["user_agent"] = ua }
+            if !extraArgs.isEmpty { dict["extra_args"] = extraArgs }
+            if let locale = localeHint { dict["locale"] = locale }
+            if let tz = timezoneHint { dict["timezone_id"] = tz }
             let data = try JSONSerialization.data(withJSONObject: dict)
             return String(data: data, encoding: .utf8) ?? "{}"
         }
