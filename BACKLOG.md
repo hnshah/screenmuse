@@ -41,9 +41,83 @@ durability hardening — not a test-coverage emergency.
 | # | Task | Notes |
 |---|------|-------|
 | 7 | **Continuous capture / monitor mode** | Competes directly with Screenpipe. High storage-management complexity. Deferred unless a real customer pulls — the agent-first thesis is more focused. |
-| 8 | **Swift 6 strict concurrency migration** | Core + App + CLI on `.swiftLanguageMode(.v5)`; MCP already on v6. Migrate module-by-module: Config → Logging → Timeline → Recording → Export → AgentAPI. |
+| 8 | **Swift 6 strict concurrency migration** | Core + App + CLI on `.swiftLanguageMode(.v5)`; MCP already on v6. See "Swift 6 migration plan" below for the staged approach. |
 | 9 | **Browser CI integration guide** | Doc `/browser` + Playwright CI patterns with Docker compose example. |
 | 10 | **AI agent examples repo** | Claude Code, Cursor, and Codex end-to-end recording workflows. |
+
+---
+
+## Swift 6 migration plan
+
+Everything shipped in **Sprint 4** is already Swift-6-clean by construction.
+The blockers are all pre-Sprint-4 code. Migrate in this order so each step
+is independently revertible and ships without flag-days:
+
+### Step 1 — Split Config + System into a leaf target (low risk)
+Files already Sendable-safe and free of circular imports:
+- `Sources/ScreenMuseCore/Config/ScreenMuseConfig.swift` — single `Codable: Sendable` struct
+- `Sources/ScreenMuseCore/System/DiskSpaceGuard.swift` — pure-logic `Sendable` struct
+- `Sources/ScreenMuseCore/Capture/ContentSharingPicker.swift` — `Sendable` wrappers, no state
+- `Sources/ScreenMuseCore/Publish/*.swift` — all `Sendable` structs + `Publisher` protocol
+- `Sources/ScreenMuseCore/Narration/*.swift` — all `Sendable` structs, one mock-holding class
+- `Sources/ScreenMuseCore/Browser/RunnerScript.swift` — static strings only
+
+**Approach:** extract these into a new `ScreenMuseFoundation` target on
+`.swiftLanguageMode(.v6)`. `ScreenMuseCore` depends on it. Zero changes to
+the files themselves — they already conform.
+
+### Step 2 — MetricsRegistry + JobQueue actors (already clean)
+- `Sources/ScreenMuseCore/AgentAPI/MetricsRegistry.swift` — actor
+- `Sources/ScreenMuseCore/AgentAPI/JobQueue.swift` — actor with `@unchecked Sendable` Job struct
+
+Neither file needs work. The blocker is that they live in the same target
+as the non-Sendable ScreenMuseServer, so a Swift 6 flip of the full target
+would require ScreenMuseServer to be migrated first.
+
+### Step 3 — Recording pipeline (medium risk)
+- `Sources/ScreenMuseCore/Recording/RecordingManager.swift`
+- `Sources/ScreenMuseCore/Recording/PiPRecordingManager.swift`
+- `Sources/ScreenMuseCore/Recording/CursorTracker.swift`
+- `Sources/ScreenMuseCore/Recording/KeyboardMonitor.swift`
+
+Each of these needs careful Sendable audits because they span
+`SCStream` delegate callbacks (non-Sendable Apple APIs) and `@MainActor`
+state. Expect `@preconcurrency` imports, some `@unchecked Sendable` on
+wrapper structs that hold non-Sendable Apple types, and new actors around
+frame buffers.
+
+### Step 4 — Export pipeline (medium risk)
+- `Sources/ScreenMuseCore/Export/*.swift`
+
+Mostly pure transforms (VideoTrimmer, VideoCropper, SpeedRamper). Risk
+is in `ActivityAnalyzer` which currently mutates shared state — needs to
+become an actor or have its state thread through `@MainActor`.
+
+### Step 5 — ScreenMuseServer (highest risk)
+- `Sources/ScreenMuseCore/AgentAPI/ScreenMuseServer.swift` (832 lines)
+- All `Server+*.swift` extensions
+
+Already `@MainActor`, so most of the compiler complaints will come from
+the `NWConnection` state handlers (currently `@retroactive @unchecked
+Sendable`), the `@Sendable` closures passed to `connection.receive`, and
+the `jobConnections` map lookups that happen inside `sendResponse`.
+This is the real refactoring work — do it with compiler feedback, not
+speculation.
+
+### Step 6 — Flip the target
+Once steps 3–5 compile cleanly under Swift 6 strict mode, flip
+`.swiftLanguageMode(.v5)` → `.v6` on `ScreenMuseCore`, then on
+`ScreenMuseApp` and `ScreenMuseCLI`. CI catches any remaining warnings.
+
+### What NOT to do
+- **Do not** run a big-bang migration. The codebase has ~11k lines of
+  pre-Sprint-4 code and no compiler feedback without a macOS build.
+- **Do not** remove `@preconcurrency import ScreenCaptureKit` — Apple's
+  SCStream delegates genuinely have Sendable issues in their upstream
+  SDK that aren't ours to fix.
+- **Do not** migrate `RecordingCoordinating` protocol until
+  `RecordViewModel` (in ScreenMuseApp) is ready — it's the bridge
+  between targets and a rename there is a multi-file refactor.
 
 ---
 

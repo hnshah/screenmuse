@@ -4,6 +4,10 @@ All notable changes to ScreenMuse are documented here.
 
 ## [Unreleased] — 2026-04-11 Sprint 4
 
+### Docs
+- **Swift 6 migration plan** added to `BACKLOG.md` — staged approach covering Config/System/Publish/Narration/Browser leaf extraction (already Sendable-safe by construction), then Recording → Export → ScreenMuseServer with the highest-risk items last. Explicitly calls out what not to attempt speculatively without compiler feedback.
+- Sprint 4 audit: every new module shipped this sprint (`Browser/`, `Narration/`, `Publish/`, `Capture/ContentSharingPicker`, `System/DiskSpaceGuard`, `AgentAPI/MetricsRegistry`) is already Swift-6-clean. The remaining work is all pre-Sprint-4 code.
+
 ### Added
 - **`GET /system/picker/availability`** — probes for SCContentSharingPicker support on the host OS. Returns `{supported, macos_version, reason?}`. Agents call this before recommending the picker-based flow, which skips the Screen Recording TCC prompt entirely on macOS 15+ (the user selects a window from a system sheet and ScreenCaptureKit silently grants access to just that window for the session).
 - **`ContentSharingPicker`** wrapper in `Sources/ScreenMuseCore/Capture/`: `Availability` struct with snake_case Codable, `Configuration` struct with source-type toggles + validation, `PickerError` LocalizedError, and a pure runtime-support probe that's safe to call from any thread. Deliberately thin — presenting the picker is a UI operation gated behind `@available(macOS 15, *)` and lives in the App target where the SwiftUI coordinator can host the sheet.
