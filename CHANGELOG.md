@@ -4,6 +4,11 @@ All notable changes to ScreenMuse are documented here.
 
 ## [Unreleased] — 2026-04-11 Sprint 5
 
+### Added — Agent workflow examples + end-to-end tests
+- **`Tests/ScreenMuseCoreTests/Sprint5WorkflowTests.swift`** — 11 tests on a dedicated port 7827, exercising the full Sprint 4+5 endpoint surface in the way agents actually hit it on first run: `/browser/status` + `/system/picker/availability` smoke tests, `/metrics` Prometheus-format assertion after preceding traffic, `/browser` v2 field-validation error paths (5 distinct codes), `/narrate` NO_VIDEO + UNSUPPORTED_PROVIDER paths, `/publish` UNKNOWN_DESTINATION path, histogram accumulation across routes, `request_id` threading through every new endpoint, and a `/version` endpoint-list-in-sync check.
+- **`examples/agent-workflows/claude_code_workflow.py`** — runnable end-to-end example for Claude Code / Cursor / Codex agents. Strings together `browser_status` → `browser_install` (async job) → `browser` (with Playwright script) → `narrate` (local Ollama + SRT + VTT) → `publish` (S3 presigned PUT + Slack webhook with video URL). CLI flags: `--target`, `--duration`, `--narrate`, `--slack-webhook`, `--s3-put-url`, `--host`, `--port`.
+- **`examples/agent-workflows/README.md`** — pattern catalog with 5 runnable recipes (record-and-narrate, authenticated flows via Playwright storage state, S3+Slack publish, scheduled competitor monitoring, Prometheus scrape config with PromQL samples) plus a troubleshooting section for the three most common error paths (runner not installed, provider unreachable, disk space low).
+
 ### Added — Config schema v2 (`~/.screenmuse.json`)
 - **Nested per-feature defaults** alongside the existing v1 flat fields. Every v2 block is optional, so existing v1 files continue to load unchanged (explicit test: `testV1FlatFileStillDecodes`).
 - **`narration:`** — `provider`, `model`, `api_key`, `endpoint`, `style`, `max_chapters`, `frame_count`, `language`. Merged into `POST /narrate` in precedence order: request body > config > hardcoded default. Lets agents set `ANTHROPIC_API_KEY` once in the config instead of on every request.
