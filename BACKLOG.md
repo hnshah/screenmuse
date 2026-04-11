@@ -1,36 +1,49 @@
 # ScreenMuse — Backlog
 
-Last updated: 2026-04-04 (post Sprint 3 with Oatis)
+Last updated: 2026-04-11 (Sprint 4 hardening plan on `claude/analyze-repo-RKrj5`)
+
+---
+
+## State of the repo (one-paragraph audit)
+
+28 test files under `Tests/ScreenMuseCoreTests/`, covering auth, HTTP integration,
+job queue, pagination, timeline, QA, speedramp, webhook, and OpenAPI drift.
+`ScreenMuseCore` has 12 subdirectories and `AgentAPI` exposes 47 routes.
+Only 2 TODO/FIXME markers remain in `Sources/` (both benign UI previews).
+`ScreenMuseServer.swift` is 832 lines of dispatch + helpers + route table;
+`Server+Export.swift` is 836 lines. `request_id` is already threaded through
+every response body *and* every log line (embedded as `[\(reqID)]` at call
+sites). The Sprint 4 focus is the next wave of agent-facing endpoints and
+durability hardening — not a test-coverage emergency.
 
 ---
 
 ## Queue (priority order)
 
-### 🔴 High
+### 🔴 High — Sprint 4
 
 | # | Task | Notes |
 |---|------|-------|
-| 1 | **POST /browser** — headless Playwright recording | Huge cross-platform surface area. Agents need browser recording too. npm install playwright, expose via HTTP API. |
-| 2 | **POST /narrate** — AI narration of recordings | After recording, generate timestamped narration + chapter suggestions via vision LLM (Claude/GPT-4o). Frames extraction already exists. |
-| 3 | **Request ID in all responses** | Add `"request_id"` to every JSON response for distributed tracing. Requires threading reqID through sendResponse (~146 call sites — non-trivial). |
-| 4 | **Continuous capture / monitor mode** | Long-running passive capture saving only on interesting events. Competes with Screenpipe's core value prop. High storage management complexity. |
+| 1 | **POST /browser** — headless Playwright recording | Node subprocess runner installed on-demand under `~/.screenmuse/playwright-runner/`. User POSTs `{url, script?, duration, width, height, headless}` → we spawn Node+Playwright, record the window, return a stop response. Keeps the Swift binary dependency-free. |
+| 2 | **POST /narrate** — AI narration of recordings | Timestamped narration + chapter suggestions via vision LLM. Providers: Anthropic Claude, OpenAI, and **Ollama (local, default)** for zero-cost agent loops. Uses `ActivityAnalyzer` for smart frame sampling, runs through `JobQueue`. |
+| 3 | **Disk-space guard + `GET /metrics`** | Pre-flight check in `RecordingManager.startRecording` and `JobQueue` that refuses if free disk < configurable N GB. Prometheus-format `/metrics` endpoint surfaces `active_recordings`, `jobs_queued`, `disk_free_bytes`, `http_requests_total`. |
 
-### 🟡 Medium
+### 🟡 Medium — Sprint 4
 
 | # | Task | Notes |
 |---|------|-------|
-| 5 | **POST /diff** — recording comparison | Compare two recordings, return structured diff: which regions changed, when, how much. For visual regression and monitoring use cases. |
-| 6 | **POST /publish** — multi-destination export | Publish to S3, Cloudflare R2, Notion, GitHub gist, Slack. Start with Slack (iCloud already done). |
-| 7 | **SCContentSharingPicker integration** | Permission-free recording for specific windows using macOS 15 system picker. Eliminates first-run friction. |
-| 8 | ~~**Pagination tests for /recordings**~~ | ✅ Done (Sprint 3) — 22 tests in RecordingsPaginationTests.swift |
+| 4 | **POST /publish** — multi-destination export | `Publisher` protocol, one file per destination: Slack (webhook + file upload), GitHub gist, S3/R2 (presigned PUT). iCloud stays as the reference implementation. |
+| 5 | **SCContentSharingPicker integration** | Permission-free recording for specific windows on macOS 15+. Eliminates first-run TCC friction. Feature-flagged behind `@available(macOS 15, *)`, ScreenCaptureKit fallback on macOS 14. |
+| 6 | **Resilience tests** | Kill mid-recording → `/recordings` marks corrupted; 50× concurrent `/start` → exactly-one wins, 49 get 409; disk-full during export → clean failure, no orphans. |
 
 ### 🟢 Low / Long-term
 
 | # | Task | Notes |
 |---|------|-------|
-| 9 | **Swift 6 strict concurrency** | Both targets on `.swiftLanguageMode(.v5)`. Migrating would catch races at compile time. Major effort. |
-| 10 | **Browser CI integration guide** | Playwright/Puppeteer users want HTTP-API-driven recording in CI. Document the pattern + Docker compose example. |
-| 11 | **AI agent examples repo** | Claude Code, Cursor, and Codex integration examples showing end-to-end recording workflows. |
+| 7 | **Continuous capture / monitor mode** | Competes directly with Screenpipe. High storage-management complexity. Deferred unless a real customer pulls — the agent-first thesis is more focused. |
+| 8 | **Swift 6 strict concurrency migration** | Core + App + CLI on `.swiftLanguageMode(.v5)`; MCP already on v6. Migrate module-by-module: Config → Logging → Timeline → Recording → Export → AgentAPI. |
+| 9 | **Browser CI integration guide** | Doc `/browser` + Playwright CI patterns with Docker compose example. |
+| 10 | **AI agent examples repo** | Claude Code, Cursor, and Codex end-to-end recording workflows. |
 
 ---
 
@@ -38,6 +51,9 @@ Last updated: 2026-04-04 (post Sprint 3 with Oatis)
 
 | Task | Sprint | Notes |
 |------|--------|-------|
+| **Request ID in every response + every log line** | Sprint 3 | Auto-injected via `sendResponse`; embedded as `[\(reqID)]` at every log call site |
+| **POST /qa** (video quality analysis) | Sprint 3 | `QAReport` JSON with 5 quality checks |
+| **POST /diff** (video structural diff) | Sprint 3 | Metadata delta — duration, size, bitrate, resolution, fps, codec |
 | Auth / API key (`X-ScreenMuse-Key`) | Prior sprints | Complete + auto-generated |
 | 65KB body limit → streaming accumulation | Prior sprints | `accumulateBody()` + 4MB cap |
 | Region bounds validation | Prior sprints | validateRegion() helper |
