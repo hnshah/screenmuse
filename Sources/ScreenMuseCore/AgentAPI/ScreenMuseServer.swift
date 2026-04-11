@@ -3,6 +3,7 @@ import AppKit
 import Foundation
 import Network
 import ScreenCaptureKit
+import ScreenMuseFoundation
 import Vision
 
 // NWConnection is thread-safe internally but not marked Sendable by Apple.

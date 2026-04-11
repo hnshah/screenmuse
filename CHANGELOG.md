@@ -4,6 +4,21 @@ All notable changes to ScreenMuse are documented here.
 
 ## [Unreleased] — 2026-04-11 Sprint 5
 
+### Changed — Swift 6 migration Step 1: `ScreenMuseFoundation` target
+- **New `ScreenMuseFoundation` library target** on `.swiftLanguageMode(.v6)` — the first Swift 6 strict-mode target in the main codebase alongside the existing MCP target. `ScreenMuseCore` now depends on it. Sprint 5 goal was to prove the two-target pattern works on the smallest, lowest-risk slice before tackling Recording / Export / AgentAPI.
+- **Files moved** from `ScreenMuseCore` to `ScreenMuseFoundation` via `git mv` (history preserved):
+  - `Config/ScreenMuseConfig.swift`
+  - `System/DiskSpaceGuard.swift`
+  - `Publish/Publisher.swift`
+  - `Publish/SlackPublisher.swift`
+  - `Publish/HTTPPutPublisher.swift`
+  - `Publish/WebhookPublisher.swift`
+- **`SlackPublisher` + `WebhookPublisher` refactored** for Swift 6 strict concurrency. `[String: Any]` Block Kit / envelope construction is now factored into pure static helpers (`buildSlackPayload`, `buildWebhookPayload`) that return `Data`, so the non-Sendable dict never crosses the `URLSession` `await` boundary.
+- **`HTTPPutPublisher` dead-code removal** — previously created an `InputStream(url: video)` and assigned it to `httpBodyStream`, but the actual upload call used `upload(for:fromFile:)` which bypasses `httpBodyStream`. The stream was orphaned and would have tripped strict-concurrency checks for non-Sendable captures across `await`. Removed.
+- **Import wiring** — `ScreenMuseServer.swift`, `Server+Publish.swift`, `Server+System.swift`, and `ScreenMuseCLI/main.swift` now `import ScreenMuseFoundation`. Every test file that touches the moved types gained a second `@testable import ScreenMuseFoundation`.
+- **`ScreenMuseCoreTests`** updated to depend on both `ScreenMuseCore` and `ScreenMuseFoundation` in `Package.swift`.
+- **BACKLOG.md** updated: Step 1 moved to "done", new Step 1b section lists the remaining leaf candidates whose migration is blocked by platform-framework dependencies (ScreenCaptureKit for `ContentSharingPicker`, AVFoundation+AppKit for `Narrator`).
+
 ### Added — Agent workflow examples + end-to-end tests
 - **`Tests/ScreenMuseCoreTests/Sprint5WorkflowTests.swift`** — 11 tests on a dedicated port 7827, exercising the full Sprint 4+5 endpoint surface in the way agents actually hit it on first run: `/browser/status` + `/system/picker/availability` smoke tests, `/metrics` Prometheus-format assertion after preceding traffic, `/browser` v2 field-validation error paths (5 distinct codes), `/narrate` NO_VIDEO + UNSUPPORTED_PROVIDER paths, `/publish` UNKNOWN_DESTINATION path, histogram accumulation across routes, `request_id` threading through every new endpoint, and a `/version` endpoint-list-in-sync check.
 - **`examples/agent-workflows/claude_code_workflow.py`** — runnable end-to-end example for Claude Code / Cursor / Codex agents. Strings together `browser_status` → `browser_install` (async job) → `browser` (with Playwright script) → `narrate` (local Ollama + SRT + VTT) → `publish` (S3 presigned PUT + Slack webhook with video URL). CLI flags: `--target`, `--duration`, `--narrate`, `--slack-webhook`, `--s3-put-url`, `--host`, `--port`.

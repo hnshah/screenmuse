@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import XCTest
 @testable import ScreenMuseCore
+@testable import ScreenMuseFoundation
 import Foundation
 
 /// Tests for the pure-logic DiskSpaceGuard decision machine and

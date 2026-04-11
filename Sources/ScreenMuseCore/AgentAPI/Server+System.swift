@@ -2,6 +2,7 @@ import AVFoundation
 import CoreGraphics
 import Foundation
 import Network
+import ScreenMuseFoundation
 
 // MARK: - Job Handlers (GET /job/:id, GET /jobs)
 

@@ -53,18 +53,26 @@ Everything shipped in **Sprint 4** is already Swift-6-clean by construction.
 The blockers are all pre-Sprint-4 code. Migrate in this order so each step
 is independently revertible and ships without flag-days:
 
-### Step 1 — Split Config + System into a leaf target (low risk)
-Files already Sendable-safe and free of circular imports:
-- `Sources/ScreenMuseCore/Config/ScreenMuseConfig.swift` — single `Codable: Sendable` struct
-- `Sources/ScreenMuseCore/System/DiskSpaceGuard.swift` — pure-logic `Sendable` struct
-- `Sources/ScreenMuseCore/Capture/ContentSharingPicker.swift` — `Sendable` wrappers, no state
-- `Sources/ScreenMuseCore/Publish/*.swift` — all `Sendable` structs + `Publisher` protocol
-- `Sources/ScreenMuseCore/Narration/*.swift` — all `Sendable` structs, one mock-holding class
-- `Sources/ScreenMuseCore/Browser/RunnerScript.swift` — static strings only
+### Step 1 — Split Config + System + Publish into a leaf target (✅ Sprint 5)
+**Status:** done — `Sources/ScreenMuseFoundation/` now exists on
+`.swiftLanguageMode(.v6)`. `ScreenMuseCore` depends on it. Moved in
+Sprint 5:
+- `Config/ScreenMuseConfig.swift` — single `Codable: Sendable` struct
+- `System/DiskSpaceGuard.swift` — pure-logic `Sendable` struct
+- `Publish/*.swift` — 4 files (Publisher protocol + Slack/HTTPPut/Webhook)
 
-**Approach:** extract these into a new `ScreenMuseFoundation` target on
-`.swiftLanguageMode(.v6)`. `ScreenMuseCore` depends on it. Zero changes to
-the files themselves — they already conform.
+During the migration we also pre-serialized non-Sendable `[String: Any]`
+payload building into static helpers (`buildSlackPayload`,
+`buildWebhookPayload`) so strict concurrency doesn't flag
+cross-`await` captures, and removed a dead `InputStream` assignment
+in `HTTPPutPublisher` that Swift 6 would have flagged.
+
+### Step 1b — Remaining leaf candidates (still in ScreenMuseCore)
+These are Sendable-safe but have platform-framework dependencies that
+make the migration slightly more involved:
+- `Capture/ContentSharingPicker.swift` — `@preconcurrency import ScreenCaptureKit`
+- `Narration/SubtitleFormatter.swift` + `NarrationProvider.swift` + `OllamaNarrationProvider.swift` + `ClaudeNarrationProvider.swift` — pure Foundation, ready to move but tangled with `Narrator.swift` which needs AVFoundation and AppKit
+- `Browser/RunnerScript.swift` — static strings, but `BrowserRecorder` + `NodeRunnerInstaller` stay in Core, so moving the script alone gains little
 
 ### Step 2 — MetricsRegistry + JobQueue actors (already clean)
 - `Sources/ScreenMuseCore/AgentAPI/MetricsRegistry.swift` — actor

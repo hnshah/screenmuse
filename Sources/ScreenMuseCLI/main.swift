@@ -28,6 +28,7 @@
 
 import Foundation
 import ScreenMuseCore
+import ScreenMuseFoundation
 
 // MARK: - HTTP Client
 

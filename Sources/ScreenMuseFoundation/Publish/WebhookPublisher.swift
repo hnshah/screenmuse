@@ -20,19 +20,20 @@ public struct WebhookPublisher: Publisher {
         }
 
         let fileSize = (try? fm.attributesOfItem(atPath: video.path)[.size] as? Int) ?? 0
-        let sizeMB = (Double(fileSize) / 1_048_576 * 100).rounded() / 100
 
-        var payload: [String: Any] = [
-            "event": "recording.published",
-            "video_path": video.path,
-            "filename": video.lastPathComponent,
-            "size_bytes": fileSize,
-            "size_mb": sizeMB,
-            "timestamp": ISO8601DateFormatter().string(from: Date())
-        ]
-        // Merge caller metadata in — everything string-typed so the shape
-        // stays stable for downstream parsers.
-        for (k, v) in config.metadata { payload[k] = v }
+        // Pre-serialize in a pure helper so the non-Sendable [String: Any]
+        // dict never crosses the URLSession await boundary — keeps Swift 6
+        // strict concurrency happy.
+        let payloadData: Data
+        do {
+            payloadData = try Self.buildWebhookPayload(
+                video: video,
+                fileSize: fileSize,
+                config: config
+            )
+        } catch {
+            throw PublishError.networkFailure("payload encoding failed: \(error.localizedDescription)")
+        }
 
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
@@ -43,11 +44,7 @@ public struct WebhookPublisher: Publisher {
         if let token = config.apiToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        } catch {
-            throw PublishError.networkFailure("payload encoding failed: \(error.localizedDescription)")
-        }
+        request.httpBody = payloadData
 
         let data: Data
         let response: URLResponse
@@ -77,5 +74,28 @@ public struct WebhookPublisher: Publisher {
 
     static func tail(_ s: String) -> String {
         s.count > 512 ? String(s.suffix(512)) : s
+    }
+
+    /// Build the webhook envelope bytes. Pure, synchronous, no
+    /// non-Sendable state leaks — the `[String: Any]` dict lives
+    /// only inside this function.
+    static func buildWebhookPayload(
+        video: URL,
+        fileSize: Int,
+        config: PublishConfig
+    ) throws -> Data {
+        let sizeMB = (Double(fileSize) / 1_048_576 * 100).rounded() / 100
+        var payload: [String: Any] = [
+            "event": "recording.published",
+            "video_path": video.path,
+            "filename": video.lastPathComponent,
+            "size_bytes": fileSize,
+            "size_mb": sizeMB,
+            "timestamp": ISO8601DateFormatter().string(from: Date())
+        ]
+        // Merge caller metadata in — everything string-typed so the shape
+        // stays stable for downstream parsers.
+        for (k, v) in config.metadata { payload[k] = v }
+        return try JSONSerialization.data(withJSONObject: payload)
     }
 }

@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import XCTest
 @testable import ScreenMuseCore
+@testable import ScreenMuseFoundation
 
 /// Tests for ScreenMuseConfig — the user configuration system.
 ///

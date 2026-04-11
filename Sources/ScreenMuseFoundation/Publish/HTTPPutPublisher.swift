@@ -25,20 +25,16 @@ public struct HTTPPutPublisher: Publisher {
 
         let fileSize = (try? fm.attributesOfItem(atPath: video.path)[.size] as? Int) ?? 0
 
-        // Stream the file body instead of slurping the full buffer into
-        // memory. Recordings over a few hundred MB are common and we'd
-        // rather not quadruple memory use just to PUT them.
-        guard let stream = InputStream(url: video) else {
-            throw PublishError.fileReadFailed("could not open \(video.path) for reading")
-        }
-
+        // Build the PUT request. We rely on URLSession.upload(for:fromFile:)
+        // to stream the file body off disk — no need to instantiate our
+        // own InputStream (which isn't Sendable and would trip Swift 6
+        // strict concurrency when captured across the upload await).
         var request = URLRequest(url: config.url)
         request.httpMethod = "PUT"
         request.timeoutInterval = max(config.timeout, Double(fileSize / 1_000_000))
         request.setValue(Self.contentType(for: video), forHTTPHeaderField: "Content-Type")
         request.setValue("\(fileSize)", forHTTPHeaderField: "Content-Length")
         for (k, v) in config.extraHeaders { request.setValue(v, forHTTPHeaderField: k) }
-        request.httpBodyStream = stream
 
         let data: Data
         let response: URLResponse

@@ -1,6 +1,7 @@
 #if canImport(XCTest)
 import XCTest
 @testable import ScreenMuseCore
+@testable import ScreenMuseFoundation
 import Foundation
 
 /// Tests for the Publisher protocol, built-in publishers, registry,

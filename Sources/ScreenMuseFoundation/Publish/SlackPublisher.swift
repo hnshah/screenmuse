@@ -24,62 +24,27 @@ public struct SlackPublisher: Publisher {
         }
 
         let fileSize = (try? fm.attributesOfItem(atPath: video.path)[.size] as? Int) ?? 0
-        let sizeMB = Double(fileSize) / 1_048_576
 
-        // Build a Slack-friendly notification payload. Uses Block Kit so
-        // the message renders with a heading + metadata table instead of
-        // a wall of text.
-        let filename = config.filename ?? video.lastPathComponent
-        let durationStr = config.metadata["duration"] ?? "unknown"
-        let videoURL = config.metadata["video_url"]
-
-        var fields: [[String: Any]] = [
-            ["type": "mrkdwn", "text": "*File*\n\(filename)"],
-            ["type": "mrkdwn", "text": "*Size*\n\(String(format: "%.1f MB", sizeMB))"],
-            ["type": "mrkdwn", "text": "*Duration*\n\(durationStr)"]
-        ]
-        // Additional metadata pairs become extra mrkdwn fields.
-        for (k, v) in config.metadata where k != "duration" && k != "video_url" {
-            fields.append(["type": "mrkdwn", "text": "*\(k.capitalized)*\n\(v)"])
+        // Pre-serialize the Block Kit payload in a pure helper so the
+        // non-Sendable [String: Any] dict never crosses the URLSession
+        // await boundary — keeps Swift 6 strict concurrency happy.
+        let payloadData: Data
+        do {
+            payloadData = try Self.buildSlackPayload(
+                video: video,
+                fileSize: fileSize,
+                config: config
+            )
+        } catch {
+            throw PublishError.networkFailure("payload encoding failed: \(error.localizedDescription)")
         }
-
-        var blocks: [[String: Any]] = [
-            [
-                "type": "header",
-                "text": ["type": "plain_text", "text": "📹 ScreenMuse recording ready"]
-            ],
-            [
-                "type": "section",
-                "fields": fields
-            ]
-        ]
-        if let videoLink = videoURL, URL(string: videoLink) != nil {
-            blocks.append([
-                "type": "actions",
-                "elements": [[
-                    "type": "button",
-                    "text": ["type": "plain_text", "text": "Open video"],
-                    "url": videoLink,
-                    "style": "primary"
-                ]]
-            ])
-        }
-
-        let payload: [String: Any] = [
-            "text": "ScreenMuse recording ready: \(filename) (\(String(format: "%.1f MB", sizeMB)))",
-            "blocks": blocks
-        ]
 
         var request = URLRequest(url: config.url)
         request.httpMethod = "POST"
         request.timeoutInterval = config.timeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         for (k, v) in config.extraHeaders { request.setValue(v, forHTTPHeaderField: k) }
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        } catch {
-            throw PublishError.networkFailure("payload encoding failed: \(error.localizedDescription)")
-        }
+        request.httpBody = payloadData
 
         let data: Data
         let response: URLResponse
@@ -111,5 +76,56 @@ public struct SlackPublisher: Publisher {
 
     static func tail(_ s: String) -> String {
         s.count > 512 ? String(s.suffix(512)) : s
+    }
+
+    /// Build the Slack Block Kit payload bytes. Pure, synchronous,
+    /// no non-Sendable state leaks out — the `[String: Any]` dict
+    /// exists only inside this function.
+    static func buildSlackPayload(
+        video: URL,
+        fileSize: Int,
+        config: PublishConfig
+    ) throws -> Data {
+        let sizeMB = Double(fileSize) / 1_048_576
+        let filename = config.filename ?? video.lastPathComponent
+        let durationStr = config.metadata["duration"] ?? "unknown"
+        let videoURL = config.metadata["video_url"]
+
+        var fields: [[String: Any]] = [
+            ["type": "mrkdwn", "text": "*File*\n\(filename)"],
+            ["type": "mrkdwn", "text": "*Size*\n\(String(format: "%.1f MB", sizeMB))"],
+            ["type": "mrkdwn", "text": "*Duration*\n\(durationStr)"]
+        ]
+        for (k, v) in config.metadata where k != "duration" && k != "video_url" {
+            fields.append(["type": "mrkdwn", "text": "*\(k.capitalized)*\n\(v)"])
+        }
+
+        var blocks: [[String: Any]] = [
+            [
+                "type": "header",
+                "text": ["type": "plain_text", "text": "📹 ScreenMuse recording ready"]
+            ],
+            [
+                "type": "section",
+                "fields": fields
+            ]
+        ]
+        if let videoLink = videoURL, URL(string: videoLink) != nil {
+            blocks.append([
+                "type": "actions",
+                "elements": [[
+                    "type": "button",
+                    "text": ["type": "plain_text", "text": "Open video"],
+                    "url": videoLink,
+                    "style": "primary"
+                ]]
+            ])
+        }
+
+        let payload: [String: Any] = [
+            "text": "ScreenMuse recording ready: \(filename) (\(String(format: "%.1f MB", sizeMB)))",
+            "blocks": blocks
+        ]
+        return try JSONSerialization.data(withJSONObject: payload)
     }
 }
