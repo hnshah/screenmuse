@@ -22,6 +22,7 @@ extension NWConnection: @retroactive @unchecked Sendable {}
 //   MEDIA      Server+Media.swift      — /timeline /validate /annotate /script /script/batch /upload/icloud
 //   BROWSER    Server+Browser.swift    — /browser /browser/install /browser/status
 //   NARRATE    Server+Narrate.swift    — /narrate (vision LLM narration of a recording)
+//   PUBLISH    Server+Publish.swift    — /publish (Slack / HTTP PUT / generic webhook)
 
 @MainActor
 public class ScreenMuseServer {
@@ -550,6 +551,9 @@ public class ScreenMuseServer {
 
         // MARK: Narration — Server+Narrate.swift
         case ("POST", "/narrate"):               await handleNarrate(body: body, connection: connection, reqID: reqID)
+
+        // MARK: Publish — Server+Publish.swift
+        case ("POST", "/publish"):               await handlePublish(body: body, connection: connection, reqID: reqID)
 
         // MARK: Media & Batch — Server+Media.swift
         case ("GET", "/timeline"):               handleTimeline(body: body, connection: connection, reqID: reqID)

@@ -5,6 +5,18 @@ All notable changes to ScreenMuse are documented here.
 ## [Unreleased] — 2026-04-11 Sprint 4
 
 ### Added
+- **`POST /publish`** — route a recording to an external destination. Three built-in publishers selected via `destination` field:
+  - **`slack`** — POSTs a Block Kit notification message with file metadata (name, size, duration, custom metadata fields, optional video button) to a Slack incoming webhook URL.
+  - **`http_put`** (aliases `s3`, `r2`, `gcs`) — streams the file bytes via HTTP PUT to a caller-supplied URL. Works with any S3-compatible presigned URL; keeps AWS SigV4 signing out of the Swift binary entirely (caller signs, we upload).
+  - **`webhook`** — POSTs a JSON metadata envelope (event, video_path, filename, size, timestamp, merged metadata) to an arbitrary URL. Works with Zapier, n8n, Discord webhooks, or any custom HTTP endpoint. Supports Bearer token via `api_token`.
+  - Pluggable via the `Publisher` protocol; custom destinations can be registered.
+- **`Publish/`** subdirectory in `ScreenMuseCore`: `Publisher.swift` (protocol + shared types + factory), `SlackPublisher.swift`, `HTTPPutPublisher.swift`, `WebhookPublisher.swift`.
+- **`PublishTests`** — 14 tests covering the registry (resolution, aliases, case-insensitivity, unknown destinations), `HTTPPutPublisher.contentType(for:)` for every supported format, all three publishers' missing-file error path, and `PublishResult` Codable round-trip.
+- **Python client**: `client.publish(url, destination, source, headers, metadata, api_token, filename, timeout)`.
+- **Node/TS client**: `client.publish({url, destination, source, headers, metadata, apiToken, filename, timeout})` + `PublishResult` type.
+- OpenAPI `/publish` entry + drift test.
+
+### Added
 - **`GET /metrics`** — Prometheus-format exposition endpoint. Counts HTTP requests by `(method, route, status)`, emits gauges for `screenmuse_active_recordings`, `screenmuse_active_connections`, `screenmuse_jobs_{pending,running,completed,failed}`, `screenmuse_disk_free_bytes`, `screenmuse_uptime_seconds`, and a constant `screenmuse_info{version="…"} 1` gauge. Paths with ephemeral IDs (`/job/abc123`, `/session/xyz`) are canonicalized to `/job/:id` and `/session/:id` to bound label cardinality.
 - **`MetricsRegistry` actor** — thread-safe counter store with Prometheus text rendering, stable sort order, and label escaping per exposition-format spec.
 - **`DiskSpaceGuard`** — pre-flight check that refuses `/start`, `/record`, and `/browser` when free disk space falls below `defaultMinFreeBytes` (2 GB). Returns a structured 507 Insufficient Storage response with `code: DISK_SPACE_LOW`, `free_bytes`, `required_bytes`, and a `suggestion`. Uses `.volumeAvailableCapacityForImportantUsage` (the number Finder shows) so reclaimable/purgeable storage counts. Can be swapped out per test via `ScreenMuseServer.diskSpaceGuard`.

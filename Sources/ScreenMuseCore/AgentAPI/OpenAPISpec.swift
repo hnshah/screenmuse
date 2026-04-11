@@ -345,6 +345,34 @@ enum OpenAPISpec {
             }
           }
         },
+        "/publish": {
+          "post": {
+            "summary": "Publish a recording to an external destination",
+            "description": "Routes a recording to Slack (incoming webhook), a presigned HTTP PUT endpoint (S3/R2/GCS), or a generic webhook. Does not re-encode — ships the bytes as-is. Long-running — supports async=true for large files.",
+            "requestBody": { "content": { "application/json": { "schema": {
+              "required": ["url"],
+              "properties": {
+                "source":      { "type": "string", "default": "last", "description": "Video path or 'last' for the most recent recording" },
+                "destination": { "type": "string", "enum": ["slack", "http_put", "s3", "r2", "gcs", "webhook"], "default": "webhook" },
+                "url":         { "type": "string", "description": "Target URL (Slack webhook / presigned S3 URL / generic webhook endpoint)" },
+                "headers":     { "type": "object", "description": "Extra HTTP headers, e.g. {\\"x-amz-meta-recording\\": \\"...\\"}" },
+                "metadata":    { "type": "object", "description": "String metadata merged into webhook payloads and Slack message fields" },
+                "api_token":   { "type": "string", "description": "Bearer token for webhook/API destinations" },
+                "filename":    { "type": "string", "description": "Override the filename displayed to the destination" },
+                "timeout":     { "type": "number", "default": 120 },
+                "async":       { "type": "boolean", "default": false }
+              }
+            } } } },
+            "responses": {
+              "200": { "description": "Published successfully — returns destination, URL, status_code, bytes_sent" },
+              "400": { "description": "Invalid destination or URL" },
+              "401": { "description": "Upstream returned 401/403 — check api_token" },
+              "404": { "description": "Source video not found" },
+              "502": { "description": "Upstream returned a 5xx response" },
+              "503": { "description": "Upstream unreachable" }
+            }
+          }
+        },
         "/narrate": {
           "post": {
             "summary": "AI narration + chapter suggestions for a recording",

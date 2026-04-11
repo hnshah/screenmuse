@@ -789,6 +789,56 @@ class ScreenMuse:
             body["source"] = source
         return self._post("/start/pip", body)
 
+    # ── Publish ───────────────────────────────────────────────────────────────
+
+    def publish(
+        self,
+        url: str,
+        destination: str = "webhook",
+        source: str = "last",
+        headers: Optional[Dict[str, str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        api_token: Optional[str] = None,
+        filename: Optional[str] = None,
+        timeout: float = 120,
+        async_: bool = False,
+    ) -> dict:
+        """Publish a recording to an external destination.
+
+        Three built-in destinations:
+          - `slack`    — POST a notification to an incoming-webhook URL
+          - `http_put` (aliases: `s3`, `r2`, `gcs`) — PUT file bytes to a
+                        presigned upload URL
+          - `webhook`  — POST a JSON metadata envelope to any URL
+
+        Args:
+            url: Target URL (slack webhook / presigned S3 URL / webhook endpoint).
+            destination: slack, http_put, s3, r2, gcs, or webhook.
+            source: Video path or 'last'.
+            headers: Extra HTTP headers (e.g. x-amz-meta-recording).
+            metadata: String metadata merged into webhook payloads
+                and Slack message fields.
+            api_token: Bearer token for webhook/API destinations.
+            filename: Override the filename shown to the destination.
+            timeout: Request timeout in seconds (default 120).
+            async_: Return a job ID and poll GET /job/{id}.
+
+        Returns:
+            {destination, url, status_code, response_body, bytes_sent}
+        """
+        body: Dict[str, Any] = {
+            "source": source,
+            "destination": destination,
+            "url": url,
+            "timeout": timeout,
+        }
+        if headers is not None: body["headers"] = headers
+        if metadata is not None: body["metadata"] = metadata
+        if api_token is not None: body["api_token"] = api_token
+        if filename is not None: body["filename"] = filename
+        if async_: body["async"] = True
+        return self._post("/publish", body)
+
     # ── AI Narration ──────────────────────────────────────────────────────────
 
     def narrate(

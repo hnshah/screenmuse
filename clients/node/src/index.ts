@@ -687,6 +687,42 @@ export class ScreenMuse {
     return result;
   }
 
+  // ── Publish ────────────────────────────────────────────────────────────────
+
+  /**
+   * Publish a recording to an external destination.
+   *
+   * Three built-in destinations:
+   *   - `slack`    — POST a notification to an incoming-webhook URL
+   *   - `http_put` (aliases: `s3`, `r2`, `gcs`) — PUT file bytes to a
+   *                 presigned upload URL (caller signs the URL, we upload)
+   *   - `webhook`  — POST a JSON metadata envelope to any URL
+   */
+  async publish(options: {
+    url: string;
+    destination?: "slack" | "http_put" | "s3" | "r2" | "gcs" | "webhook";
+    source?: string;
+    headers?: Record<string, string>;
+    metadata?: Record<string, string | number | boolean>;
+    apiToken?: string;
+    filename?: string;
+    timeout?: number;
+    async?: boolean;
+  }): Promise<PublishResult> {
+    const body: Record<string, unknown> = {
+      url: options.url,
+      destination: options.destination ?? "webhook",
+    };
+    if (options.source !== undefined) body.source = options.source;
+    if (options.headers !== undefined) body.headers = options.headers;
+    if (options.metadata !== undefined) body.metadata = options.metadata;
+    if (options.apiToken !== undefined) body.api_token = options.apiToken;
+    if (options.filename !== undefined) body.filename = options.filename;
+    if (options.timeout !== undefined) body.timeout = options.timeout;
+    if (options.async) body.async = true;
+    return this.request("POST", "/publish", body);
+  }
+
   // ── AI Narration ───────────────────────────────────────────────────────────
 
   /**
@@ -812,6 +848,18 @@ export interface JobResult {
   job_id: string;
   status: "pending" | "running" | "completed" | "failed";
   poll: string;
+}
+
+// ── Publish result types ────────────────────────────────────────────────────
+
+export interface PublishResult {
+  destination: "slack" | "http_put" | "webhook" | string;
+  url: string;
+  status_code: number;
+  response_body: string;
+  bytes_sent: number;
+  source: string;
+  request_id?: number;
 }
 
 // ── Narration result types ──────────────────────────────────────────────────

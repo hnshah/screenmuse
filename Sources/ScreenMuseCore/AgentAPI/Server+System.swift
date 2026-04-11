@@ -232,7 +232,9 @@ extension ScreenMuseServer {
             // Browser (Playwright) recording
             "POST /browser", "POST /browser/install", "GET /browser/status",
             // AI narration
-            "POST /narrate"
+            "POST /narrate",
+            // Publish to external destinations
+            "POST /publish"
         ]
         sendResponse(connection: connection, status: 200, body: [
             "version": Self.currentVersion,
